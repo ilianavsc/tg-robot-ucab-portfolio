@@ -27,11 +27,11 @@ P = prototipo simulado. H = prueba con hardware real.
 ## Orden de los prototipos web
 | Código | Carpeta | Qué hace |
 |---|---|---|
-| **P01** | `P01-mqtt-base/` | Así se hablan el robot y la app (MQTT, QoS, última voluntad). |
-| **P02** | `P02-sensores/` | Inspector de hardware: **inspección de cada componente** (etiquetas 3D, ficha en vivo, rayos X); se puede manejar como en el Simulador 1 y la **consola de sensores** (velocímetro + 4 sensores de línea) se abre con su botón. `README.md` es el registro HIL. |
-| **P03** | `P03-radar-ultrasonico/` | Radar ultrasónico (2× HC-SR04P, frente y atrás) con la misma consola oscura que P02. |
-| **P04** | `P04-simulador-1-esp32/` | Simulador 1 (2 pistas, manual y automático) **+ placa ESP32**: un LED por sensor de línea, sincronizado con el robot. |
-| **P05** | `P05-gemelo-digital/` | Gemelo Digital: el robot aprende la ruta y la repite (teach-and-repeat) sobre las pistas de P04, con el radar de P03 y tramos sin cinta. |
+| **P01** | `P01-mqtt-base/` | Base de mensajería MQTT: así se hablan el robot y la app (QoS, última voluntad, reconexión). |
+| **P02** | `P02-sensores/` | Inspector interactivo de los componentes del robot (vista principal) con manejo Auto/Manual y consola de sensores opcional con botón. `README.md` es el registro HIL. |
+| **P03** | `P03-radar-ultrasonico/` | Simulación del radar ultrasónico (2× HC-SR04P, frente y atrás) y frenado automático ante obstáculos. |
+| **P04** | `P04-simulador-1-esp32/` | Simulador 1 integrado con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT bidireccional con la app web (control remoto desde Admin + Modo Desarrollador). |
+| **P05** | `P05-gemelo-digital/` | Gemelo Digital: calibra y aprende la pista, con puntos de control equitativos en tercios en la segunda vuelta. |
 
 ## Cómo recompilar los simuladores 3D (P01, P02 y P04)
 Los tres simuladores se empaquetan igual, con esbuild y `three` de npm (ya no se usa el kit teardown). Cada `codigo/` tiene todo el fuente: `main.js` (entrada), los módulos, `style.css`, `fuentes.css`, `plantilla.html` y `construir.mjs`.

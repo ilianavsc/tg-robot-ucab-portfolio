@@ -84,11 +84,11 @@ window.TG = {
 
   /* Texto corto de cada prototipo para las tarjetas: nombre corto + qué hace en 1 línea */
   protoResumen: {
-    P01: { corto: "App ↔ Robot (MQTT)", linea: "Mensajes que no se pierden entre la app y el robot." },
-    P02: { corto: "Inspector de hardware", linea: "Maneja el robot y mira su consola: velocímetro y 4 sensores de línea en vivo." },
-    P03: { corto: "Radar Ultrasónico (Frente/Atrás)", linea: "El robot mide qué tan lejos está lo que tiene delante y detrás." },
-    P04: { corto: "Sim 1 + ESP32", linea: "El robot sigue la cinta negra y la placa ESP32 enciende un LED por sensor." },
-    P05: { corto: "Gemelo Digital", linea: "El robot aprende la ruta y la repite, también donde no hay cinta." },
+    P01: { corto: "Base MQTT", linea: "Arquitectura base de mensajería MQTT: robot y app se hablan sin perder mensajes." },
+    P02: { corto: "Inspector de hardware", linea: "Inspector interactivo de los componentes del robot: manejo Auto/Manual y consola de sensores opcional." },
+    P03: { corto: "Radar Ultrasónico (Frente/Atrás)", linea: "Simulación del radar ultrasónico: mide distancias y frena solo ante obstáculos." },
+    P04: { corto: "Simulador 1 + ESP32", linea: "Simulador 1 integrado con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT bidireccional con la app." },
+    P05: { corto: "Gemelo Digital", linea: "Calibra y aprende la pista; puntos de control equitativos en tercios en la segunda vuelta." },
     P06: { corto: "Robot virtual", linea: "Un robot de prueba conectado a Firebase." },
     P07: { corto: "Firmware ESP32", linea: "Todo el código del ESP32 trabajando junto." },
     P09: { corto: "App Flutter (v1 · Modo Demo)", linea: "Pide y mira el robot desde el celular, sin robot. Incluye acceso y Modo Demo." },
