@@ -332,6 +332,24 @@
 .esp-card strong { display: block; font-family: var(--font-mono); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .esp-card strong.cyan { color: #7dd3fc; }
 .esp-card strong.ok { color: #86efac; }
+.datos-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+.datos-filtro { display: inline-flex; background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; overflow: hidden; }
+.datos-filtro button { font-family: var(--font-mono); font-size: 11px; font-weight: 700; min-height: 36px; padding: 4px 10px; border: none; border-right: 1px solid var(--s2-borde); background: transparent; color: var(--s2-muted); cursor: pointer; }
+.datos-filtro button:last-child { border-right: none; }
+.datos-filtro button.sel { background: rgba(56, 189, 248, 0.22); color: #e0f2fe; }
+.btn-mini { font-family: var(--font-mono); font-size: 11px; font-weight: 700; min-height: 36px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--s2-borde); background: var(--s2-bg); color: #7dd3fc; cursor: pointer; }
+.btn-mini:hover { border-color: var(--s2-prim); }
+.bloque-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.bloque-cab h3 { margin: 0; }
+.seg-pill { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--s2-borde); color: var(--s2-muted); background: var(--s2-bg); white-space: nowrap; }
+.seg-pill.activo { border-color: var(--s2-warn); color: #fde68a; background: rgba(245, 158, 11, 0.14); }
+.seg-pill.ok { border-color: var(--s2-ok); color: #86efac; background: rgba(34, 197, 94, 0.16); }
+.seg-lista { display: grid; gap: 6px; }
+.seg-row { background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; padding: 7px 9px; display: grid; gap: 3px; font-family: var(--font-mono); font-size: 10.5px; }
+.seg-row.activo { border-color: var(--s2-warn); }
+.seg-row.ok { border-color: rgba(34, 197, 94, 0.5); }
+.seg-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; color: #e2e8f0; font-weight: 700; }
+.seg-meta { color: var(--s2-muted); font-variant-numeric: tabular-nums; }
 .lectura-celda { background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; padding: 6px 8px; min-width: 0; }
 .lectura-celda small { display: block; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--s2-muted); margin-bottom: 2px; }
 .lectura-celda strong { display: block; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--s2-txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -674,15 +692,72 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
       </details>
     </section>
 
-    <!-- Pestaña 3: Datos -->
+    <!-- Pestaña 3: Datos (Consola organizada por vueltas y validación secuencial de 3 segmentos) -->
     <section class="tab-panel" id="tab-datos" role="tabpanel" aria-labelledby="tbtn-datos">
-      <div class="panel">
+      <div class="datos-toolbar">
+        <div class="datos-filtro" role="group" aria-label="Filtrar bloques de datos">
+          <button type="button" class="sel" data-datos-filtro="todo" aria-pressed="true">Todo</button>
+          <button type="button" data-datos-filtro="captura" aria-pressed="false">Captura</button>
+          <button type="button" data-datos-filtro="segmentos" aria-pressed="false">Segmentos</button>
+        </div>
+        <button type="button" class="btn-mini" id="btn-copiar-json">📋 Copiar JSON</button>
+      </div>
+
+      <!-- Bloque 1: Vuelta lenta (SLOW_READING) -->
+      <div class="panel" id="bloque-datos-1" data-datos-grupo="captura">
+        <div class="bloque-cab">
+          <h3>Bloque 1 · Vuelta lenta (SLOW_READING)</h3>
+          <span class="seg-pill" id="b1-estado">Pendiente</span>
+        </div>
+        <div class="esp-grid" style="margin-top:0">
+          <div class="esp-card"><small>Largo de pista</small><strong class="cyan" id="b1-largo">—</strong></div>
+          <div class="esp-card"><small>Perfil inicial radar (HC-SR04P)</small><strong id="b1-radar">—</strong></div>
+        </div>
+        <div class="sub" id="b1-nav">Navegación base (TCRT5000 + MPU-6050 + odometría): pendiente de captura lenta (0,16 m/s).</div>
+      </div>
+
+      <!-- Bloque 2: Pasada normal (NORMAL_READING) -->
+      <div class="panel" id="bloque-datos-2" data-datos-grupo="captura">
+        <div class="bloque-cab">
+          <h3>Bloque 2 · Pasada normal (NORMAL_READING)</h3>
+          <span class="seg-pill" id="b2-estado">Pendiente</span>
+        </div>
+        <div class="esp-card" style="margin-bottom:6px">
+          <small>3 Puntos de Control (PC1 · PC2 · PC3)</small>
+          <strong class="cyan" id="b2-pcs">—</strong>
+        </div>
+        <div class="sub" id="b2-paredes">Firma de paredes (radar delantero): pendiente de pasada normal (0,41 m/s).</div>
+      </div>
+
+      <!-- Bloque 3: Validación por segmentos (3 vueltas de ajuste sin obstáculos) -->
+      <div class="panel" id="bloque-datos-3" data-datos-grupo="segmentos">
+        <div class="bloque-cab">
+          <h3>Bloque 3 · Validación por segmentos (3 vueltas)</h3>
+          <span class="seg-pill" id="b3-estado">0/3</span>
+        </div>
+        <div class="seg-lista" id="lista-segmentos">
+          <div class="seg-row" id="seg-row-1">
+            <div class="seg-top"><span>Segmento 1 · Inicio → PC1</span><span class="seg-pill" id="seg-st-1">Pendiente</span></div>
+            <div class="seg-meta" id="seg-meta-1">Viaje 1/3 · sin validar aún</div>
+          </div>
+          <div class="seg-row" id="seg-row-2">
+            <div class="seg-top"><span>Segmento 2 · PC1 → PC2</span><span class="seg-pill" id="seg-st-2">Pendiente</span></div>
+            <div class="seg-meta" id="seg-meta-2">Viaje 2/3 · sin validar aún</div>
+          </div>
+          <div class="seg-row" id="seg-row-3">
+            <div class="seg-top"><span>Segmento 3 · PC2 → PC3 / cierre</span><span class="seg-pill" id="seg-st-3">Pendiente</span></div>
+            <div class="seg-meta" id="seg-meta-3">Viaje 3/3 · sin validar aún</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" data-datos-grupo="todo">
         <h3>Historial de viajes y métricas RMS</h3>
         <p class="nota" id="metricas-resumen">Estado: INITIAL · Madurez: En construcción</p>
         <div class="viajes-lista" id="historial-viajes" style="margin-top:8px"></div>
       </div>
 
-      <details class="det" id="det-contrato">
+      <details class="det" id="det-contrato" data-datos-grupo="todo">
         <summary>Contrato del gemelo digital <small>JSON</small></summary>
         <div class="det-cuerpo">
           <div class="json" id="contrato-json" aria-label="Estado del gemelo digital">—</div>
@@ -690,7 +765,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
         </div>
       </details>
 
-      <details class="det" id="det-registro">
+      <details class="det" id="det-registro" data-datos-grupo="todo">
         <summary>Registro de eventos <small>últimos 8</small></summary>
         <div class="det-cuerpo"><div class="log" id="log-eventos" aria-live="polite"></div></div>
       </details>
@@ -1034,6 +1109,18 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     refrescarDom(true);
   }
 
+  function aplicarFiltroDatos(filtro) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-datos-filtro]"), function (b) {
+      var on = b.getAttribute("data-datos-filtro") === filtro;
+      b.classList.toggle("sel", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("#tab-datos [data-datos-grupo]"), function (el) {
+      var g = el.getAttribute("data-datos-grupo");
+      el.hidden = (filtro !== "todo") && (g !== filtro);
+    });
+  }
+
   function enlazar() {
     $("btn-ing").addEventListener("click", function () { abrirCajon(!cajonAbierto); });
     $("btn-cajon-cerrar").addEventListener("click", function () { abrirCajon(false); });
@@ -1041,6 +1128,19 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     window.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && cajonAbierto) abrirCajon(false); });
     Array.prototype.forEach.call(document.querySelectorAll("[data-tab]"), function (b) {
       b.addEventListener("click", function () { activarTab(b.getAttribute("data-tab")); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-datos-filtro]"), function (b) {
+      b.addEventListener("click", function () { aplicarFiltroDatos(b.getAttribute("data-datos-filtro")); });
+    });
+    $("btn-copiar-json").addEventListener("click", function () {
+      var e = GemeloEstado.estadoGemelo(sim, S);
+      var txt = JSON.stringify({ gemelo: e, aprendizaje: { estado: ap.estado, madurez: ap.madurez, viajes: ap.viajes, segmentos: segmentos3() } }, null, 2);
+      var btn = $("btn-copiar-json");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).catch(function () { /* ignora */ });
+      }
+      btn.textContent = "✔ Copiado";
+      setTimeout(function () { btn.textContent = "📋 Copiar JSON"; }, 1400);
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-pista]"), function (b) {
       b.addEventListener("click", function () { cargarPista(b.getAttribute("data-pista")); refrescarDom(true); });
@@ -1343,6 +1443,94 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     $("step-4").title = "Módulo adicional opcional · Torres de Control B1/B2" + (!puedeSinCinta ? " (Pista A solo cinta)" : " + prueba sin cinta T2");
   }
 
+  function puntosControl3() {
+    var L = sim ? sim.L : 9.0;
+    var pcs = (pistaObj && pistaObj.puntosDeControl) ? pistaObj.puntosDeControl.map(function (p) { return p.posicionM; }).sort(function (a, b) { return a - b; }) : [];
+    var pc1 = pcs[0] !== undefined ? pcs[0] : +(L / 3).toFixed(2);
+    var pc2 = pcs[1] !== undefined ? pcs[1] : +(2 * L / 3).toFixed(2);
+    var pc3 = pcs[2] !== undefined ? pcs[2] : +L.toFixed(2);
+    return [pc1, pc2, pc3];
+  }
+
+  function segmentos3() {
+    var pcs = puntosControl3();
+    return [
+      { id: 1, nombre: "Inicio → PC1", desdeM: 0, hastaM: pcs[0], largoM: +(pcs[0]).toFixed(2) },
+      { id: 2, nombre: "PC1 → PC2", desdeM: pcs[0], hastaM: pcs[1], largoM: +(pcs[1] - pcs[0]).toFixed(2) },
+      { id: 3, nombre: "PC2 → PC3 / cierre", desdeM: pcs[1], hastaM: pcs[2], largoM: +(pcs[2] - pcs[1]).toFixed(2) }
+    ];
+  }
+
+  function actualizarDatosPorEtapa() {
+    var pcs = puntosControl3();
+    var segs = segmentos3();
+    var vLenta = ap.viajes.filter(function (v) { return v.valid && v.trip_type === "SLOW_READING"; })[0] || null;
+    var vNormal = ap.viajes.filter(function (v) { return v.valid && v.trip_type === "NORMAL_READING"; })[0] || null;
+    var vAjustes = ap.viajes.filter(function (v) { return v.valid && v.trip_type === "ADJUSTING"; });
+
+    /* Bloque 1 · Vuelta lenta (SLOW_READING) */
+    var b1EnCurso = ap.estado === "SLOW_READING" && ap.viajeActivo;
+    var b1Est = $("b1-estado");
+    if (vLenta) {
+      b1Est.textContent = "Completado ✔"; b1Est.className = "seg-pill ok";
+      $("b1-largo").textContent = fmt(vLenta.length_m, 2) + " m (ref. fija)";
+      $("b1-radar").textContent = "Libre (> 50 cm) · sin obs.";
+      $("b1-nav").textContent = "TCRT5000 + MPU-6050 + odom.: " + fmt(vLenta.actual_speed_ms, 2) + " m/s · cob. " + fmt(vLenta.coverage_pct, 0) + " % · RMS " + fmt(vLenta.lateral_error_rms_mm, 1) + " mm / " + fmt(vLenta.heading_error_rms_deg, 1) + "°.";
+    } else if (b1EnCurso) {
+      b1Est.textContent = "Capturando…"; b1Est.className = "seg-pill activo";
+      $("b1-largo").textContent = fmt(sim.s, 2) + " / " + fmt(sim.L, 2) + " m";
+      $("b1-radar").textContent = "Escaneando HC-SR04P…";
+      $("b1-nav").textContent = "Capturando navegación base a 0,16 m/s (" + Math.round(sim.s / sim.L * 100) + " % completado).";
+    } else {
+      b1Est.textContent = "Pendiente"; b1Est.className = "seg-pill";
+      $("b1-largo").textContent = "—";
+      $("b1-radar").textContent = "—";
+      $("b1-nav").textContent = "Navegación base (TCRT5000 + MPU-6050 + odometría): pendiente de captura lenta (0,16 m/s).";
+    }
+
+    /* Bloque 2 · Pasada normal (NORMAL_READING) */
+    var b2EnCurso = ap.estado === "NORMAL_READING" && ap.viajeActivo;
+    var b2Est = $("b2-estado");
+    if (vNormal) {
+      b2Est.textContent = "Completado ✔"; b2Est.className = "seg-pill ok";
+      $("b2-pcs").textContent = "PC1 " + fmt(pcs[0], 2) + " m · PC2 " + fmt(pcs[1], 2) + " m · PC3 " + fmt(pcs[2], 2) + " m";
+      $("b2-paredes").textContent = "Firma de paredes (radar delantero): pasillo libre fijado a " + fmt(vNormal.actual_speed_ms, 2) + " m/s · RMS base " + fmt(vNormal.lateral_error_rms_mm, 1) + " mm.";
+    } else if (b2EnCurso) {
+      b2Est.textContent = "Capturando…"; b2Est.className = "seg-pill activo";
+      $("b2-pcs").textContent = "Fijando PC1–PC3 (" + fmt(sim.s, 2) + " m)…";
+      $("b2-paredes").textContent = "Registrando firma de paredes del radar delantero a 0,41 m/s…";
+    } else {
+      b2Est.textContent = "Pendiente"; b2Est.className = "seg-pill";
+      $("b2-pcs").textContent = "—";
+      $("b2-paredes").textContent = "Firma de paredes (radar delantero): pendiente de pasada normal (0,41 m/s).";
+    }
+
+    /* Bloque 3 · Validación por segmentos (3 vueltas de ajuste) */
+    var nOk = Math.min(3, vAjustes.length);
+    var b3Est = $("b3-estado");
+    b3Est.textContent = nOk === 3 ? "3/3 ✔" : (nOk + "/3");
+    b3Est.className = "seg-pill" + (nOk === 3 ? " ok" : (ap.estado === "ADJUSTING" ? " activo" : ""));
+    segs.forEach(function (seg, idx) {
+      var n = idx + 1;
+      var row = $("seg-row-" + n), stEl = $("seg-st-" + n), metaEl = $("seg-meta-" + n);
+      var trp = vAjustes[idx] || null;
+      var verificando = !trp && ap.estado === "ADJUSTING" && ap.viajeActivo && vAjustes.length === idx;
+      if (trp) {
+        row.className = "seg-row ok";
+        stEl.className = "seg-pill ok"; stEl.textContent = "Verificado";
+        metaEl.textContent = fmt(seg.largoM, 2) + " m · RMS " + fmt(trp.lateral_error_rms_mm, 1) + " mm / " + fmt(trp.heading_error_rms_deg, 1) + "° · radar libre (Viaje " + n + "/3)";
+      } else if (verificando) {
+        row.className = "seg-row activo";
+        stEl.className = "seg-pill activo"; stEl.textContent = "Verificando";
+        metaEl.textContent = fmt(seg.largoM, 2) + " m · recorriendo Viaje " + n + "/3 (" + Math.round(sim.s / sim.L * 100) + " %) · radar libre";
+      } else {
+        row.className = "seg-row";
+        stEl.className = "seg-pill"; stEl.textContent = "Pendiente";
+        metaEl.textContent = fmt(seg.largoM, 2) + " m · Viaje " + n + "/3 pendiente";
+      }
+    });
+  }
+
   function refrescarDom() {
     var C = nucleo.CFG;
     var nombre = nucleo.NOMBRE_ESTADO[sim.nav.estado];
@@ -1454,6 +1642,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
 
     $("metricas-resumen").textContent = "Estado: " + ap.estado + " · Madurez: " + met.madurez +
       " · RMS lat: " + fmt(met.rmsLatMm, 2) + " mm · RMS ang: " + fmt(met.rmsHeadDeg, 2) + "° · Mejora: " + fmt(met.mejoraPct, 1) + " % · tau: " + fmt(met.wheelTauS, 3) + " s";
+    actualizarDatosPorEtapa();
     if (cajonAbierto && tabActiva === "datos") {
       var hv = $("historial-viajes");
       hv.innerHTML = ap.viajes.length
@@ -1714,6 +1903,24 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     } else {
       /* Mapa completo (Gemelo V1 creado en adelante) */
       dibujarPisoYCotas(c, 0.75);
+      /* Resaltado sutil del segmento activo durante los viajes de ajuste 1/3, 2/3 y 3/3 */
+      var segActivo = null;
+      if (ap.estado === "ADJUSTING" && ap.viajesAjusteValidos < 3) {
+        segActivo = segmentos3()[ap.viajesAjusteValidos] || null;
+        if (segActivo) {
+          c.save();
+          c.strokeStyle = "rgba(56,189,248,0.28)";
+          c.lineWidth = 11;
+          c.setLineDash([]);
+          for (i = 0; i < n; i++) {
+            a = i * P.CELDA_M; b = a + P.CELDA_M; mid = (a + b) / 2;
+            if (mid < segActivo.desdeM || mid > segActivo.hastaM) continue;
+            pa = tr.puntoEn(a); pb = tr.puntoEn(b);
+            c.beginPath(); c.moveTo(VX(pa.x), VY(pa.y)); c.lineTo(VX(pb.x), VY(pb.y)); c.stroke();
+          }
+          c.restore();
+        }
+      }
       for (i = 0; i < n; i++) {
         a = i * P.CELDA_M; b = a + P.CELDA_M; mid = (a + b) / 2;
         pa = tr.puntoEn(a); pb = tr.puntoEn(b);
