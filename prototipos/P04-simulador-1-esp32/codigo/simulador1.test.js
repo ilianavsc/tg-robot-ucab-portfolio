@@ -10,6 +10,7 @@ import {leerSensores, binarios} from './linea.js';
 import {R} from './model.js';
 import {IDS_PISTA, PISTAS, ZONA, ZONA_B, crearPista, ocultarTramo, tramoEn} from './pista.js';
 import {GEOM, PINES_TCRT, crearSim, ledsEsp32} from './sim.js';
+import {BROKERS, TOPICOS, TIMEOUT_MANUAL_S, crearPuenteMqtt} from './mqtt_puente.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const leer = (f) => readFileSync(join(aqui, f), 'utf8');
@@ -282,6 +283,84 @@ prueba('la plantilla de P04 trae la placa ESP32 con 4 LEDs de línea', () => {
   assert.strictEqual((html.match(/class="esp-led tcrt"/g) || []).length, 4);
   const main = readFileSync(join(aqui, 'main.js'), 'utf8');
   assert.ok(/ledsEsp32\(/.test(main), 'main.js pinta la placa con ledsEsp32');
+  assert.ok(/id="placa-mqtt"/.test(html) && /id="b-mqtt"/.test(html) && /id="mqtt-estado"/.test(html));
+});
+
+prueba('puente MQTT: tópicos y brokers coinciden con la App Flutter (HiveMQ → EMQX → Mosquitto)', () => {
+  assert.deepStrictEqual(BROKERS.map((b) => b.nombre), ['HiveMQ', 'EMQX', 'Mosquitto']);
+  assert.strictEqual(TOPICOS.estado, 'ucab-tg-sf/robot/estado');
+  assert.strictEqual(TOPICOS.ultrasonido, 'ucab-tg-sf/robot/ultrasonido');
+  assert.strictEqual(TOPICOS.ordenes, 'ucab-tg-sf/robot/ordenes');
+  assert.strictEqual(TOPICOS.ack, 'ucab-tg-sf/robot/ordenes/ack');
+});
+
+prueba('puente MQTT: comandos de movimiento y freno mueven el robot en tiempo real, publican telemetría y responden ACK', () => {
+  const s = crearSim({pistaId: 'A', modo: 'auto'});
+  const publicados = [];
+  const suscritos = [];
+  const listeners = {};
+  const clienteMock = {
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    subscribe(topic, opts) { suscritos.push({topic, opts}); },
+    publish(topic, payload, opts) { publicados.push({topic, payload: JSON.parse(payload), opts}); },
+    removeAllListeners() {},
+    end() {},
+  };
+
+  const puente = crearPuenteMqtt({
+    sim: s,
+    crearCliente: () => clienteMock,
+  });
+
+  puente.conectar();
+  assert.strictEqual(puente.estado, 'conectando');
+  listeners.connect.forEach((fn) => fn());
+  assert.strictEqual(puente.estado, 'conectado');
+  assert.strictEqual(suscritos[0].topic, TOPICOS.ordenes);
+  assert.ok(publicados.some((p) => p.topic === TOPICOS.estado));
+  assert.ok(publicados.some((p) => p.topic === TOPICOS.ultrasonido));
+
+  // Recibir orden 'adelante' cambia a manual, mueve el robot y envía ACK
+  const emitir = (obj) => listeners.message.forEach((fn) => fn(TOPICOS.ordenes, JSON.stringify(obj)));
+  emitir({id: 'ord-1', cmd: 'adelante'});
+  assert.strictEqual(s.modo, 'manual');
+  for (let t = 0; t < 1.5; t += 0.05) { puente.avanzar(0.05); s.avanzar(0.05); }
+  assert.ok(s.v > 0.35, `velocidad hacia adelante esperada > 0.35, obtuvo ${s.v}`);
+  const ack1 = publicados.filter((p) => p.topic === TOPICOS.ack).pop();
+  assert.strictEqual(ack1.payload.id, 'ord-1');
+  assert.strictEqual(ack1.payload.recibidas, 1);
+
+  // Recibir orden 'atras' invierte el sentido de marcha y los LEDs/PWM lo reflejan
+  emitir({id: 'ord-2', cmd: 'atras'});
+  for (let t = 0; t < 2.0; t += 0.05) { puente.avanzar(0.05); s.avanzar(0.05); }
+  assert.ok(s.v < -0.25, `velocidad hacia atrás esperada < -0.25, obtuvo ${s.v}`);
+  assert.strictEqual(ledsEsp32(s.lectura()).dirIzq, -1);
+
+  // Recibir orden 'frenar' detiene al robot y envía ACK
+  emitir({id: 'ord-3', cmd: 'frenar'});
+  for (let t = 0; t < 0.4; t += 0.05) { puente.avanzar(0.05); s.avanzar(0.05); }
+  assert.ok(Math.abs(s.v) < 0.02, `robot debe detenerse tras frenar, v=${s.v}`);
+  const ack3 = publicados.filter((p) => p.topic === TOPICOS.ack).pop();
+  assert.strictEqual(ack3.payload.id, 'ord-3');
+  assert.strictEqual(ack3.payload.recibidas, 3);
+
+  // Fail-safe manual: sin nuevas órdenes por > TIMEOUT_MANUAL_S se detiene por timeout
+  emitir({id: 'ord-4', cmd: 'derecha'});
+  for (let t = 0; t < TIMEOUT_MANUAL_S + 0.6; t += 0.1) { puente.avanzar(0.1); s.avanzar(0.1); }
+  assert.strictEqual(puente.parada, 'timeout');
+  assert.ok(Math.abs(s.v) < 0.02, `timeout debe frenar al robot, v=${s.v}`);
+
+  // Recibir 'auto' reanuda seguimiento automático de línea
+  emitir({id: 'ord-5', cmd: 'auto'});
+  assert.strictEqual(s.modo, 'auto');
+  assert.strictEqual(puente.parada, 'ninguna');
+  const ultEstado = publicados.filter((p) => p.topic === TOPICOS.estado).pop().payload;
+  assert.strictEqual(ultEstado.estado, 'autonomo');
+  assert.strictEqual(ultEstado.ordenes, 5);
+  assert.strictEqual(ultEstado.sensores.length, 4);
+
+  puente.desconectar();
+  assert.strictEqual(puente.estado, 'desconectado');
 });
 
 console.log(`\nP04 Simulador 1: ${ok}/${ok} pruebas pasaron`);

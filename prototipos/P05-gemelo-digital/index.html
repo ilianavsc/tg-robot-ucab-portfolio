@@ -1276,15 +1276,11 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     var est = ap.estado;
     return est === "PHASE1_READY" || est === "BEACONS_STARTING" || est === "BEACONS_ACTIVE" || est === "NO_TAPE_TEST" || est === "PHASE1_VALIDATED";
   }
-  /* 3 puntos de control siempre (PC1/PC2/PC3): usa los de la pista B o calcula 3 para la A. */
+  /* 3 puntos de control equitativos (PC1/PC2/PC3): dividen el largo total de la ruta entre 3 (tercios iguales). */
   function puntosDeControlDibujo() {
-    if (pistaObj.puntosDeControl && pistaObj.puntosDeControl.length === 3) return pistaObj.puntosDeControl;
-    var L = sim.L || tr.L || 9;
-    return [
-      { id: "PC1", posicionM: L * 0.33 },
-      { id: "PC2", posicionM: L * 0.5 },
-      { id: "PC3", posicionM: L * 0.75 }
-    ];
+    if (ap && ap.puntosControl && ap.puntosControl.length === 3) return ap.puntosControl;
+    var L = (sim && sim.L) || (tr && tr.L) || 9.0;
+    return A.calcularPuntosControlEquitativos(L);
   }
   function actualizarControlesObstaculo() {
     var permitido = obstaculoPermitido();
@@ -1444,12 +1440,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   }
 
   function puntosControl3() {
-    var L = sim ? sim.L : 9.0;
-    var pcs = (pistaObj && pistaObj.puntosDeControl) ? pistaObj.puntosDeControl.map(function (p) { return p.posicionM; }).sort(function (a, b) { return a - b; }) : [];
-    var pc1 = pcs[0] !== undefined ? pcs[0] : +(L / 3).toFixed(2);
-    var pc2 = pcs[1] !== undefined ? pcs[1] : +(2 * L / 3).toFixed(2);
-    var pc3 = pcs[2] !== undefined ? pcs[2] : +L.toFixed(2);
-    return [pc1, pc2, pc3];
+    return puntosDeControlDibujo().map(function (p) { return p.posicionM; });
   }
 
   function segmentos3() {

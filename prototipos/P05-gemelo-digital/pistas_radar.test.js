@@ -456,4 +456,33 @@ module.exports = async function (ctx) {
     const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
     assert.ok(html.includes("HiveMQ → EMQX → Mosquitto"), "falta cadena MQTT de respaldo");
   });
+
+  await prueba("Etapa 2 (2da vuelta): puntos de control equitativos dividiendo la longitud total entre 3 (Pista B y Pista A)", () => {
+    const mB = mundo("B");
+    const apB = A.crear({ pistaId: "B" });
+    A.iniciarViaje(apB, "NORMAL_READING", "B", mB.sim.L, mB.sim.cinta.length);
+    assert.strictEqual(apB.puntosControl.length, 3);
+    assert.deepStrictEqual(
+      apB.puntosControl.map((p) => p.posicionM),
+      [3.0, 6.0, 9.0],
+      "Pista B (9,0 m) debe fijar PC1=3,0 m, PC2=6,0 m, PC3=9,0 m"
+    );
+    assert.deepStrictEqual(
+      apB.puntosControl.map((p) => p.tramoM),
+      [3.0, 3.0, 3.0],
+      "Cada tramo entre puntos de control en Pista B debe medir exactamente L/3 = 3,0 m"
+    );
+
+    const mA = mundo("A");
+    const apA = A.crear({ pistaId: "A", permiteSinCinta: false });
+    A.iniciarViaje(apA, "NORMAL_READING", "A", mA.sim.L, mA.sim.cinta.length);
+    assert.strictEqual(apA.puntosControl.length, 3);
+    const tercioA = mA.sim.L / 3;
+    assert.ok(Math.abs(apA.puntosControl[0].posicionM - tercioA) <= 0.01);
+    assert.ok(Math.abs(apA.puntosControl[1].posicionM - 2 * tercioA) <= 0.01);
+    assert.ok(Math.abs(apA.puntosControl[2].posicionM - mA.sim.L) <= 0.01);
+    for (const pc of apA.puntosControl) {
+      assert.ok(Math.abs(pc.tramoM - tercioA) <= 0.01, "tramo equitativo en Pista A: " + pc.tramoM);
+    }
+  });
 };

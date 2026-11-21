@@ -51,6 +51,10 @@
             <span>ENA</span><span class="pwm-pista"><i id="pwm-izq"></i></span>
             <span>ENB</span><span class="pwm-pista"><i id="pwm-der"></i></span>
           </div>
+          <div class="placa-mqtt" id="placa-mqtt" role="group" aria-label="Enlace MQTT con la App">
+            <span class="mqtt-est"><i class="mqtt-dot" id="mqtt-dot" aria-hidden="true"></i><span id="mqtt-estado">Desconectado</span></span>
+            <button class="mqtt-btn" type="button" id="b-mqtt" aria-pressed="false">Conectar App</button>
+          </div>
         </div>
         <div class="fila tcrt"><span class="k">Sensores S1…S4</span><b class="v mono" id="v-bin">[0, 0, 0, 0]</b></div>
         <div class="fila"><span class="k">Error medido</span><b class="v mono" id="v-emed">+0,0 mm</b></div>

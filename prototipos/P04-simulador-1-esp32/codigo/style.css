@@ -62,6 +62,14 @@ button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visi
 .pwm-pista{display:block;height:8px;border-radius:4px;background:#0f172a;border:1px solid #334155;overflow:hidden}
 .pwm-pista i{display:block;height:100%;width:0;background:#22c55e;border-radius:3px}
 .pwm-pista i.atras{background:#f59e0b}
+.placa-mqtt{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:7px;padding-top:6px;border-top:1px solid rgba(167,243,208,.22);font:600 10.5px/1.2 ui-monospace,monospace;color:#d1fae5}
+.mqtt-est{display:inline-flex;align-items:center;gap:5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mqtt-dot{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:#64748b}
+.mqtt-dot.conectando{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,.8)}
+.mqtt-dot.conectado{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.85)}
+.mqtt-btn{flex:0 0 auto;border:1px solid rgba(167,243,208,.45);background:rgba(15,23,42,.55);color:#ecfdf5;border-radius:7px;padding:4px 8px;min-height:26px;font:700 10.5px/1 ui-monospace,monospace;cursor:pointer;white-space:nowrap}
+.mqtt-btn:hover{background:rgba(15,23,42,.82);border-color:#6ee7b7}
+.mqtt-btn[aria-pressed="true"]{background:rgba(34,197,94,.22);border-color:#4ade80;color:#fff}
 @media (prefers-reduced-motion:reduce){.placa-cab .tx.pulso{animation:none}}
 .sq{width:15px;height:15px;border-radius:3px;border:2px solid var(--tinta);background:#fff;display:inline-block}
 .sq.on{background:var(--verde)}

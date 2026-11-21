@@ -44,6 +44,21 @@
   function r2(x) { return Math.round(x * 100) / 100; }
   function r3(x) { return Math.round(x * 1000) / 1000; }
 
+  /* Asigna 3 puntos de control equitativos dividiendo el largo total de la ruta entre 3
+     (tercios iguales: L/3, 2*L/3 y L) en la segunda vuelta (NORMAL_READING). */
+  function calcularPuntosControlEquitativos(largoM) {
+    var L = Number(largoM) > 0 ? Number(largoM) : 9.0;
+    var tercio = L / 3;
+    var pc1 = r2(tercio);
+    var pc2 = r2(tercio * 2);
+    var pc3 = r2(L);
+    return [
+      { id: "PC1", posicionM: pc1, tramoM: pc1 },
+      { id: "PC2", posicionM: pc2, tramoM: r2(pc2 - pc1) },
+      { id: "PC3", posicionM: pc3, tramoM: r2(pc3 - pc2) }
+    ];
+  }
+
   function crear(opciones) {
     opciones = opciones || {};
     var meta = opciones.metaViajes === 5 ? 5 : C.META_VIAJES_DEMO;
@@ -59,6 +74,7 @@
       balizasActivas: false,
       pruebaSinCintaOk: false,
       geometriaRef: null,          /* referencia fija congelada tras SLOW_READING */
+      puntosControl: [],           /* 3 puntos de control equitativos (L/3) fijados en NORMAL_READING */
       modeloDinamico: {
         wheel_tau_s: 0.22,         /* estimación inicial antes de ajustar hacia 0,18 s */
         factorDinamico: 1.0,
@@ -98,6 +114,7 @@
     } else if (tipo === "NORMAL_READING") {
       ap.estado = "NORMAL_READING";
       ap.madurez = "En construcción";
+      ap.puntosControl = calcularPuntosControlEquitativos(largoM);
     } else if (tipo === "NO_TAPE_TEST") {
       ap.estado = "NO_TAPE_TEST";
       ap.madurez = "Validado Fase 1";
@@ -215,6 +232,7 @@
       ap.madurez = "En construcción";
     } else if (va.trip_type === "NORMAL_READING") {
       ap.capturaNormalOk = true;
+      ap.puntosControl = calcularPuntosControlEquitativos(va.length_m);
       ap.modeloDinamico.rmsBaseMm = reg.lateral_error_rms_mm;
       if (ap.capturaLentaOk) {
         ap.estado = "TWIN_CREATING";
@@ -406,6 +424,7 @@
     evaluarGemelo: evaluarGemelo,
     recuperarFallo: recuperarFallo,
     resumenMetricas: resumenMetricas,
-    etiquetaBoton: etiquetaBoton
+    etiquetaBoton: etiquetaBoton,
+    calcularPuntosControlEquitativos: calcularPuntosControlEquitativos
   };
 });

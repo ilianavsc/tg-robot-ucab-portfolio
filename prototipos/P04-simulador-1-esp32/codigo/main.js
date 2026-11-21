@@ -6,6 +6,7 @@ import {crearGranito} from './granito.js';
 import {crearMundo} from './mundo.js';
 import {R} from './model.js';
 import {GEOM, PD, crearSim, ledsEsp32} from './sim.js';
+import {crearPuenteMqtt} from './mqtt_puente.js';
 import {IDS_PISTA, PISTAS} from './pista.js';
 import {ZA, buildRobot} from './robot.js';
 
@@ -123,6 +124,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     $$('[data-dp]').forEach((b) => b.classList.toggle('on', activo(b.dataset.dp)));
   };
   const tomaControl = () => {
+    mqtt.cancelarRemoto();
     if (sim.modo === 'auto') ponModo('manual', 'Control manual: tomaste el mando');
   };
   addEventListener('keydown', (e) => {
@@ -191,6 +193,40 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     });
   });
 
+  // ---------------------------------------------------------------- puente MQTT (App ↔ P04)
+  const bMqtt = $('#b-mqtt');
+  const mqttDot = $('#mqtt-dot');
+  const mqttEstEl = $('#mqtt-estado');
+  const pulsarLedTx = () => {
+    const el = $('#led-tx');
+    if (!el) return;
+    el.classList.remove('pulso');
+    void el.offsetWidth;
+    el.classList.add('pulso');
+  };
+  const mqtt = crearPuenteMqtt({
+    sim,
+    alModo: (m, txt) => ponModo(m, txt),
+    alTx: pulsarLedTx,
+    alEstado: ({estado: est, broker}) => {
+      mqttDot.className = 'mqtt-dot' + (est === 'desconectado' ? '' : ' ' + est);
+      if (est === 'conectado') {
+        mqttEstEl.textContent = `Conectado · ${broker.nombre}`;
+        bMqtt.textContent = 'Desconectar';
+        bMqtt.setAttribute('aria-pressed', 'true');
+      } else if (est === 'conectando') {
+        mqttEstEl.textContent = `Conectando · ${broker.nombre}…`;
+        bMqtt.textContent = 'Cancelar';
+        bMqtt.setAttribute('aria-pressed', 'true');
+      } else {
+        mqttEstEl.textContent = 'Desconectado';
+        bMqtt.textContent = 'Conectar App';
+        bMqtt.setAttribute('aria-pressed', 'false');
+      }
+    },
+  });
+  bMqtt.addEventListener('click', () => mqtt.alternar());
+
   // ---------------------------------------------------------------- botones de la barra
   const ponModo = (m, texto = '') => {
     sim.setModo(m);
@@ -207,11 +243,17 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     irA(ui.vista, true);
   };
   const reiniciar = () => {
+    mqtt.cancelarRemoto();
     soltarTodo();
     sim.reiniciar();
     irA(ui.vista, true);
   };
-  $$('[data-modo]').forEach((b) => b.addEventListener('click', () => ponModo(b.dataset.modo)));
+  $$('[data-modo]').forEach((b) =>
+    b.addEventListener('click', () => {
+      mqtt.cancelarRemoto();
+      ponModo(b.dataset.modo);
+    })
+  );
   $$('[data-pista]').forEach((b) => b.addEventListener('click', () => ponPista(b.dataset.pista)));
   $('#b-reiniciar').addEventListener('click', reiniciar);
   $('#b-vista').addEventListener('click', () => {
@@ -372,6 +414,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const dt = Math.min(0.25, (ahora - ultimo) / 1000);
     ultimo = ahora;
     ui.t += dt;
+    mqtt.avanzar(dt);
     sim.avanzar(dt);
     animar(dt);
     // el eje de las ruedas está ZA delante del centro del chasis
@@ -410,5 +453,5 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   avisoTeclado();
 
   // ayuda para capturas y pruebas del navegador
-  window.SIM1 = {sim, ui, irA, ponModo, ponPista, reiniciar, camera, controls, pulsa, suelta, IDS_PISTA, repintado};
+  window.SIM1 = {sim, ui, mqtt, irA, ponModo, ponPista, reiniciar, camera, controls, pulsa, suelta, IDS_PISTA, repintado};
 }
