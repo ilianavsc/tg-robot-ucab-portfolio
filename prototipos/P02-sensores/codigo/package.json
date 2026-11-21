@@ -1,0 +1,6 @@
+{
+  "name": "p02-inspector-hardware",
+  "private": true,
+  "type": "module",
+  "description": "Fuentes de la Inspector de hardware de P02. Para regenerar ../simulador.html: npm install --no-save three@0.187.0 esbuild && node construir.mjs"
+}

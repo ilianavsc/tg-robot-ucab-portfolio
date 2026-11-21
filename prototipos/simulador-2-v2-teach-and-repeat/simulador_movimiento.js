@@ -12,7 +12,7 @@
  * [PENDIENTE DE INTEGRACIÓN EN FIRMWARE]. Sin magnetómetro: el rumbo es
  * RELATIVO a la dirección de la pista al empezar el viaje.
  *
- * Física calibrada con SIM1 (JGA25-371 Speed 200 + L298N, 3S a 11,1 V; model.js de P08): PWM 1,0 = 0,572 m/s
+ * Física calibrada con SIM1 (JGA25-371 Speed 200 + L298N, 3S a 11,1 V; model.js de P04): PWM 1,0 = 0,572 m/s
  * (PWM 0,8 = 0,457 m/s en recta), constante de las ruedas 0,18 s, ancho entre ruedas 0,18 m, sensores TCRT5000
  * a 0,06 m del eje. Las dos pistas de SIM1 (A: 8,05 m, B: 9,0 m) entran por `opciones.trazado`
  * (pistas_sim1.js): la planta usa coordenadas de Frenet (s, y, ψ) con la curvatura κ(s) de la pista, así que en
@@ -36,7 +36,7 @@
     V_MAX_MS: 0.572,       /* velocidad con PWM = 1,0 (SIM1: (11,1 − 2,1 V)/12 × 280 rpm × 0,8 × π × 0,065 / 60) */
     ANCHO_EJES_M: 0.18,    /* separación entre ruedas (SIM1) */
     ADELANTE_SENSOR_M: 0.06, /* los TCRT5000 van 6 cm delante del eje (SIM1) */
-    FRENTE_ROBOT_M: 0.076, /* del eje a la cara del HC-SR04P frontal (modelo 3D de SIM1/P03) */
+    FRENTE_ROBOT_M: 0.076, /* del eje a la cara del HC-SR04P frontal (modelo 3D de SIM1/P02) */
     ATRAS_ROBOT_M: 0.136,  /* del eje a la cara del HC-SR04P trasero */
     ANCHO_CINTA_MM: 19,
     CAIDA_SENSOR_MM: 6,    /* el sensor pasa de ver a no ver la cinta en 6 mm */
@@ -49,9 +49,9 @@
     GIRO_MANUAL_PWM: 0.4,
     ATRAS_LIBRE_CM: 160,
     ALCANCE_US_CM: 400,
-    CONO_US_GRADOS: 15,    /* semiapertura del haz del HC-SR04P (P03) */
+    CONO_US_GRADOS: 15,    /* semiapertura del haz del HC-SR04P (P02) */
     OBST_RADIO_M: 0.05,    /* ficha del obstáculo: ⌀ 10 cm */
-    RAMPA_DECEL_MS2: 0.55, /* limitador suave del frenado (P13) */
+    RAMPA_DECEL_MS2: 0.55, /* limitador suave del frenado (P03) */
     RAMPA_ACEL_MS2: 0.9,
     KD_LINEA_FW: 0.0015    /* término D del PD del firmware (robot_integrado.ino y SIM1: PWM por mm/s); el núcleo solo trae el P */
   };
@@ -329,7 +329,7 @@
       sim.ultimaSalida = salida;
       pwmIzq = salida.vIzq;
       pwmDer = salida.vDer;
-      /* Limitador suave de planta (P13): el núcleo manda PWM 0,5× en precaución y 0 en parada crítica; la planta
+      /* Limitador suave de planta (P03): el núcleo manda PWM 0,5× en precaución y 0 en parada crítica; la planta
          suaviza la componente COMÚN con una rampa en m/s² (el diferencial de la corrección de línea no se toca).
          La parada a < 20 cm es inmediata; al despejar, la velocidad se recupera con rampa. */
       /* Término D del PD del firmware real (el núcleo compartido solo tiene el P): amortigua la corrección de línea.

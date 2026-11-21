@@ -29,7 +29,7 @@ export const FICHAS = {
       ['Orden', 'S1…S4, de izquierda a derecha'],
       ['Separación', '18 mm entre sensores'],
       ['Cinta', 'negra, 19 mm, sobre piso de granito'],
-      ['Lazo', 'PD a 100 Hz sobre el error ponderado (P08)'],
+      ['Lazo', 'PD a 100 Hz sobre el error ponderado (P04)'],
     ],
     vivo: (v) => [
       ['Lectura', `[${v.sens.join(', ')}]`],

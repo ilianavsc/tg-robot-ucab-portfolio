@@ -1,14 +1,21 @@
-// El recorrido autónomo de demostración: seguimiento de trayectoria sobre la ruta cerrada.
-// No es la máquina de estados de teach-and-repeat (esa vive en specs/navegacion y en el Simulador 2 V2):
-// aquí el robot solo recorre un circuito conocido para que se vean los componentes trabajando.
-import {R, cinematica, dutyPara, encoderHz, motor, ruedas} from './model.js';
+// El robot del Inspector de hardware (P02): recorre solo la ruta cerrada (automático) o se maneja a mano
+// con la misma modalidad del Simulador 1 (P04): W A S D / flechas o D-Pad, Espacio frena.
+// No es la máquina de estados de teach-and-repeat (esa vive en specs/navegacion y en el Simulador 2 V2).
+import {R, VMAX, cinematica, dutyPara, encoderHz, motor, ruedas} from './model.js';
 import {GEO, OBSTACULOS, ZONAS, crearRuta, lineaSensores, ultrasonido, zonaDe} from './ruta.js';
 
-export const V_NOM = 0.4; // m/s, parecida a la del seguidor de línea P08 (supuesto de simulación)
+export const V_NOM = 0.4; // m/s, parecida a la del seguidor de línea P04 (supuesto de simulación)
 const LOOK = 0.16; // distancia de mira (m)
 const TAU = 0.08; // lag de los motores (s)
 const KP = 25; // rad/s por metro de error lateral
 const KD = 0.4;
+
+// Manejo manual: los mismos valores del Simulador 1 (P04 · sim.js): PWM máximo al avanzar, PWM diferencial al
+// girar y constante de la rampa (s)
+export const MANUAL = {avance: 0.8, giro: 0.45, suavizado: 0.08};
+// Zona del piso por la que se puede manejar (el piso de granito mide 9 × 6,5 m)
+export const LIMITES = {x: 4.2, z: 3.0};
+const lim1 = (x) => Math.max(-1, Math.min(1, x));
 
 export function crearDemo() {
   const ruta = crearRuta();
@@ -30,11 +37,42 @@ export function crearDemo() {
     w: 0,
     v: 0,
     eLat: 0,
+    modo: 'auto',
+    entrada: {f: 0, t: 0, freno: false}, // f: +1 avanza / −1 retrocede · t: +1 izquierda / −1 derecha
+    cmd: {f: 0, t: 0},
+    pwm: {izq: 0, der: 0},
+    bloqueado: false, // frente a < 20 cm: el firmware no deja avanzar ni girar (solo retroceder)
+  };
+
+  // Cambia entre 'auto' y 'manual'. Al volver a automático busca el punto de la ruta más cercano en toda la vuelta.
+  const setModo = (m) => {
+    if (m === est.modo) return;
+    est.modo = m;
+    est.cmd = {f: 0, t: 0};
+    est.entrada = {f: 0, t: 0, freno: false};
+    if (m === 'auto') est.hint = ruta.cercano(est.x, est.z, est.hint, ruta.N).i;
+  };
+
+  // Ruedas deseadas en manual: rampa suave de la orden y PWM diferencial, como el Simulador 1
+  const objetivoManual = (dt) => {
+    const E = est.entrada;
+    const a = 1 - Math.exp(-dt / MANUAL.suavizado);
+    est.cmd.f += (E.f - est.cmd.f) * a;
+    est.cmd.t += (E.t - est.cmd.t) * a;
+    if (E.freno) est.cmd.f = est.cmd.t = 0;
+    let izq = lim1(est.cmd.f * MANUAL.avance - est.cmd.t * MANUAL.giro);
+    let der = lim1(est.cmd.f * MANUAL.avance + est.cmd.t * MANUAL.giro);
+    // regla del firmware: con el frente a < 20 cm solo se permite retroceder
+    est.bloqueado = est.frente < ZONAS.critica && (izq > 0 || der > 0);
+    if (est.bloqueado) izq = der = 0;
+    est.pwm = {izq, der};
+    return {izq: izq * VMAX, der: der * VMAX};
   };
 
   const paso = (dt) => {
     est.t += dt;
-    const c = ruta.cercano(est.x, est.z, est.hint);
+    // a mano el robot puede salir de la cinta y volver por otro lado: se busca en toda la vuelta
+    const c = ruta.cercano(est.x, est.z, est.hint, est.modo === 'manual' ? ruta.N >> 1 : 90);
     est.hint = c.i;
     if (c.s < est.sPrev - ruta.largo / 2) est.vuelta++; // cruzó la meta
     est.sPrev = c.s;
@@ -48,7 +86,7 @@ export function crearDemo() {
     const lx = dx * Math.cos(est.th) - dz * Math.sin(est.th); // a la izquierda del robot
     const lz = dx * Math.sin(est.th) + dz * Math.cos(est.th); // al frente
     const kap = (2 * lx) / (lx * lx + lz * lz);
-    // corrección PD sobre el error lateral de la regleta (como el seguidor de línea P08)
+    // corrección PD sobre el error lateral de la regleta (como el seguidor de línea P04)
     const sx = est.x + Math.sin(est.th) * GEO.tcrtZ;
     const sz = est.z + Math.cos(est.th) * GEO.tcrtZ;
     const cs = ruta.cercano(sx, sz, c.i);
@@ -62,7 +100,13 @@ export function crearDemo() {
     const cerca = Math.max(0, Math.min(1, (ZONAS.precaucion - est.frente) / (ZONAS.precaucion - ZONAS.critica)));
     const v = (V_NOM - 0.08 * Math.min(1, kRuta / 3)) * (1 - 0.55 * cerca);
     const w = Math.max(-5, Math.min(5, v * kap + KP * eLat + KD * dE));
-    const obj = ruedas(v, w);
+    let obj;
+    if (est.modo === 'manual') obj = objetivoManual(dt);
+    else {
+      obj = ruedas(v, w);
+      est.bloqueado = false;
+      est.pwm = {izq: dutyPara(obj.izq) * Math.sign(obj.izq), der: dutyPara(obj.der) * Math.sign(obj.der)};
+    }
     const a = 1 - Math.exp(-dt / TAU);
     est.vIzq += (obj.izq - est.vIzq) * a;
     est.vDer += (obj.der - est.vDer) * a;
@@ -70,8 +114,8 @@ export function crearDemo() {
     est.v = cin.v;
     est.w = cin.w;
     est.th += cin.w * dt;
-    est.x += Math.sin(est.th) * cin.v * dt;
-    est.z += Math.cos(est.th) * cin.v * dt;
+    est.x = Math.max(-LIMITES.x, Math.min(LIMITES.x, est.x + Math.sin(est.th) * cin.v * dt));
+    est.z = Math.max(-LIMITES.z, Math.min(LIMITES.z, est.z + Math.cos(est.th) * cin.v * dt));
     est.sens = lineaSensores(ruta, est.x, est.z, est.th, est.hint);
     est.frente = ultrasonido(est.x, est.z, est.th, 'frente', obstaculos);
     est.atras = ultrasonido(est.x, est.z, est.th, 'atras', obstaculos);
@@ -97,7 +141,7 @@ export function crearDemo() {
     };
   };
 
-  return {ruta, obstaculos, est, paso, motores, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
+  return {ruta, obstaculos, est, paso, motores, setModo, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
 }
 
 export {GEO};

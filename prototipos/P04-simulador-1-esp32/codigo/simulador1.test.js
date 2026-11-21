@@ -1,6 +1,6 @@
-/* Pruebas del Simulador 1 de aprendizaje progresivo (P08): las dos pistas, la lectura de la línea, los modos manual/automático
+/* Pruebas del Simulador 1 de aprendizaje progresivo (P04): las dos pistas, la lectura de la línea, los modos manual/automático
  * y los datos en vivo. Solo la parte sin three.js: no necesita navegador ni dependencias.
- * Uso:  node prototipos/P08-seguidor-linea/avance-01-simulador-3d/codigo/simulador1.test.js */
+ * Uso:  node prototipos/P04-simulador-1-esp32/codigo/simulador1.test.js */
 import assert from 'node:assert';
 import {readFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
@@ -9,11 +9,11 @@ import {crearGranito} from './granito.js';
 import {leerSensores, binarios} from './linea.js';
 import {R} from './model.js';
 import {IDS_PISTA, PISTAS, ZONA, ZONA_B, crearPista, ocultarTramo, tramoEn} from './pista.js';
-import {GEOM, crearSim} from './sim.js';
+import {GEOM, PINES_TCRT, crearSim, ledsEsp32} from './sim.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const leer = (f) => readFileSync(join(aqui, f), 'utf8');
-const especificacion = JSON.parse(readFileSync(join(aqui, '../../../../specs/pista_canonica.json'), 'utf8'));
+const especificacion = JSON.parse(readFileSync(join(aqui, '../../../specs/pista_canonica.json'), 'utf8'));
 let ok = 0;
 const prueba = (nombre, f) => {
   f();
@@ -236,4 +236,52 @@ prueba('terminología: aprendizaje progresivo y teach-and-repeat; sin términos 
   assert.ok(!/FOLLOW_LINE|HEADING_HOLD|WAIT_BEACON|REACQUIRE_LINE/.test(todo), 'no copia la máquina de estados de teach-and-repeat');
 });
 
-console.log(`\nP08 Simulador 1: ${ok}/${ok} pruebas pasaron`);
+// ---- fusión con el Simulador del ESP32: LEDs de la placa sincronizados con la pista
+prueba('placa ESP32: los 4 LEDs de línea siguen en cada paso la misma lectura del lazo PD', () => {
+  const crear = crearSim;
+  assert.deepStrictEqual(PINES_TCRT, ['GPIO 36', 'GPIO 39', 'GPIO 34', 'GPIO 35']);
+  const s = crear({pistaId: 'A', modo: 'auto'});
+  let encendidos = 0;
+  let cambios = 0;
+  let previo = '';
+  for (let k = 0; k < 1500; k++) {
+    s.avanzar(1 / 60);
+    const L = s.lectura();
+    const led = ledsEsp32(L);
+    assert.deepStrictEqual(led.tcrt, L.bin.map((b) => (b ? 1 : 0)));
+    assert.ok(led.ena >= 0 && led.ena <= 1 && led.enb >= 0 && led.enb <= 1);
+    if (led.tcrt.some((b) => b)) encendidos++;
+    const c = led.tcrt.join('');
+    if (c !== previo) cambios++;
+    previo = c;
+  }
+  assert.ok(encendidos > 1400, `sobre la cinta casi siempre (${encendidos})`);
+  assert.ok(cambios > 10, `los LEDs cambian con el movimiento (${cambios})`);
+});
+
+prueba('placa ESP32: fuera de la cinta los LEDs se apagan y al retroceder marca el sentido de los motores', () => {
+  const crear = crearSim;
+  const s = crear({pistaId: 'B', modo: 'manual'});
+  s.entrada.t = 1; // gira sobre sí mismo hasta salir de la cinta
+  for (let k = 0; k < 120; k++) s.avanzar(1 / 60);
+  s.entrada.t = 0;
+  s.entrada.f = 1;
+  for (let k = 0; k < 120; k++) s.avanzar(1 / 60);
+  assert.deepStrictEqual(ledsEsp32(s.lectura()).tcrt, [0, 0, 0, 0]);
+  s.entrada.f = -1;
+  for (let k = 0; k < 60; k++) s.avanzar(1 / 60);
+  const led = ledsEsp32(s.lectura());
+  assert.strictEqual(led.dirIzq, -1);
+  assert.strictEqual(led.dirDer, -1);
+  assert.ok(led.ena > 0.5 && led.enb > 0.5);
+});
+
+prueba('la plantilla de P04 trae la placa ESP32 con 4 LEDs de línea', () => {
+  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
+  assert.ok(/id="placa-esp32"/.test(html));
+  assert.strictEqual((html.match(/class="esp-led tcrt"/g) || []).length, 4);
+  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
+  assert.ok(/ledsEsp32\(/.test(main), 'main.js pinta la placa con ledsEsp32');
+});
+
+console.log(`\nP04 Simulador 1: ${ok}/${ok} pruebas pasaron`);

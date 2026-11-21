@@ -1,4 +1,4 @@
-// El motor del Simulador 1 de aprendizaje progresivo: robot, modo manual o automático, y los datos en vivo. Sin three.js aquí.
+// El motor del Simulador 1 + ESP32 (P04): robot, modo manual o automático, y los datos en vivo. Sin three.js aquí.
 // Une las tres piezas separadas: pista.js (qué pista hay), linea.js (cómo se lee la línea) y model.js (cómo se mueve el robot).
 // Un simulador futuro hereda esto tal cual y solo llama a ocultarTramo() de pista.js para retirar cinta.
 import {R, mover, rumbo} from './model.js';
@@ -10,6 +10,18 @@ export const PD = {base: 0.8, kp: 0.03, kd: 0.0015};
 export const GEOM = {sep: 0.018, adelante: 0.06}; // sensores a 18 mm entre sí y a 60 mm del eje
 export const MANUAL = {avance: 0.8, giro: 0.45, suavizado: 0.08}; // PWM máximo al avanzar, PWM diferencial al girar, constante de la rampa (s)
 export const PASO_FISICA = 0.002;
+
+// Placa ESP32 del simulador (fusión con el Simulador del ESP32): lo que muestran sus LEDs y salidas en cada cuadro.
+// Los 4 LEDs de línea son la misma lectura binaria que usa el lazo PD (S1…S4 de izquierda a derecha, ADC1).
+export const PINES_TCRT = ['GPIO 36', 'GPIO 39', 'GPIO 34', 'GPIO 35'];
+export const ledsEsp32 = (L) => ({
+  tcrt: L.bin.map((b) => (b ? 1 : 0)),
+  ena: Math.min(1, Math.abs(L.pwm.izq)), // PWM del motor izquierdo (ENA · GPIO 25)
+  enb: Math.min(1, Math.abs(L.pwm.der)), // PWM del motor derecho (ENB · GPIO 14)
+  dirIzq: Math.sign(Math.round(L.pwm.izq * 100)),
+  dirDer: Math.sign(Math.round(L.pwm.der * 100)),
+  linea: !L.perdida,
+});
 const DEBOUNCE_SALIDA = 0.25; // s sin ver la línea para contar una salida
 const DEBOUNCE_VUELTA = 0.1;
 

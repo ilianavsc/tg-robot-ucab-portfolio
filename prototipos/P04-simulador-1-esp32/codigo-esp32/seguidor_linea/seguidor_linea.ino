@@ -1,5 +1,5 @@
 /*
-  P08 · Seguidor de línea · ESP32 + L298N + 4 × TCRT5000
+  P04 · Seguidor de línea · ESP32 + L298N + 4 × TCRT5000
   Tesis: Robot móvil para búsqueda y transporte de componentes (UCAB Telecom)
 
   Este código hace lo mismo que el simulador 3D (codigo/linea.js, función control()):
@@ -170,7 +170,7 @@ void setup() {
   analogSetPinAttenuation(PIN_BATERIA, ADC_11db);
 
   detener();
-  Serial.println("P08 seguidor de linea listo. Empieza en 2 s...");
+  Serial.println("P04 seguidor de linea listo. Empieza en 2 s...");
   delay(2000);
 }
 

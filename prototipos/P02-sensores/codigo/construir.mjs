@@ -1,6 +1,6 @@
 // Construye ../simulador.html: un solo archivo con el JavaScript (three.js incluido), los estilos y las fuentes.
 //
-//   cd prototipos/P08-seguidor-linea/avance-01-simulador-3d/codigo
+//   cd prototipos/P02-sensores/codigo
 //   npm install --no-save three@0.187.0 esbuild      # una sola vez (o apunta NODE_PATH a una carpeta con ambos)
 //   node construir.mjs
 //

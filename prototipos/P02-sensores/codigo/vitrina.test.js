@@ -1,11 +1,11 @@
-/* Pruebas del núcleo de la vitrina autónoma de P03 (ruta cerrada, sensores y modelo de tracción).
- * Uso:  node prototipos/P03-motores/avance-02-simulador-3d/codigo/vitrina.test.js
+/* Pruebas del núcleo de la Inspector de hardware de P02 (ruta cerrada, sensores y modelo de tracción).
+ * Uso:  node prototipos/P02-sensores/codigo/vitrina.test.js
  * No necesita navegador ni dependencias: solo prueba la parte sin three.js. */
 import assert from 'node:assert';
 import {readFileSync, readdirSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {crearDemo} from './demo.js';
+import {LIMITES, MANUAL, crearDemo} from './demo.js';
 import {R, VMAX, dutyPara, encoderHz} from './model.js';
 import {CINTA, GEO, OBSTACULOS, crearRuta, lineaSensores, ultrasonido, zonaDe} from './ruta.js';
 
@@ -106,13 +106,85 @@ prueba('modelo único: Speed 200 con L298N a 11,1 V da ≈ 0,57 m/s al 100 % y 6
   assert.ok(dutyPara(0.4) > 0.6 && dutyPara(0.4) < 0.8);
 });
 
-prueba('la demo no copia la máquina de estados de teach-and-repeat ni usa teclado', () => {
+prueba('la demo no copia la máquina de estados de teach-and-repeat', () => {
   const archivos = readdirSync(aqui).filter((f) => f.endsWith('.js') && !f.endsWith('.test.js'));
   for (const f of archivos) {
     const t = readFileSync(join(aqui, f), 'utf8');
     assert.ok(!/FOLLOW_LINE|LINE_LOST_CHECK|HEADING_HOLD|WAIT_BEACON|REACQUIRE_LINE/.test(t), `${f} duplica estados`);
-    assert.ok(!/keydown|keyup|ArrowUp|ArrowLeft|WASD/.test(t.replace(/addEventListener\('keydown', \(e\) => \{\s*if \(e\.key === 'Escape'/, '')), `${f} usa teclado`);
   }
+});
+
+// ---- manejo manual con la modalidad del Simulador 1 (P04)
+const manejar = (d, f, t, seg, freno = false) => {
+  d.est.entrada = {f, t, freno};
+  for (let k = 0; k < seg * 120; k++) d.paso(1 / 120);
+};
+
+prueba('manual: usa los mismos valores del Simulador 1 y avanza recto a ≈ 0,46 m/s', () => {
+  const sim1 = readFileSync(join(aqui, '../../P04-simulador-1-esp32/codigo/sim.js'), 'utf8');
+  const m = /MANUAL = \{avance: ([\d.]+), giro: ([\d.]+), suavizado: ([\d.]+)\}/.exec(sim1);
+  assert.ok(m, 'el Simulador 1 define MANUAL');
+  assert.deepStrictEqual([MANUAL.avance, MANUAL.giro, MANUAL.suavizado], [+m[1], +m[2], +m[3]]);
+  const d = crearDemo();
+  d.est.x = 0;
+  d.est.z = -2.4; // lejos de la cinta y de los bidones
+  d.est.th = 0;
+  d.setModo('manual');
+  const th0 = d.est.th;
+  manejar(d, 1, 0, 2);
+  assert.ok(Math.abs(d.est.v - MANUAL.avance * VMAX) < 0.01, `v ${d.est.v}`);
+  assert.ok(Math.abs(d.est.th - th0) < 1e-6, 'sin giro');
+  assert.deepStrictEqual(d.est.sens, [0, 0, 0, 0], 'fuera de la cinta no lee línea');
+});
+
+prueba('manual: gira a la izquierda, retrocede y Espacio frena; no sale del piso', () => {
+  const d = crearDemo();
+  d.est.x = 0;
+  d.est.z = -2.4;
+  d.est.th = 0;
+  d.setModo('manual');
+  manejar(d, 0, 1, 1);
+  assert.ok(d.est.th > 0.5, `th ${d.est.th}`);
+  manejar(d, -1, 0, 1);
+  assert.ok(d.est.v < -0.3, `v ${d.est.v}`);
+  manejar(d, 1, 0, 0.5, true);
+  assert.ok(Math.abs(d.est.v) < 0.02, 'frena');
+  manejar(d, 1, 0, 30);
+  assert.ok(Math.abs(d.est.x) <= LIMITES.x + 1e-9 && Math.abs(d.est.z) <= LIMITES.z + 1e-9);
+});
+
+prueba('manual: con un obstáculo a < 20 cm no deja avanzar ni girar, solo retroceder (como el firmware)', () => {
+  const d = crearDemo();
+  const o = OBSTACULOS[0];
+  d.est.x = o.x;
+  d.est.z = o.z - 0.42;
+  d.est.th = 0; // mira al bidón
+  d.setModo('manual');
+  manejar(d, 1, 0, 3);
+  assert.ok(d.est.frente < 0.2 && d.est.frente > 0.1, `frente ${d.est.frente}`);
+  assert.ok(d.est.bloqueado);
+  assert.ok(Math.abs(d.est.v) < 0.01);
+  manejar(d, 0, 1, 1);
+  assert.ok(d.est.bloqueado && Math.abs(d.est.w) < 0.01, 'tampoco gira');
+  manejar(d, -1, 0, 1);
+  assert.ok(!d.est.bloqueado && d.est.v < -0.3, 'retrocede');
+});
+
+prueba('manual en la cinta: los 4 sensores de línea se encienden en vivo y al volver a automático sigue la ruta', () => {
+  const d = crearDemo();
+  for (let k = 0; k < 240; k++) d.paso(1 / 120);
+  d.setModo('manual');
+  manejar(d, 0, 0, 0.5);
+  assert.ok(d.est.sens.some((v) => v === 1), 'sobre la cinta');
+  manejar(d, 0, 1, 1.2); // gira fuera de la cinta
+  manejar(d, 1, 0, 1.5);
+  d.setModo('auto');
+  let enCinta = 0;
+  for (let k = 0; k < 20 * 120; k++) {
+    d.paso(1 / 120);
+    if (k > 12 * 120 && d.est.sens.some((v) => v === 1)) enCinta++;
+  }
+  assert.ok(enCinta > 6 * 120, `vuelve a la cinta (${enCinta})`);
 });
 
 prueba('el texto de la vitrina usa teach-and-repeat y no usa términos de otras tecnologías', () => {
@@ -123,4 +195,4 @@ prueba('el texto de la vitrina usa teach-and-repeat y no usa términos de otras 
   assert.ok(/GPIO 15/.test(todo));
 });
 
-console.log(`\nP03 vitrina: ${ok}/${ok} pruebas pasaron`);
+console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

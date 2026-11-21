@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>P08 · Simulador 1 de aprendizaje progresivo</title>
+<title>P04 · Simulador 1 + ESP32</title>
 <style>
 /*CSS*/
 </style>
@@ -39,8 +39,20 @@
 
     <aside class="datos" id="datos" aria-label="Datos en vivo">
       <section class="resumen">
-        <h2>Datos en vivo</h2>
-        <div class="fila tcrt"><span class="k nowrap">4× TCRT<span class="largo">5000</span></span><span class="sqs" aria-hidden="true"><i class="sq"></i><i class="sq"></i><i class="sq"></i><i class="sq"></i></span><b class="v mono" id="v-bin">[0, 0, 0, 0]</b></div>
+        <div class="placa" id="placa-esp32" role="group" aria-label="Placa ESP32 en vivo: 4 LEDs de los sensores de línea y PWM de los motores">
+          <div class="placa-cab"><span class="usb" aria-hidden="true"></span><b>ESP32</b><span class="tx" id="led-tx" aria-hidden="true"></span></div>
+          <div class="leds-tcrt" aria-hidden="true">
+            <span class="led-item"><i class="esp-led tcrt"></i>S1<small>36</small></span>
+            <span class="led-item"><i class="esp-led tcrt"></i>S2<small>39</small></span>
+            <span class="led-item"><i class="esp-led tcrt"></i>S3<small>34</small></span>
+            <span class="led-item"><i class="esp-led tcrt"></i>S4<small>35</small></span>
+          </div>
+          <div class="pwm" aria-hidden="true">
+            <span>ENA</span><span class="pwm-pista"><i id="pwm-izq"></i></span>
+            <span>ENB</span><span class="pwm-pista"><i id="pwm-der"></i></span>
+          </div>
+        </div>
+        <div class="fila tcrt"><span class="k">Sensores S1…S4</span><b class="v mono" id="v-bin">[0, 0, 0, 0]</b></div>
         <div class="fila"><span class="k">Error medido</span><b class="v mono" id="v-emed">+0,0 mm</b></div>
         <div class="fila extra"><span class="k">Desvío real</span><b class="v mono" id="v-ereal">+0,0 mm</b></div>
         <div class="fila extra"><span class="k">Estado</span><b class="v" id="v-estado" data-ok="1">En la línea</b></div>

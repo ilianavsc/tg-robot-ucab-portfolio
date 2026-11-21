@@ -1,6 +1,6 @@
 # Simulador 2 V2 · teach-and-repeat sobre las 2 pistas de SIM1
 
-Gemelo digital de **movimiento** (SIL). Se abre por http (no por `file://`): carga `specs/navegacion/teach_and_repeat.js`, `specs/pista_canonica.json` y las pistas de SIM1 (`../P08-seguidor-linea/avance-01-simulador-3d/codigo/pista.js`) sin copiarlos.
+Gemelo digital de **movimiento** (SIL). Se abre por http (no por `file://`): carga `specs/navegacion/teach_and_repeat.js`, `specs/pista_canonica.json` y las pistas de SIM1 (`../P04-simulador-1-esp32/codigo/pista.js`) sin copiarlos.
 
 ## Flujo
 1. **Pista 1 o 2** (las dos de SIM1): A = circuito histórico de 8,05 m · B = recorrido canónico de 9,0 m (tramos T1–T4 y puntos de control de la especificación).
@@ -16,7 +16,7 @@ Gemelo digital de **movimiento** (SIL). Se abre por http (no por `file://`): car
 - `alerta`: `ninguna | obstaculo | obstaculo_atras | timeout_sin_linea | deriva_excesiva`.
 - Solo `estado` y `ultrasonido` existen en el firmware real (`gemelo_estado.js → aContratoApp`); la posición es solo del gemelo. La app (`app/`) no se tocó: sus estaciones (3,78 / 6,3 m) todavía no coinciden con las de la especificación (3,0 / 4,5 / 7,5 / 9,0 m).
 
-## Radar (de P13)
+## Radar (de P03)
 Ficha roja arrastrable sobre la pista (o Enter sobre la ficha: 90 cm delante; Supr la retira). Cada HC-SR04P tiene un cono de ±15° con zonas crítica (< 20 cm) y precaución (20–50 cm), ondas y eco. Limitador de planta: rampa de 0,55 m/s² al frenar; parada completa a < 20 cm; la simulación nunca se pausa. Velocímetro de 0,00 a 0,46 m/s. La ranura de alertas tiene altura fija (delta = 0 px).
 
 ## Supuestos (SIL, [PENDIENTE DE MEDICIÓN FÍSICA])
@@ -32,6 +32,6 @@ Ficha roja arrastrable sobre la pista (o Enter sobre la ficha: 90 cm delante; Su
 | `index.html` | Interfaz (6 paneles `<details>` cerrados por defecto) |
 | `simulador_movimiento.js` | Planta: Frenet con curvatura, sensores, enseñanza, limitador, obstáculos del mundo |
 | `pistas_sim1.js` | Adaptador de las pistas de SIM1 (κ(s), pose, rectitud) |
-| `radar_us.js` | Lógica del radar de P13 (cono, rampa, velocímetro) |
+| `radar_us.js` | Lógica del radar de P03 (cono, rampa, velocímetro) |
 | `gemelo_estado.js` | Estado del gemelo y puente con la app |
 | `simulador_movimiento.test.js`, `pistas_radar.test.js` | 38 pruebas en Node (CI): `node prototipos/simulador-2-v2-teach-and-repeat/simulador_movimiento.test.js` |

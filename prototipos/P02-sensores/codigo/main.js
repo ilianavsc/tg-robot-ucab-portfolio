@@ -1,11 +1,13 @@
-// Vitrina autónoma de los componentes reales del robot: el robot recorre solo una ruta cerrada de
-// demostración mientras se ven sus sensores trabajando. Sin control por teclado.
+// Inspector de hardware (P02): el robot recorre solo una ruta cerrada (Auto) o se maneja a mano con la misma
+// modalidad del Simulador 1 (P04): W A S D o flechas, Espacio frena, o el D-Pad táctil. La consola de sensores
+// muestra en vivo el velocímetro y los 4 sensores de línea; las fichas explican cada componente.
 import * as THREE from 'three';
 import {SIN_WEBGL, crearAviso, vigilarContexto} from './arranque.js';
 import {crearDemo} from './demo.js';
 import {ETIQUETAS, FICHAS, ORDEN, fmtDist} from './fichas.js';
 import {crearMundo} from './mundo.js';
-import {R} from './model.js';
+import {R, VMAX} from './model.js';
+import {MANUAL} from './demo.js';
 import {buildRobot, RW} from './robot.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -56,6 +58,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     inspeccion: {off: new THREE.Vector3(0.38, 0.3, 0.46), alto: 0.05},
     general: {pos: new THREE.Vector3(0, 3.3, 3.0), tgt: new THREE.Vector3(0, 0, 0.05)},
   };
+  const NOMBRE_VISTA = {seguir: 'Seguir', inspeccion: 'Inspección', general: 'Panorámica'};
   const yaw = new THREE.Vector3(0, 1, 0);
   let tween = null;
   let thPrev = est.th;
@@ -70,7 +73,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const irA = (v, instantaneo = false) => {
     ui.vista = v;
     aro.visible = v === 'general';
-    $$('[data-vista]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.vista === v)));
+    $('#b-vista-tx').textContent = NOMBRE_VISTA[v];
     controls.enablePan = v === 'general';
     controls.minDistance = v === 'general' ? 1 : 0.25;
     controls.maxDistance = v === 'general' ? 7 : 3;
@@ -141,7 +144,127 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     $('#guias').style.display = on ? '' : 'none';
   };
   bE.addEventListener('click', () => ponEtiquetas(!ui.etiquetas));
-  $$('[data-vista]').forEach((b) => b.addEventListener('click', () => irA(b.dataset.vista)));
+  $('#b-vista').addEventListener('click', () => {
+    const orden = ['inspeccion', 'seguir', 'general'];
+    irA(orden[(orden.indexOf(ui.vista) + 1) % orden.length]);
+  });
+
+  // ---------------------------------------------------------------- manejo: la modalidad del Simulador 1 (P04)
+  const teclas = new Set();
+  const botones = new Set();
+  const MAPA = {KeyW: 'arriba', ArrowUp: 'arriba', KeyS: 'abajo', ArrowDown: 'abajo', KeyA: 'izq', ArrowLeft: 'izq', KeyD: 'der', ArrowRight: 'der', Space: 'stop'};
+  const activo = (k) => teclas.has(k) || botones.has(k);
+  const aplicaEntrada = () => {
+    est.entrada = {
+      f: (activo('arriba') ? 1 : 0) - (activo('abajo') ? 1 : 0),
+      t: (activo('izq') ? 1 : 0) - (activo('der') ? 1 : 0),
+      freno: activo('stop'),
+    };
+    $$('[data-dp]').forEach((b) => b.classList.toggle('on', activo(b.dataset.dp)));
+  };
+  const ponModo = (m) => {
+    demo.setModo(m);
+    document.body.dataset.modo = m;
+    $$('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === m)));
+    aplicaEntrada();
+  };
+  // tocar un control toma el mando (pasa a manual) y quita la pausa
+  const tomaControl = () => {
+    if (est.modo !== 'manual') ponModo('manual');
+    if (ui.pausa) ponPausa(false);
+  };
+  $$('[data-modo]').forEach((b) => b.addEventListener('click', () => ponModo(b.dataset.modo)));
+  addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'KeyM' && !e.repeat) return ponModo(est.modo === 'auto' ? 'manual' : 'auto');
+    const k = MAPA[e.code];
+    if (!k) return;
+    e.preventDefault();
+    if (!teclas.has(k)) {
+      teclas.add(k);
+      tomaControl();
+      aplicaEntrada();
+    }
+  });
+  addEventListener('keyup', (e) => {
+    const k = MAPA[e.code];
+    if (!k) return;
+    e.preventDefault();
+    teclas.delete(k);
+    aplicaEntrada();
+  });
+  const soltarTodo = () => {
+    teclas.clear();
+    botones.clear();
+    aplicaEntrada();
+  };
+  addEventListener('blur', soltarTodo);
+  document.addEventListener('visibilitychange', () => document.hidden && soltarTodo());
+  // D-Pad: pulsación sostenida (pointer) y touch como respaldo, igual que el Simulador 1
+  const pulsa = (k) => {
+    if (botones.has(k)) return;
+    botones.add(k);
+    tomaControl();
+    aplicaEntrada();
+  };
+  const suelta = (k) => {
+    if (botones.delete(k)) aplicaEntrada();
+  };
+  $$('[data-dp]').forEach((b) => {
+    const k = b.dataset.dp;
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      try {
+        b.setPointerCapture(e.pointerId);
+      } catch {
+        /* el navegador no lo permite: no pasa nada */
+      }
+      pulsa(k);
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture', 'pointerleave']) b.addEventListener(ev, () => suelta(k));
+    b.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      pulsa(k);
+    }, {passive: false});
+    for (const ev of ['touchend', 'touchcancel']) b.addEventListener(ev, (e) => {
+      e.preventDefault();
+      suelta(k);
+    }, {passive: false});
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
+  });
+  canvas.addEventListener('pointerdown', () => window.focus());
+
+  // ---------------------------------------------------------------- consola de sensores (estilo del radar P03)
+  const VEL_MAX = 0.46; // misma escala que el velocímetro del radar (máx. del Simulador 1)
+  const ARCO = 94.25;
+  const velArco = $('#velo-arco');
+  const velAguja = $('#velo-aguja');
+  const velVal = $('#velo-val');
+  const velCaja = $('#velocimetro');
+  const leds = $$('.c-leds i');
+  const cModo = $('#c-modo');
+  const lineaLeds = $('#linea-leds');
+  let previo = '';
+  const refrescaConsola = () => {
+    const v = Math.abs(est.v);
+    const r = Math.max(0, Math.min(1, v / VEL_MAX));
+    const color = est.bloqueado ? '#ef4444' : demo.zonaFrente() === 'precaucion' ? '#f59e0b' : '#22c55e';
+    velArco.setAttribute('stroke-dashoffset', (ARCO * (1 - r)).toFixed(2));
+    velArco.style.stroke = color;
+    velAguja.setAttribute('transform', `rotate(${(-90 + r * 180).toFixed(1)} 40 40)`);
+    const txt = `${est.v < -0.005 ? '−' : ''}${num(v)}`;
+    const clave = `${txt}|${est.sens.join('')}|${est.modo}|${est.bloqueado}|${color}`;
+    if (clave === previo) return;
+    previo = clave;
+    velVal.innerHTML = `${txt}<small>m/s</small>`;
+    velVal.style.color = color;
+    velCaja.style.borderColor = color === '#22c55e' ? '' : color;
+    velCaja.setAttribute('aria-label', `Velocímetro: ${txt} metros por segundo`);
+    leds.forEach((l, i) => l.classList.toggle('on', !!est.sens[i]));
+    lineaLeds.setAttribute('aria-label', `Sensores de línea S1 a S4: ${est.sens.join(', ')}`);
+    cModo.textContent = est.bloqueado ? '■ < 20 cm' : est.modo === 'manual' ? 'MANUAL' : 'AUTO';
+    cModo.className = 'c-modo' + (est.bloqueado ? ' bloq' : est.modo === 'manual' ? ' manual' : '');
+  };
 
   // ---------------------------------------------------------------- tira de componentes y ficha
   const ficha = $('#ficha');
@@ -257,7 +380,6 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       else el.textContent = txt[id];
       if (id === 'us_front' || id === 'us_rear') el.dataset.zona = id === 'us_front' ? v.zonaF : v.zonaR;
     }
-    $('#estado').textContent = `Ruta cerrada de demostración · vuelta ${est.vuelta + 1} · ${num(est.v)} m/s${ui.pausa ? ' · en pausa' : ''}`;
   };
 
   // ---------------------------------------------------------------- animación de la pieza
@@ -423,6 +545,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       movPend = null;
     }
     renderer.render(scene, camera);
+    refrescaConsola();
     if (ui.etiquetas) colocaEtiquetas();
     acRefresco += dt;
     if (acRefresco > 0.12) {
@@ -438,9 +561,17 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     resize();
     desplazaVista();
   }).observe(canvas);
+  // la consola y el D-Pad se apoyan sobre la tira de componentes
+  const app = $('#app');
+  const medir = () => {
+    app.style.setProperty('--alto-tira', `${tira.offsetHeight}px`);
+    app.style.setProperty('--ancho-consola', `${$('#consola').offsetWidth}px`);
+  };
+  new ResizeObserver(medir).observe(tira);
+  new ResizeObserver(medir).observe($('#consola'));
   resize();
   irA('inspeccion', true);
-  ponEtiquetas(true);
+  ponEtiquetas(canvas.clientWidth >= 640); // en el teléfono las etiquetas 3D empiezan apagadas: menos texto
   // pasos iniciales para que no arranque en cero
   for (let i = 0; i < 240; i++) {
     demo.paso(1 / 120);
@@ -460,6 +591,9 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     irA,
     ponPausa,
     ponEtiquetas,
+    ponModo,
+    manual: MANUAL,
+    vmax: VMAX,
     xray: (on) => {
       ui.xrayMeta = on ? 1 : 0;
       bX.setAttribute('aria-pressed', String(!!on));

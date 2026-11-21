@@ -38,11 +38,11 @@ jobs:
       - name: Pruebas del Simulador 2 V2 (planta física + núcleo compartido)
         run: node prototipos/simulador-2-v2-teach-and-repeat/simulador_movimiento.test.js
 
-      - name: Pruebas de la vitrina autónoma de P03 (ruta, sensores y modelo)
-        run: node prototipos/P03-motores/avance-02-simulador-3d/codigo/vitrina.test.js
+      - name: Pruebas del Inspector de hardware P02 (ruta, sensores, modelo y manejo)
+        run: node prototipos/P02-sensores/codigo/vitrina.test.js
 
-      - name: Pruebas del Simulador 1 de aprendizaje progresivo (P08, pistas, lectura de línea y modos)
-        run: node prototipos/P08-seguidor-linea/avance-01-simulador-3d/codigo/simulador1.test.js
+      - name: Pruebas del Simulador 1 + ESP32 P04 (pistas, lectura de línea, modos y LEDs)
+        run: node prototipos/P04-simulador-1-esp32/codigo/simulador1.test.js
 
       - name: Pruebas del protocolo del simulador MQTT P01 (QoS, telemetría y pérdida de red)
         run: node prototipos/P01-mqtt-base/simulador-3d/codigo/pruebas.mjs

@@ -377,7 +377,7 @@
 .log-mqtt div { margin-bottom: 4px; overflow-wrap: anywhere; word-break: break-word; }
 .log-mqtt .ts { color: #64748b; }
 
-/* ---- Paneles colapsables (patrón <details> estilo P01/P13) ---- */
+/* ---- Paneles colapsables (patrón <details> estilo P01/P03) ---- */
 .p10-detalle { border-top: 1.5px solid #1e293b; }
 .p10-detalle summary {
   cursor: pointer; list-style: none;
@@ -571,7 +571,7 @@ button:not(:disabled):active, .perfil-item:active { transform: scale(0.97); }
         </div>
       </div>
 
-      <!-- Paneles técnicos colapsables por defecto (patrón P01/P13) -->
+      <!-- Paneles técnicos colapsables por defecto (patrón P01/P03) -->
       <details class="p10-detalle" id="detalle-sil">
         <summary>Pruebas SIL y Escenario Híbrido <span class="p10-detalle-hint">Eventos · Tramo sin cinta + BLE</span></summary>
         <div class="p10-detalle-cuerpo">
@@ -705,7 +705,7 @@ button:not(:disabled):active, .perfil-item:active { transform: scale(0.97); }
     return Math.round(lado * POS_SENSORES[0] * 1.2 * 10) / 10;
   }
 
-  /* Parámetros físicos reales de SIM1 (prototipos/P08-seguidor-linea/avance-01-simulador-3d/codigo/model.js + sim.js + linea.js):
+  /* Parámetros físicos reales de SIM1 (prototipos/P04-simulador-1-esp32/codigo/model.js + sim.js + linea.js):
      Motor JGA25-371 Speed 200 (280 rpm @ 12V, carga 0.8, rueda 65 mm), L298N (drop 2.1V), LiPo 3S (12.6/11.1/9.9V),
      PD.base = 0.80 -> 0.46 m/s máx en recta, 0.41 m/s crucero medio (rango libre 0.38–0.45 m/s), tau = 0.18 s. */
   var SIM1_VEL_CRUCERO = 0.41;
@@ -1114,7 +1114,7 @@ button:not(:disabled):active, .perfil-item:active { transform: scale(0.97); }
       seg.alertaObstaculoAtras = false;
     }
     seg.parada = "ninguna";
-    /* Desaceleración progresiva en zona de aviso 20–50 cm (coherente con SIM1 y P13) */
+    /* Desaceleración progresiva en zona de aviso 20–50 cm (coherente con SIM1 y P03) */
     if (usaFrente && ultraFrenteOk && ultraFrente >= UMBRAL_PARADA_CM && ultraFrente < UMBRAL_AVISO_CM) {
       var factorAviso = (ultraFrente - UMBRAL_PARADA_CM) / (UMBRAL_AVISO_CM - UMBRAL_PARADA_CM);
       return {

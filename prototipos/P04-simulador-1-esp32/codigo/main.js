@@ -1,11 +1,11 @@
-// Simulador 1 de aprendizaje progresivo (P08): el robot recorre una de dos pistas, en modo manual (teclado o botones
+// Simulador 1 + ESP32 (P04): Simulador 1 de aprendizaje progresivo con la placa ESP32 en vivo. el robot recorre una de dos pistas, en modo manual (teclado o botones
 // táctiles) o con el seguidor automático, y el panel muestra los datos en vivo para compararlos.
 import * as THREE from 'three';
 import {SIN_WEBGL, crearAviso, vigilarContexto} from './arranque.js';
 import {crearGranito} from './granito.js';
 import {crearMundo} from './mundo.js';
 import {R} from './model.js';
-import {GEOM, PD, crearSim} from './sim.js';
+import {GEOM, PD, crearSim, ledsEsp32} from './sim.js';
 import {IDS_PISTA, PISTAS} from './pista.js';
 import {ZA, buildRobot} from './robot.js';
 
@@ -276,7 +276,29 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const el = $('#' + id);
     if (el.textContent !== txt) el.textContent = txt;
   };
-  const sqs = $$('.sq');
+  // placa ESP32: se pinta en cada cuadro, sincronizada con el robot de la pista
+  const ledsTcrt = $$('.esp-led.tcrt');
+  const pwmIzq = $('#pwm-izq');
+  const pwmDer = $('#pwm-der');
+  const ledTx = $('#led-tx');
+  let tTx = 0;
+  const pintaPlaca = (dt) => {
+    const led = ledsEsp32(sim.lectura());
+    for (let i = 0; i < 4; i++) ledsTcrt[i].classList.toggle('on', led.tcrt[i] === 1);
+    set('v-bin', `[${led.tcrt.join(',')}]`);
+    pwmIzq.style.width = `${Math.round(led.ena * 100)}%`;
+    pwmDer.style.width = `${Math.round(led.enb * 100)}%`;
+    pwmIzq.classList.toggle('atras', led.dirIzq < 0);
+    pwmDer.classList.toggle('atras', led.dirDer < 0);
+    // telemetría del ESP32 cada 2 s (como en el Simulador del ESP32): el LED TX parpadea
+    tTx += dt;
+    if (tTx >= 2) {
+      tTx = 0;
+      ledTx.classList.remove('pulso');
+      void ledTx.offsetWidth;
+      ledTx.classList.add('pulso');
+    }
+  };
   const barra = $('#progreso');
   const construyeBarra = () => {
     const P = sim.P;
@@ -284,8 +306,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   };
   const refresca = () => {
     const L = sim.lectura();
-    L.bin.forEach((b, i) => sqs[i].classList.toggle('on', !!b));
-    set('v-bin', `[${L.bin.join(',')}]`);
     set('v-raw', L.raw.join(' · '));
     set('v-emed', `${sg(L.eMedido)} mm`);
     set('v-ereal', `${sg(L.eReal)} mm`);
@@ -366,6 +386,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     seguirCamara(dt);
     controls.update();
     renderer.render(scene, camera);
+    pintaPlaca(dt);
     acRef += dt;
     if (acRef > 0.1) {
       acRef = 0;

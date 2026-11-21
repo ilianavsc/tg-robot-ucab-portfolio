@@ -1,0 +1,6 @@
+{
+  "name": "p04-simulador-1-esp32",
+  "private": true,
+  "type": "module",
+  "description": "Fuentes del Simulador 1 de aprendizaje progresivo (P04). Para regenerar ../simulador.html: npm install --no-save three@0.187.0 esbuild && node construir.mjs"
+}

@@ -1,4 +1,6 @@
-# P02 · Los sentidos del robot — Registro de mediciones físicas (HIL)
+# P02 · Inspector de hardware — Registro de mediciones físicas (HIL)
+
+> **Simulador (SIL):** [`index.html`](index.html): robot manejable con consola de sensores (velocímetro + 4 TCRT5000).
 
 > **Estado:** plantilla vacía, lista para diciembre (llegada del hardware: 15–28 dic 2026).
 > **Ficha técnica (pines, umbrales, calibración):** [`docs/sensores.md`](../../docs/sensores.md)

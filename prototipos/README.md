@@ -24,10 +24,18 @@ P = prototipo simulado. H = prueba con hardware real.
 - Lo técnico va al final, en "Para los curiosos".
 - Sin contraseñas y sin capturas con datos personales (recortar el escritorio).
 
-## Cómo recompilar los simuladores 3D (P01, P03 y P08)
+## Orden de los prototipos web
+| Código | Carpeta | Qué hace |
+|---|---|---|
+| **P01** | `P01-mqtt-base/` | Así se hablan el robot y la app (MQTT, QoS, última voluntad). |
+| **P02** | `P02-sensores/` | Inspector de hardware: el robot se maneja como en el Simulador 1 y muestra la **consola de sensores** (velocímetro + 4 sensores de línea). `README.md` es el registro HIL. |
+| **P03** | `P03-radar-ultrasonico/` | Radar ultrasónico (2× HC-SR04P, frente y atrás) con la misma consola oscura que P02. |
+| **P04** | `P04-simulador-1-esp32/` | Simulador 1 (2 pistas, manual y automático) **+ placa ESP32**: un LED por sensor de línea, sincronizado con el robot. |
+
+## Cómo recompilar los simuladores 3D (P01, P02 y P04)
 Los tres simuladores se empaquetan igual, con esbuild y `three` de npm (ya no se usa el kit teardown). Cada `codigo/` tiene todo el fuente: `main.js` (entrada), los módulos, `style.css`, `fuentes.css`, `plantilla.html` y `construir.mjs`.
 ```bash
-cd prototipos/P01-mqtt-base/simulador-3d/codigo   # o P03-motores/avance-02-simulador-3d/codigo, o P08-seguidor-linea/avance-01-simulador-3d/codigo
+cd prototipos/P01-mqtt-base/simulador-3d/codigo   # o P02-sensores/codigo, o P04-simulador-1-esp32/codigo
 npm install --no-save three@0.187.0 esbuild      # una sola vez
 node construir.mjs                               # genera ../simulador.html (un solo archivo)
 ```
@@ -35,18 +43,18 @@ P01: `node pruebas.mjs` valida los pasos de cada QoS, la telemetría QoS 0 cada 
 
 No edites `simulador.html` a mano: se pierde al recompilar. Cambia el fuente en `codigo/`.
 
-### P03 · vitrina autónoma (esbuild, sin el kit teardown)
-`P03-motores/avance-02-simulador-3d/codigo/` ya no usa el kit: la vitrina autónoma (ruta cerrada, sensores y fichas de componentes) se empaqueta con esbuild y `three` de npm.
+### P02 · Inspector de hardware (esbuild)
+`P02-sensores/codigo/`: el robot recorre solo la ruta cerrada (**Auto**) o se maneja a mano (**Manual**) con la misma modalidad del Simulador 1: W A S D o flechas, Espacio frena, D-Pad táctil, mismos valores `MANUAL` de `P04-simulador-1-esp32/codigo/sim.js`. Con menos de 20 cm al frente solo deja retroceder, como el firmware. La **consola de sensores** (velocímetro en la escala del radar y 4 LEDs de línea) reemplaza el texto explicativo.
 ```bash
-cd prototipos/P03-motores/avance-02-simulador-3d/codigo
+cd prototipos/P02-sensores/codigo
 npm install --no-save three@0.187.0 esbuild   # una sola vez
 node construir.mjs                            # genera ../simulador.html (un solo archivo)
-node vitrina.test.js                          # pruebas del núcleo, sin navegador
+node vitrina.test.js                          # pruebas del núcleo y del manejo, sin navegador (14)
 ```
-El movimiento es automático (sin teclado) y **no** reimplementa teach-and-repeat: esa máquina de estados es solo del Simulador 2 V2.
+No reimplementa teach-and-repeat: esa máquina de estados es solo del Simulador 2 V2.
 
-### P08 · Simulador 1 de aprendizaje progresivo (esbuild)
-Igual que P03: `P08-seguidor-linea/avance-01-simulador-3d/codigo/` se empaqueta con esbuild (`npm install --no-save three@0.187.0 esbuild && node construir.mjs`). Pruebas: `node codigo/simulador1.test.js` (16). Dos pistas (A 8,05 m histórica y B 9,0 m canónica), modo manual (teclado y D-Pad táctil) o seguidor automático; `pista.js`, `linea.js` y `model.js` están separados para que los simuladores futuros retiren cinta con `ocultarTramo()`.
+### P04 · Simulador 1 + ESP32 (esbuild)
+Igual que P02: `P04-simulador-1-esp32/codigo/` se empaqueta con esbuild (`npm install --no-save three@0.187.0 esbuild && node construir.mjs`). Pruebas: `node codigo/simulador1.test.js` (19). Dos pistas (A 8,05 m histórica y B 9,0 m canónica), modo manual (teclado y D-Pad táctil) o seguidor automático, y la **placa ESP32** del Simulador del ESP32 (`ledsEsp32()` en `sim.js`): 4 LEDs S1…S4 con la misma lectura del lazo PD, PWM de ENA/ENB y LED TX cada 2 s. `pista.js`, `linea.js` y `model.js` están separados para que los simuladores futuros retiren cinta con `ocultarTramo()`. La prueba en vivo ESP32 ↔ App por MQTT sigue en `P10-simulador-esp32/`.
 
 ## Simulador 2 V2 · teach-and-repeat
 `simulador-2-v2-teach-and-repeat/` no es un prototipo P0X: es un gemelo digital de **movimiento** (SIL). Carga tal cual `specs/pista_canonica.json` (9,0 m) y `specs/navegacion/teach_and_repeat.js`; la planta física (cinta, sensores, cinemática, giroscopio, RSSI de las 2 balizas BLE en los extremos) está en `simulador_movimiento.js`. Pruebas: `node prototipos/simulador-2-v2-teach-and-repeat/simulador_movimiento.test.js` (22). Se abre por http (no por `file://`).

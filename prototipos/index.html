@@ -45,15 +45,15 @@ a.proto:hover{transform:translate(-2px,-2px)}
   // Categorías limpias (sin prefijo P0X): solo el tema visual de cada tarjeta.
   var categorias = {
     P01: "MQTT",
-    P03: "Hardware 3D",
-    P08: "Simulador 3D",
+    P02: "Hardware 3D",
+    P03: "Ultrasonido",
+    P04: "Simulador 3D",
     P09: "Flutter",
-    P10: "Simulador 3D",
-    P13: "Ultrasonido"
+    P10: "Simulador 3D"
   };
   function claseEstado(e) { return e === "listo" ? "hecho" : e === "en_pruebas" ? "pruebas" : "pendiente"; }
   D.fases.forEach(function(f){
-    var ps = D.prototipos.filter(function(p){ return !p.principal && p.codigo !== "P02" && U.faseDe(U.inicioSemana(p.semana)).id === f.id; });
+    var ps = D.prototipos.filter(function(p){ return !p.principal && U.faseDe(U.inicioSemana(p.semana)).id === f.id; });
     if (!ps.length) return;
     html += '<h2 class="fase-titulo">Fase ' + f.id + " · " + f.nombre + '</h2><div class="lista">';
     ps.forEach(function(p){
@@ -65,8 +65,8 @@ a.proto:hover{transform:translate(-2px,-2px)}
     html += "</div>";
   });
   document.getElementById("por-fase").innerHTML = html;
-  // Orden fijo de "Listos para usar" (3x2): P13 en la 3.ª, P08 en la 6.ª.
-  var ordenListos = ["P01", "P03", "P13", "P08", "P10", "P09"];
+  // Orden fijo de "Listos para usar" (3x2): P01 → P02 → P03 → P04, y luego P10 y P09.
+  var ordenListos = ["P01", "P02", "P03", "P04", "P10", "P09"];
   document.getElementById("listos").innerHTML = ordenListos.map(function(cod){
     var p = D.prototipos.filter(function(x){ return x.codigo === cod; })[0];
     if (!p) return "";

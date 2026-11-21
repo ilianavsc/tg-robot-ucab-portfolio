@@ -1,6 +1,6 @@
 /* Simulador 2 V2 · adaptador de las pistas de SIM1 a la planta de movimiento.
  *
- * SIM1 (prototipos/P08-seguidor-linea/avance-01-simulador-3d/codigo/pista.js) define DOS pistas:
+ * SIM1 (prototipos/P04-simulador-1-esp32/codigo/pista.js) define DOS pistas:
  *   A · circuito histórico de 8,05 m   y   B · recorrido canónico de 9,0 m (Pasillo UCAB).
  * Este archivo NO las redefine: recibe el objeto que devuelve crearPista() de SIM1 (X, Z, TX, TZ, paso, largo)
  * y calcula lo que la planta necesita: curvatura con signo κ(s), pose en el mundo (x, y, angulo) y si un tramo es recto.

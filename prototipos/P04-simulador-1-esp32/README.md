@@ -1,6 +1,8 @@
-# P08 Seguir la línea · Avance 1: simulador 3D → Simulador 1 de aprendizaje progresivo
+# P04 · Simulador 1 + ESP32 (seguir la línea)
 
-**Fase:** I (adelanto de P08, planificado para la semana 13)
+> **Fusión (P04):** el Simulador 1 de aprendizaje progresivo lleva dentro la **placa ESP32** del Simulador del ESP32: 4 LEDs (S1…S4, GPIO 36/39/34/35) encendidos con la misma lectura binaria del lazo PD, barras PWM de ENA/ENB y el LED TX de la telemetría cada 2 s. Se pintan en cada cuadro, sincronizados con el robot en la pista (`ledsEsp32()` en `codigo/sim.js`, 3 pruebas en `simulador1.test.js`). La prueba en vivo ESP32 ↔ App por MQTT sigue en [`P10`](../P10-simulador-esp32/index.html).
+
+**Fase:** I (planificado para la semana 13)
 **Fecha:** 14 nov 2026
 
 👉 **Versión visual:** [index.html](index.html) · **Simulador:** [simulador.html](simulador.html)
@@ -30,8 +32,8 @@ Probar en simulación el control PD del seguidor de línea con el motor que se c
 - RNF-03: velocidad entre 0,35 y 0,6 m/s.
 
 ## 3. Simulador y enlace
-- Simulador 3D en el navegador (three.js). En el Avance 1 era una copia del simulador de la tracción de P03 (kit [teardown](https://github.com/elvarofficial/teardown), MIT); el Simulador 1 usa fuentes propias empaquetadas con esbuild.
-- El plan original decía Webots. Se usó el simulador web para reutilizar el robot y el modelo del motor de P03.
+- Simulador 3D en el navegador (three.js). En el Avance 1 era una copia del simulador de la tracción de P02 (kit [teardown](https://github.com/elvarofficial/teardown), MIT); el Simulador 1 usa fuentes propias empaquetadas con esbuild.
+- El plan original decía Webots. Se usó el simulador web para reutilizar el robot y el modelo del motor de P02.
 
 ## 4. Cómo se prueba
 - En la página: ARRANCAR, cambiar base, Kp, Kd, separación de sensores, distancia al eje y batería, y mirar la gráfica y los resultados.
@@ -71,8 +73,8 @@ Evidencias en [evidencias/](evidencias/).
 | Zona que ve el sensor | radio 3 mm | Pasando el sensor sobre el borde de la cinta |
 | Granito | inventado | Foto del piso en la observación del 18 nov |
 | Pista | inventada | Distancias de la observación del 18 nov |
-| Peso (80 %) y respuesta (0,18 s) | de P03 | Con el encoder en P03 (semana 6) |
-| PWM mínimo para arrancar | no se modela | Con el motor real en P03 |
+| Peso (80 %) y respuesta (0,18 s) | de P02 | Con el encoder en P02 (semana 6) |
+| PWM mínimo para arrancar | no se modela | Con el motor real en P02 |
 
 ## 9. Siguiente paso
 1. Cambiar la pista por el recorrido real del laboratorio (después del 18 nov).

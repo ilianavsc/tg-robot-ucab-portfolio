@@ -1,4 +1,4 @@
-/* Pruebas de SIM2 V2 con las dos pistas de SIM1, la enseñanza real (Teach), el radar P13 y el estado del gemelo digital.
+/* Pruebas de SIM2 V2 con las dos pistas de SIM1, la enseñanza real (Teach), el radar P03 y el estado del gemelo digital.
  * Lo carga simulador_movimiento.test.js (que es el que corre en CI): no se ejecuta solo.
  * Importa las pistas y la física de SIM1 tal cual (ESM), sin copiarlas. */
 "use strict";
@@ -7,7 +7,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
-const SIM1 = path.join(__dirname, "..", "P08-seguidor-linea", "avance-01-simulador-3d", "codigo");
+const SIM1 = path.join(__dirname, "..", "P04-simulador-1-esp32", "codigo");
 const T = require("./pistas_sim1.js");
 const R = require("./radar_us.js");
 const G = require("./gemelo_estado.js");
@@ -221,7 +221,7 @@ module.exports = async function (ctx) {
     assert.ok(/data-pista="A"/.test(html) && /data-pista="B"/.test(html));
     for (const id of ["lienzo-pista", "velocimetro", "velo-arco", "velo-aguja", "base-obstaculo", "alerta", "contrato-json", "btn-ensenar", "btn-viaje-ida"]) assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     assert.ok(/pointerdown/.test(html) && /pointermove/.test(html) && /pointerup/.test(html), "ficha arrastrable con eventos de puntero");
-    assert.ok(html.includes("../P08-seguidor-linea/avance-01-simulador-3d/codigo/pista.js"), "usa las pistas de SIM1 sin copiarlas");
+    assert.ok(html.includes("../P04-simulador-1-esp32/codigo/pista.js"), "usa las pistas de SIM1 sin copiarlas");
   });
 
   await prueba("los archivos nuevos no reimplementan la máquina de estados ni mencionan 'IA'", () => {

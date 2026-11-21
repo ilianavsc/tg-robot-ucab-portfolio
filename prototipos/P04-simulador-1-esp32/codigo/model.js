@@ -4,15 +4,15 @@
 // Driver: L298N. Sensores: 4 × TCRT5000 con salida analógica (A0) en pines ADC1.
 export const R = {
   bat: {llena: 12.6, nominal: 11.1, baja: 9.9}, // 3S: cargada, nominal y alarma de batería baja (V)
-  drop: 2.1, // caída del L298N (V), la misma del P03
+  drop: 2.1, // caída del L298N (V), la misma del P02
   ruedaD: 0.065, // diámetro de rueda (m), del kit
-  via: 0.18, // distancia entre ruedas (m), la misma del P03
+  via: 0.18, // distancia entre ruedas (m), la misma del P02
   ZA: 0.03, // eje de las ruedas, 3 cm delante del centro del chasis
   rpm12: 280, // Speed 200: rpm de la rueda sin carga a 12 V (tabla del vendedor)
   ratio: 21.3, // caja reductora
   ppr: 11, // pulsos por vuelta del motor, por canal
-  carga: 0.8, // SUPUESTO del P03: con peso va al 80 % de la velocidad sin carga
-  tau: 0.18, // SUPUESTO del P03: la rueda tarda ~0,18 s en llegar a su velocidad
+  carga: 0.8, // SUPUESTO del P02: con peso va al 80 % de la velocidad sin carga
+  tau: 0.18, // SUPUESTO del P02: la rueda tarda ~0,18 s en llegar a su velocidad
   meta: [0.35, 0.6], // RNF-03 (m/s)
   // Sensores (SUPUESTOS hasta calibrar con los módulos reales)
   adcPiso: 500, // lectura en piso claro (de 4095)
