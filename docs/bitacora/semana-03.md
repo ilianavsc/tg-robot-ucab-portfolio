@@ -5,7 +5,7 @@
 - Revisión de la lista de materiales (versión 1).
 - Repositorio en GitHub con estructura, 7 etapas, etiquetas y tareas de la Fase I.
 - P01 MQTT base en Wokwi: estado, órdenes, confirmación, aviso de desconexión y reconexión funcionando.
-- Firmware integrado (P01 + P03 + P08): un solo `.ino` para el ESP32, compilado sin errores (71 % de flash y 15 % de RAM), con modo autónomo y modo manual.
+- Firmware integrado (P01 + P02 + P04): un solo `.ino` para el ESP32, compilado sin errores (71 % de flash y 15 % de RAM), con modo autónomo y modo manual.
 
 ## Qué falló o aprendimos
 - Wokwi pausa la simulación si la pestaña queda oculta: el broker avisó "desconectado" (sirvió para probar el LWT).

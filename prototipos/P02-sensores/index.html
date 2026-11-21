@@ -16,6 +16,14 @@
 .pista-icono span{font-size:30px;line-height:1;flex:none}
 .pista-icono small{display:block;font-weight:400;font-size:13.5px;color:var(--text-muted)}
 @media (max-width:640px){.pistas-iconos{grid-template-columns:1fr}}
+.piezas{margin:22px 0 0}
+.piezas h2{margin:0 0 10px;font-size:22px}
+.piezas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.pieza{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:#fff;border:2px solid var(--border-dark);border-left:8px solid var(--c);border-radius:var(--radius-md);padding:12px 14px;box-shadow:var(--shadow-hard);font:inherit;color:inherit;cursor:pointer;min-height:44px}
+.pieza:hover{transform:translate(-1px,-1px)}
+.pieza b{font-size:16px}
+.pieza span{font-size:14px;color:var(--text-muted);line-height:1.35}
+.pieza:focus-visible{outline:3px solid #FFD23F;outline-offset:2px}
 .curiosos{margin-top:26px;background:#fff;border:2px solid var(--border-dark);border-radius:var(--radius-md);padding:4px 18px}
 .curiosos summary{cursor:pointer;font-weight:700;padding:12px 0;font-size:17px}
 .curiosos ul{margin:0 0 14px;padding-left:20px;line-height:1.5}
@@ -34,21 +42,34 @@
   </a>
 
   <p class="ceja">P02 · Inspector de hardware</p>
-  <h1>Maneja el robot y <em>mira lo que siente</em></h1>
+  <h1>Mira el robot <em>pieza por pieza</em></h1>
 
   <div class="pistas-iconos" role="list">
-    <div class="pista-icono" role="listitem"><span aria-hidden="true">🎮</span><div>Manéjalo<small>W A S D, flechas o D-Pad</small></div></div>
-    <div class="pista-icono" role="listitem"><span aria-hidden="true">📟</span><div>Mira la consola<small>velocidad y 4 sensores de línea</small></div></div>
-    <div class="pista-icono" role="listitem"><span aria-hidden="true">🔍</span><div>Toca una pieza<small>se abre su ficha</small></div></div>
+    <div class="pista-icono" role="listitem"><span aria-hidden="true">🔍</span><div>Toca una pieza<small>se abre su ficha con datos en vivo</small></div></div>
+    <div class="pista-icono" role="listitem"><span aria-hidden="true">🩻</span><div>Rayos X<small>mira cables y tracción por dentro</small></div></div>
+    <div class="pista-icono" role="listitem"><span aria-hidden="true">🎮</span><div>Manéjalo<small>W A S D, flechas o D-Pad · consola opcional</small></div></div>
   </div>
 
   <section aria-label="Simulador">
     <div class="simulador-embed-container">
       <div class="simulador-embed-bar">
-        <span><i class="dot-live" aria-hidden="true"></i>EN VIVO · AUTO O MANUAL</span>
+        <span><i class="dot-live" aria-hidden="true"></i>INSPECTOR 3D · EN VIVO</span>
         <a href="simulador.html" target="_blank" rel="noopener" class="btn-link-dark">Pantalla completa ↗</a>
       </div>
-      <iframe src="simulador.html" class="simulador-embed-frame" title="P02 · Inspector de hardware: robot manejable con consola de sensores" loading="lazy"></iframe>
+      <iframe src="simulador.html" class="simulador-embed-frame" id="inspector" title="P02 · Inspector de hardware: componentes del robot con su ficha, manejo y consola opcional"></iframe>
+    </div>
+  </section>
+
+  <section class="piezas" aria-labelledby="t-piezas">
+    <h2 id="t-piezas">Las 7 piezas del robot</h2>
+    <div class="piezas-grid" id="piezas">
+      <button type="button" class="pieza" data-comp="tcrt" style="--c:#0F9D84"><b>4× TCRT5000</b><span>Ven la cinta negra del piso.</span></button>
+      <button type="button" class="pieza" data-comp="us_front" style="--c:#E8B90C"><b>HC-SR04P frontal</b><span>Mide la distancia al frente.</span></button>
+      <button type="button" class="pieza" data-comp="us_rear" style="--c:#E8B90C"><b>HC-SR04P trasero</b><span>Vigila atrás antes de retroceder.</span></button>
+      <button type="button" class="pieza" data-comp="esp32" style="--c:#6B4EE6"><b>ESP32</b><span>El cerebro: decide y habla con la app.</span></button>
+      <button type="button" class="pieza" data-comp="mpu" style="--c:#2c4fb8"><b>MPU-6050</b><span>Siente los giros para no perder el rumbo.</span></button>
+      <button type="button" class="pieza" data-comp="traccion" style="--c:#F2603D"><b>Tracción + chasis</b><span>Dos motores con encoder y una rueda loca.</span></button>
+      <button type="button" class="pieza" data-comp="bateria" style="--c:#2a7fb8"><b>Batería 3S</b><span>Da energía a todo el robot.</span></button>
     </div>
   </section>
 
@@ -76,5 +97,18 @@
 <footer id="pie"></footer>
 <script src="../../datos/proyecto.js"></script>
 <script src="../../assets/sitio.js"></script>
+<script>
+/* Cada tarjeta abre la ficha de su pieza dentro del inspector 3D */
+document.getElementById("piezas").addEventListener("click", function (e) {
+  var b = e.target.closest("[data-comp]");
+  if (!b) return;
+  var marco = document.getElementById("inspector");
+  marco.scrollIntoView({ behavior: "smooth", block: "center" });
+  try {
+    var V = marco.contentWindow.VITRINA;
+    if (V) V.abrirFicha(b.dataset.comp);
+  } catch (err) { /* sin acceso al marco: solo se desplaza */ }
+});
+</script>
 </body>
 </html>

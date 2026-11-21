@@ -110,7 +110,7 @@ export const FICHAS = {
       ['Rumbo relativo (ideal)', `${num((((v.th * 180) / Math.PI) % 360 + 360) % 360, 0)} °`],
     ],
     estado: ['pendiente', 'Pendiente de integración'],
-    nota: `La lectura de la MPU-6050 ${PEND_FW}; el firmware solo reserva el bus I²C. Los valores de arriba son ideales (sin deriva). Esta demo no ejecuta teach-and-repeat: esa lógica de 5 estados vive en el Simulador 2 V2.`,
+    nota: `La lectura de la MPU-6050 ${PEND_FW}; el firmware solo reserva el bus I²C. Los valores de arriba son ideales (sin deriva). Esta demo no ejecuta teach-and-repeat: esa lógica de 5 estados vive en el Gemelo Digital (P05).`,
   },
   traccion: {
     nombre: 'Tracción diferencial + chasis PLA',

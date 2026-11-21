@@ -27,12 +27,12 @@
 <main>
 <p class="ceja">Arquitectura</p>
 <h1>El sistema <em>completo</em></h1>
-<p class="bajada">Cinco piezas que se pasan mensajes. Las de borde verde ya funcionan <strong>en simulación (SIL)</strong>; las punteadas vienen en las próximas fases. Hoy la App (P09) habla <strong>directo con el broker</strong> por WebSocket; cuando exista el puente (P05) leerá también de Firebase. La validación con el robot físico (HIL) empieza en diciembre.</p>
+<p class="bajada">Cinco piezas que se pasan mensajes. Las de borde verde ya funcionan <strong>en simulación (SIL)</strong>; las punteadas vienen en las próximas fases. Hoy la App (P09) habla <strong>directo con el broker</strong> por WebSocket; cuando exista el puente (P06) leerá también de Firebase. La validación con el robot físico (HIL) empieza en diciembre.</p>
 
 <section aria-labelledby="t-mapa">
   <h2 id="t-mapa">El mapa</h2>
   <div class="tarjeta sombra diagrama"><div class="desliza">
-  <svg viewBox="0 0 1000 330" role="img" aria-label="El robot habla con el broker por MQTT; el puente pasa los mensajes a Firebase; la app lee Firebase y hoy también el broker; el ESP32 virtual P10 se conecta al broker">
+  <svg viewBox="0 0 1000 330" role="img" aria-label="El robot habla con el broker por MQTT; el puente pasa los mensajes a Firebase; la app lee Firebase y hoy también el broker; el banco P01 se conecta al broker">
     <defs><marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#14213D"/></marker></defs>
     <g font-family="Atkinson Hyperlegible, sans-serif" font-size="13" fill="#4A5A73">
       <line x1="174" y1="110" x2="226" y2="110" stroke="#14213D" stroke-width="1.6" marker-start="url(#fl)" marker-end="url(#fl)"/>
@@ -58,12 +58,12 @@
       <rect x="434" y="60" width="152" height="100" rx="14" fill="#FFFFFF" stroke="#4A5A73" stroke-width="2" stroke-dasharray="6 4"/>
       <text x="510" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Puente</text>
       <text x="510" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">MQTT a Firebase</text>
-      <text x="510" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">P05 · Fase III</text>
+      <text x="510" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">P06 · Fase III</text>
 
       <rect x="641" y="60" width="152" height="100" rx="14" fill="#FFFFFF" stroke="#4A5A73" stroke-width="2" stroke-dasharray="6 4"/>
       <text x="717" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Firebase</text>
       <text x="717" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">datos, usuarios, avisos</text>
-      <text x="717" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">P05 · Fase III</text>
+      <text x="717" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">P06 · Fase III</text>
 
       <rect x="848" y="60" width="132" height="100" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
       <text x="914" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">App</text>
@@ -72,7 +72,7 @@
 
       <rect x="217" y="220" width="172" height="86" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
       <text x="303" y="256" text-anchor="middle" font-weight="700" font-size="16" fill="#14213D">ESP32 virtual</text>
-      <text x="303" y="278" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">P10 · banco P01</text>
+      <text x="303" y="278" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">banco P01</text>
       <text x="303" y="295" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">funciona (SIL)</text>
     </g>
   </svg></div></div>
@@ -103,7 +103,7 @@
   </ul>
   <p class="suave" style="font-size:15px;margin-bottom:6px">Así se ve un pedido por dentro:</p>
   <pre style="font-family:var(--mono);font-size:14px;background:var(--blanco);border:2px solid var(--tinta);border-radius:12px;padding:12px 14px;overflow-x:auto;margin:0 0 10px">{"id":"P-0001","componente":"Resistencia 1k","cantidad":5,"estante":"A3"}</pre>
-  <p class="suave" style="font-size:15px">Probado en <a href="prototipos/P01-mqtt-base/">P01</a> y en el Gemelo Digital (<a href="prototipos/P10-simulador-esp32/">P10</a> + <a href="app/">App P09</a>). Contrato JSON completo: <a href="docs/arquitectura/topicos-mqtt.md">docs/arquitectura/topicos-mqtt.md</a>.</p>
+  <p class="suave" style="font-size:15px">Probado en <a href="prototipos/P01-mqtt-base/">P01</a>, en la <a href="app/">App P09</a> (Modo Demo) y en el <a href="prototipos/P05-gemelo-digital/">Gemelo Digital (P05)</a>. Contrato JSON completo: <a href="docs/arquitectura/topicos-mqtt.md">docs/arquitectura/topicos-mqtt.md</a>.</p>
 </section>
 </main>
 <footer id="pie"></footer>

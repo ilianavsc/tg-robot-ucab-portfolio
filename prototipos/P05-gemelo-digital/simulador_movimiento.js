@@ -1,4 +1,4 @@
-/* Simulador 2 V2 · planta física del robot sobre la pista canónica (9,0 m).
+/* P05 · Gemelo Digital · planta física del robot sobre la pista canónica (9,0 m).
  *
  * Este archivo SOLO modela el mundo y el robot (cinta, sensores, cinemática,
  * giroscopio, balizas BLE, obstáculos). La lógica de navegación NO está aquí:

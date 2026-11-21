@@ -1,4 +1,4 @@
-/* Simulador 2 V2 · Etapa 2: Máquina de 14 estados de aprendizaje, Gemelo V1 y registro RMS por viaje.
+/* P05 · Gemelo Digital · Etapa 2: Máquina de 14 estados de aprendizaje, Gemelo V1 y registro RMS por viaje.
  *
  * Separada por completo de los 5 estados del núcleo de navegación
  * (FOLLOW_LINE, LINE_LOST_CHECK, HEADING_HOLD, WAIT_BEACON, REACQUIRE_LINE).

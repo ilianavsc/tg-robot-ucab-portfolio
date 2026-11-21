@@ -1,6 +1,6 @@
 # Centro de pruebas · flujo de la prueba física
 
-**Objetivo:** comprobar con un ESP32 real lo mismo que ya funciona en el simulador P10: la app envía una orden, el robot la recibe y confirma con un ACK.
+**Objetivo:** comprobar con un ESP32 real lo mismo que ya funcionaba con el ESP32 virtual (hoy retirado) y en el Modo Demo: la app envía una orden, el robot la recibe y confirma con un ACK.
 
 **Qué se prueba:** `firmware/robot_integrado.ino` + App Flutter (P09).
 **Qué NO se prueba aún:** motores, sensores y batería (el pedido llega a Miami el 15-28 dic). El ESP32 va solo, por USB.
@@ -10,7 +10,7 @@
 ## Estado del firmware antes de la prueba
 
 - **Firmware C++ validado (13/13 tests).** Son pruebas en el PC de la lógica de órdenes y ACK, con un MQTT falso. No sustituyen la prueba en el ESP32 real: para eso es este documento.
-- El ACK sale idéntico al del simulador P10:
+- El ACK sale con el mismo formato que el Modo Demo y el firmware:
   `{"id":"<uuid>","recibidas":N,"t":millis}`
 - Si no hay red, el ACK **no se pierde**: se reintenta al reconectar.
 
@@ -88,4 +88,4 @@
 
 ## Para el jurado
 
-Mismo flujo, sin hardware: abrir `prototipos/centro-pruebas.html` (P10 → P01 → P09). La prueba física de este documento es la versión con el ESP32 real.
+Sin hardware: abrir `prototipos/centro-pruebas.html` (P04/P05 → P01 → P09, cada pieza por separado). La prueba física de este documento es la versión con el ESP32 real.

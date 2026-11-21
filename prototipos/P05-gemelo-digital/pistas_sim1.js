@@ -1,4 +1,4 @@
-/* Simulador 2 V2 · adaptador de las pistas de SIM1 a la planta de movimiento.
+/* P05 · Gemelo Digital · adaptador de las pistas de SIM1 a la planta de movimiento.
  *
  * SIM1 (prototipos/P04-simulador-1-esp32/codigo/pista.js) define DOS pistas:
  *   A · circuito histórico de 8,05 m   y   B · recorrido canónico de 9,0 m (Pasillo UCAB).

@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {LIMITES, MANUAL, crearDemo} from './demo.js';
 import {R, VMAX, dutyPara, encoderHz} from './model.js';
 import {CINTA, GEO, OBSTACULOS, crearRuta, lineaSensores, ultrasonido, zonaDe} from './ruta.js';
+import {FICHAS, ORDEN} from './fichas.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 let ok = 0;
@@ -193,6 +194,34 @@ prueba('el texto de la vitrina usa teach-and-repeat y no usa términos de otras 
   assert.ok(!prohibido.test(todo));
   assert.ok(/teach-and-repeat/.test(todo));
   assert.ok(/GPIO 15/.test(todo));
+});
+
+// ---- interfaz: el inspector de componentes es la vista principal y la consola es opcional
+prueba('el inspector de componentes es lo principal: etiquetas 3D, tira de las 7 piezas y ficha abierta de entrada', () => {
+  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
+  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
+  assert.strictEqual(ORDEN.length, 7);
+  for (const id of ORDEN) assert.ok(FICHAS[id] && FICHAS[id].nombre && FICHAS[id].rol, `ficha ${id}`);
+  assert.ok(/id="tira"/.test(html) && /id="ficha"/.test(html) && /id="etiquetas"/.test(html));
+  assert.ok(/id="pista-tocar"/.test(html), 'invita a tocar una pieza');
+  // la barra empieza por las herramientas de inspección
+  const barra = html.slice(html.indexOf('class="barra"'), html.indexOf('</div>\n  <p class="pista-tocar"'));
+  assert.ok(barra.indexOf('b-xray') < barra.indexOf('data-modo="auto"'), 'Rayos X va antes del manejo');
+  assert.ok(/ponEtiquetas\(true\)/.test(main), 'etiquetas encendidas en todos los tamaños');
+  assert.ok(/abrirFicha\('tcrt'\)/.test(main), 'en pantallas anchas abre una ficha al cargar');
+});
+
+prueba('la consola de sensores empieza oculta y se abre o se cierra con su botón', () => {
+  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
+  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
+  assert.ok(/<section class="consola" id="consola"[^>]*\shidden>/.test(html), 'consola oculta por defecto');
+  assert.ok(/id="b-consola"[^>]*aria-pressed="false"/.test(html), 'botón apagado al inicio');
+  assert.ok(/Consola de sensores<\/button>/.test(html), 'el botón dice Consola de sensores');
+  assert.ok(/bConsola\.addEventListener\('click', \(\) => ponConsola\(consola\.hidden\)\)/.test(main), 'alterna al pulsar');
+  assert.ok(/ponConsola\(false\)/.test(main), 'arranca cerrada');
+  assert.ok(/consola\.hidden = !on/.test(main) && /setAttribute\('aria-pressed', String\(on\)\)/.test(main));
+  const css = readFileSync(join(aqui, 'style.css'), 'utf8');
+  assert.ok(!/(^|\n)\.estado\{/.test(css), 'sin la regla .estado');
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

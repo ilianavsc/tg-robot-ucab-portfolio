@@ -28,10 +28,6 @@ a.proto:hover{transform:translate(-2px,-2px)}
 <p class="bajada">Los que tienen borde punteado todavía no empiezan.</p>
 <h2 class="fase-titulo" style="margin-top:8px">Listos para usar</h2>
 <div class="lista" id="listos"></div>
-<h2 class="fase-titulo">Simuladores de movimiento</h2>
-<div class="lista">
-  <a class="proto" href="simulador-2-v2-teach-and-repeat/"><span class="cod">Simulador 2 V2 · Teach-and-repeat</span><h3>Gemelo digital de movimiento</h3><p>Pista de 9,0 m con retiro progresivo de cinta, núcleo teach-and-repeat, control manual y telemetría lógica en vivo (simulación).</p></a>
-</div>
 <h2 class="fase-titulo">Lo que viene</h2>
 <div id="por-fase"></div>
 <p style="margin-top:30px"><a href="../archivo-fase-1.html">Archivo Fase I</a>: Wokwi y la primera simulación en Colab.</p>
@@ -48,8 +44,8 @@ a.proto:hover{transform:translate(-2px,-2px)}
     P02: "Hardware 3D",
     P03: "Ultrasonido",
     P04: "Simulador 3D",
-    P09: "Flutter",
-    P10: "Simulador 3D"
+    P05: "Gemelo Digital",
+    P09: "Flutter"
   };
   function claseEstado(e) { return e === "listo" ? "hecho" : e === "en_pruebas" ? "pruebas" : "pendiente"; }
   D.fases.forEach(function(f){
@@ -65,8 +61,8 @@ a.proto:hover{transform:translate(-2px,-2px)}
     html += "</div>";
   });
   document.getElementById("por-fase").innerHTML = html;
-  // Orden fijo de "Listos para usar" (3x2): P01 → P02 → P03 → P04, y luego P10 y P09.
-  var ordenListos = ["P01", "P02", "P03", "P04", "P10", "P09"];
+  // Orden fijo de "Listos para usar" (3x2): P01 → P02 → P03 → P04 → P05, y luego la app P09.
+  var ordenListos = ["P01", "P02", "P03", "P04", "P05", "P09"];
   document.getElementById("listos").innerHTML = ordenListos.map(function(cod){
     var p = D.prototipos.filter(function(x){ return x.codigo === cod; })[0];
     if (!p) return "";

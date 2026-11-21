@@ -28,9 +28,10 @@ P = prototipo simulado. H = prueba con hardware real.
 | Código | Carpeta | Qué hace |
 |---|---|---|
 | **P01** | `P01-mqtt-base/` | Así se hablan el robot y la app (MQTT, QoS, última voluntad). |
-| **P02** | `P02-sensores/` | Inspector de hardware: el robot se maneja como en el Simulador 1 y muestra la **consola de sensores** (velocímetro + 4 sensores de línea). `README.md` es el registro HIL. |
+| **P02** | `P02-sensores/` | Inspector de hardware: **inspección de cada componente** (etiquetas 3D, ficha en vivo, rayos X); se puede manejar como en el Simulador 1 y la **consola de sensores** (velocímetro + 4 sensores de línea) se abre con su botón. `README.md` es el registro HIL. |
 | **P03** | `P03-radar-ultrasonico/` | Radar ultrasónico (2× HC-SR04P, frente y atrás) con la misma consola oscura que P02. |
 | **P04** | `P04-simulador-1-esp32/` | Simulador 1 (2 pistas, manual y automático) **+ placa ESP32**: un LED por sensor de línea, sincronizado con el robot. |
+| **P05** | `P05-gemelo-digital/` | Gemelo Digital: el robot aprende la ruta y la repite (teach-and-repeat) sobre las pistas de P04, con el radar de P03 y tramos sin cinta. |
 
 ## Cómo recompilar los simuladores 3D (P01, P02 y P04)
 Los tres simuladores se empaquetan igual, con esbuild y `three` de npm (ya no se usa el kit teardown). Cada `codigo/` tiene todo el fuente: `main.js` (entrada), los módulos, `style.css`, `fuentes.css`, `plantilla.html` y `construir.mjs`.
@@ -44,17 +45,17 @@ P01: `node pruebas.mjs` valida los pasos de cada QoS, la telemetría QoS 0 cada 
 No edites `simulador.html` a mano: se pierde al recompilar. Cambia el fuente en `codigo/`.
 
 ### P02 · Inspector de hardware (esbuild)
-`P02-sensores/codigo/`: el robot recorre solo la ruta cerrada (**Auto**) o se maneja a mano (**Manual**) con la misma modalidad del Simulador 1: W A S D o flechas, Espacio frena, D-Pad táctil, mismos valores `MANUAL` de `P04-simulador-1-esp32/codigo/sim.js`. Con menos de 20 cm al frente solo deja retroceder, como el firmware. La **consola de sensores** (velocímetro en la escala del radar y 4 LEDs de línea) reemplaza el texto explicativo.
+`P02-sensores/codigo/`: lo principal es la **inspección de los componentes** (etiquetas 3D, tira de las 7 piezas, ficha con datos en vivo y rayos X). El robot recorre solo la ruta cerrada (**Auto**) o se maneja a mano (**Manual**) con la misma modalidad del Simulador 1: W A S D o flechas, Espacio frena, D-Pad táctil, mismos valores `MANUAL` de `P04-simulador-1-esp32/codigo/sim.js`. Con menos de 20 cm al frente solo deja retroceder, como el firmware. La **consola de sensores** (velocímetro en la escala del radar y 4 LEDs de línea) es opcional: empieza oculta y se abre con el botón «Consola de sensores».
 ```bash
 cd prototipos/P02-sensores/codigo
 npm install --no-save three@0.187.0 esbuild   # una sola vez
 node construir.mjs                            # genera ../simulador.html (un solo archivo)
-node vitrina.test.js                          # pruebas del núcleo y del manejo, sin navegador (14)
+node vitrina.test.js                          # pruebas del núcleo, del manejo y de la interfaz, sin navegador (16)
 ```
-No reimplementa teach-and-repeat: esa máquina de estados es solo del Simulador 2 V2.
+No reimplementa teach-and-repeat: esa máquina de estados es solo del Gemelo Digital (P05).
 
 ### P04 · Simulador 1 + ESP32 (esbuild)
-Igual que P02: `P04-simulador-1-esp32/codigo/` se empaqueta con esbuild (`npm install --no-save three@0.187.0 esbuild && node construir.mjs`). Pruebas: `node codigo/simulador1.test.js` (19). Dos pistas (A 8,05 m histórica y B 9,0 m canónica), modo manual (teclado y D-Pad táctil) o seguidor automático, y la **placa ESP32** del Simulador del ESP32 (`ledsEsp32()` en `sim.js`): 4 LEDs S1…S4 con la misma lectura del lazo PD, PWM de ENA/ENB y LED TX cada 2 s. `pista.js`, `linea.js` y `model.js` están separados para que los simuladores futuros retiren cinta con `ocultarTramo()`. La prueba en vivo ESP32 ↔ App por MQTT sigue en `P10-simulador-esp32/`.
+Igual que P02: `P04-simulador-1-esp32/codigo/` se empaqueta con esbuild (`npm install --no-save three@0.187.0 esbuild && node construir.mjs`). Pruebas: `node codigo/simulador1.test.js` (19). Dos pistas (A 8,05 m histórica y B 9,0 m canónica), modo manual (teclado y D-Pad táctil) o seguidor automático, y la **placa ESP32** del Simulador del ESP32 (`ledsEsp32()` en `sim.js`): 4 LEDs S1…S4 con la misma lectura del lazo PD, PWM de ENA/ENB y LED TX cada 2 s. `pista.js`, `linea.js` y `model.js` están separados para que los simuladores futuros retiren cinta con `ocultarTramo()`.
 
-## Simulador 2 V2 · teach-and-repeat
-`simulador-2-v2-teach-and-repeat/` no es un prototipo P0X: es un gemelo digital de **movimiento** (SIL). Carga tal cual `specs/pista_canonica.json` (9,0 m) y `specs/navegacion/teach_and_repeat.js`; la planta física (cinta, sensores, cinemática, giroscopio, RSSI de las 2 balizas BLE en los extremos) está en `simulador_movimiento.js`. Pruebas: `node prototipos/simulador-2-v2-teach-and-repeat/simulador_movimiento.test.js` (22). Se abre por http (no por `file://`).
+## P05 · Gemelo Digital (teach-and-repeat)
+`P05-gemelo-digital/` es el gemelo digital de **movimiento** (SIL). Carga tal cual `specs/pista_canonica.json` (9,0 m) y `specs/navegacion/teach_and_repeat.js`, y usa las 2 pistas del Simulador 1 (`P04-simulador-1-esp32/codigo/pista.js`) sin copiarlas; la planta física (cinta, sensores, cinemática, giroscopio, RSSI de las 2 balizas BLE en los extremos) está en `simulador_movimiento.js` y el radar sale de P03. Pruebas: `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` (48). Se abre por http (no por `file://`).

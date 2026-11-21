@@ -1,6 +1,6 @@
-/* Pruebas del Simulador 2 V2 (planta física + integración con el núcleo
+/* Pruebas del P05 · Gemelo Digital (planta física + integración con el núcleo
  * teach-and-repeat compartido). No necesita navegador ni dependencias.
- * Uso:  node prototipos/simulador-2-v2-teach-and-repeat/simulador_movimiento.test.js */
+ * Uso:  node prototipos/P05-gemelo-digital/simulador_movimiento.test.js */
 "use strict";
 const assert = require("node:assert");
 const fs = require("node:fs");

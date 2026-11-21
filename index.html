@@ -154,9 +154,9 @@ a.ir:hover {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
         Probar App en vivo
       </a>
-      <a href="prototipos/P10-simulador-esp32/index.html" class="btn btn-secundario">
+      <a href="prototipos/P05-gemelo-digital/index.html" class="btn btn-secundario">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-        Abrir Simulador ESP32
+        Gemelo Digital (P05)
       </a>
       <a href="prototipos/P03-radar-ultrasonico/index.html" class="btn btn-secundario">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12a10 10 0 0 1 20 0"></path><path d="M6 12a6 6 0 0 1 12 0"></path><circle cx="12" cy="12" r="2"></circle></svg>
@@ -236,7 +236,7 @@ a.ir:hover {
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P02 (Tracción):</strong> PWM a 20 kHz e interrupciones de encoders con batería Li-Ion 3S.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P04 (Línea):</strong> Control PD a 100 Hz con 4 sensores TCRT5000 a 0,41 m/s.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P03 (Ultrasonido):</strong> Radar interactivo en canvas (Adelante y Atrás) publicando en <code>ucab-tg-sf/robot/ultrasonido</code>.</div></li>
-              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware C++ · pruebas SIL (10 escenarios T1-T10):</strong> órdenes, ACK, duplicados QoS 1, obstáculos, fallo de ultrasonido, timeout manual y corte por batería, probados en el PC (corren solos en GitHub Actions); el contrato MQTT es idéntico al del simulador P10. Falta la prueba con el ESP32 real (<a href="docs/centro_de_pruebas.md" data-md="docs/centro_de_pruebas.md" data-titulo="Centro de pruebas">flujo de la prueba física</a>).</div></li>
+              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware C++ · pruebas SIL (10 escenarios T1-T10):</strong> órdenes, ACK, duplicados QoS 1, obstáculos, fallo de ultrasonido, timeout manual y corte por batería, probados en el PC (corren solos en GitHub Actions); el contrato MQTT es el de <code>docs/arquitectura/topicos-mqtt.md</code>. Falta la prueba con el ESP32 real (<a href="docs/centro_de_pruebas.md" data-md="docs/centro_de_pruebas.md" data-titulo="Centro de pruebas">flujo de la prueba física</a>).</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware Integrado:</strong> Un solo archivo <code>.ino</code> sin <code>delay()</code> (71 % Flash, 15 % RAM) con fail-safe y corte por batería baja (9,9 V).</div></li>
             </ul>
             <div style="display:flex;flex-wrap:wrap;gap:10px">
@@ -306,21 +306,7 @@ a.ir:hover {
 <script>
 (function () {
   var U = TGU, D = TG, hoy = U.hoy(), s = U.semana(hoy), fase = U.faseDe(hoy);
-  var sim2Proto = {
-    codigo: "SIM2",
-    nombre: "Sim 2 · Teach & Repeat",
-    tema: "Teach & Repeat",
-    semana: 16,
-    estado: "listo",
-    categoria: "software",
-    etapa: 2,
-    url: "prototipos/simulador-2-v2-teach-and-repeat/index.html",
-    historico: "prototipos/simulador-2-v2-teach-and-repeat/README.md"
-  };
   var P = D.prototipos.slice();
-  if (!P.some(function (x) { return x.codigo === "SIM2"; })) {
-    P.push(sim2Proto);
-  }
   var listosArr = P.filter(function (p) { return p.estado === "listo"; });
   var caminoArr = P.filter(function (p) { return p.estado === "en_pruebas" || p.estado === "pendiente"; });
 
@@ -388,25 +374,14 @@ a.ir:hover {
         { label: "Ficha técnica (.md)", href: "prototipos/P04-simulador-1-esp32/README.md", md: true, titulo: "Ficha técnica P04 (Sim 1 + ESP32)" }
       ]
     },
-    SIM2: {
-      corto: "Sim 2 · Teach & Repeat",
-      linea: "Gemelo digital sobre las 2 pistas de SIM1 con enseñanza/repetición y radar ultrasónico.",
-      boton: "Abrir Simulador 2",
-      url: "prototipos/simulador-2-v2-teach-and-repeat/index.html",
-      tecnico: "Teach & Repeat · pistas A/B heredadas de SIM1 · radar ultrasónico integrado · navegación sin cinta.",
+    P05: {
+      corto: "Gemelo Digital (P05)",
+      linea: "El robot aprende la ruta y la repite sobre las 2 pistas del Simulador 1, con radar y tramos sin cinta.",
+      boton: "Abrir Gemelo Digital",
+      url: "prototipos/P05-gemelo-digital/index.html",
+      tecnico: "Teach & Repeat · pistas A/B del Simulador 1 (P04) · radar ultrasónico (P03) · navegación sin cinta.",
       links: [
-        { label: "Ficha técnica (.md)", href: "prototipos/simulador-2-v2-teach-and-repeat/README.md", md: true, titulo: "Ficha técnica Sim 2 · Teach & Repeat" }
-      ]
-    },
-    P10: {
-      corto: "Simulador ESP32 (P10)",
-      linea: "Telemetría virtual calibrada con SIM1: LiPo 3S, velocidad real 0,41–0,46 m/s y MQTT en vivo.",
-      boton: "Abrir Simulador ESP32",
-      url: "prototipos/P10-simulador-esp32/index.html",
-      tecnico: "ESP32 virtual · HiveMQ → EMQX → Mosquitto · paridad RF-05 · pruebas SIL + híbrido BLE (10/10).",
-      links: [
-        { label: "Tópicos MQTT (.md)", href: "docs/arquitectura/topicos-mqtt.md", md: true, titulo: "Tópicos MQTT" },
-        { label: "Firmware (.ino)", href: "firmware/robot_integrado.ino", download: true }
+        { label: "Ficha técnica (.md)", href: "prototipos/P05-gemelo-digital/README.md", md: true, titulo: "Ficha técnica P05 · Gemelo Digital" }
       ]
     },
     P09: {
@@ -442,7 +417,7 @@ a.ir:hover {
       return true;
     });
     // Los Listos primero en orden lógico del proyecto.
-    var ordenListos = ["P01", "P02", "P03", "P04", "SIM2", "P10", "P09"];
+    var ordenListos = ["P01", "P02", "P03", "P04", "P05", "P09"];
     lista = lista.slice().sort(function (a, b) {
       var ia = ordenListos.indexOf(a.codigo), ib = ordenListos.indexOf(b.codigo);
       if (ia === -1 && ib === -1) return 0;

@@ -29,14 +29,11 @@ jobs:
       - name: Pruebas del firmware en el PC (SIL)
         run: sh firmware/pruebas_pc/correr.sh
 
-      - name: Pruebas del escenario híbrido de P10 (SIL, Node)
-        run: node prototipos/P10-simulador-esp32/p10_hibrido_modelo.test.js
-
       - name: Pruebas del núcleo teach-and-repeat (specs/navegacion)
         run: node specs/navegacion/teach_and_repeat.test.js
 
-      - name: Pruebas del Simulador 2 V2 (planta física + núcleo compartido)
-        run: node prototipos/simulador-2-v2-teach-and-repeat/simulador_movimiento.test.js
+      - name: Pruebas del Gemelo Digital P05 (planta física + núcleo compartido)
+        run: node prototipos/P05-gemelo-digital/simulador_movimiento.test.js
 
       - name: Pruebas del Inspector de hardware P02 (ruta, sensores, modelo y manejo)
         run: node prototipos/P02-sensores/codigo/vitrina.test.js

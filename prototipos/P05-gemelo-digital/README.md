@@ -1,4 +1,4 @@
-# Simulador 2 V2 · teach-and-repeat sobre las 2 pistas de SIM1
+# P05 · Gemelo Digital · teach-and-repeat sobre las 2 pistas del Simulador 1 (P04)
 
 Gemelo digital de **movimiento** (SIL). Se abre por http (no por `file://`): carga `specs/navegacion/teach_and_repeat.js`, `specs/pista_canonica.json` y las pistas de SIM1 (`../P04-simulador-1-esp32/codigo/pista.js`) sin copiarlos.
 
@@ -34,4 +34,4 @@ Ficha roja arrastrable sobre la pista (o Enter sobre la ficha: 90 cm delante; Su
 | `pistas_sim1.js` | Adaptador de las pistas de SIM1 (κ(s), pose, rectitud) |
 | `radar_us.js` | Lógica del radar de P03 (cono, rampa, velocímetro) |
 | `gemelo_estado.js` | Estado del gemelo y puente con la app |
-| `simulador_movimiento.test.js`, `pistas_radar.test.js` | 38 pruebas en Node (CI): `node prototipos/simulador-2-v2-teach-and-repeat/simulador_movimiento.test.js` |
+| `simulador_movimiento.test.js`, `pistas_radar.test.js` | 38 pruebas en Node (CI): `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` |

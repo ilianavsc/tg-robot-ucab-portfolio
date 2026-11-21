@@ -1,4 +1,4 @@
-/* Simulador 2 V2 · lógica del radar ultrasónico (tomada de P03) sin DOM, para poder probarla en Node.
+/* P05 · Gemelo Digital · lógica del radar ultrasónico (tomada de P03) sin DOM, para poder probarla en Node.
  *
  * Qué trae de P03 (prototipos/P02-radar-ultrasonico/index.html):
  *   · zonas: crítica < 20 cm · precaución 20–50 cm · libre ≥ 50 cm (las mismas del firmware y del núcleo);

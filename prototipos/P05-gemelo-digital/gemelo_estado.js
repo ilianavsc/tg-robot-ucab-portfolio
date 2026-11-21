@@ -1,4 +1,4 @@
-/* Simulador 2 V2 · estado del gemelo digital y puente con la app Flutter. Sin DOM.
+/* P05 · Gemelo Digital · estado del gemelo digital y puente con la app Flutter. Sin DOM.
  *
  * Formato del estado (una sola fuente para la página, las pruebas y el mapa de la app):
  *   { pista, x, y, angulo, velocidad_ms, frente_cm, atras_cm, alerta, s_m }

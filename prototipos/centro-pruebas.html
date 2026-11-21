@@ -45,40 +45,40 @@
 <main>
 <p class="ceja">Centro de pruebas · para el jurado</p>
 <h1>El flujo completo, <em>en 3 pasos</em></h1>
-<p class="bajada">El robot virtual manda sus datos, el panel los ve pasar y la app los muestra. Hazlo en este orden: cada herramienta se abre en una pestaña nueva y esta guía queda aquí.</p>
+<p class="bajada">El robot (en simulación), el panel de control y la app. Cada herramienta se abre en una pestaña nueva y esta guía queda aquí.</p>
 
 <div class="antes">
   <b>Antes de empezar</b>
   <span>Usa una computadora con Chrome o Edge.</span>
-  <span>Ten internet: los 3 se hablan por un broker MQTT público.</span>
-  <span>Deja las pestañas abiertas una al lado de la otra.</span>
+  <span>Sin el robot real, cada pieza se prueba por separado (SIL).</span>
+  <span>Con el ESP32 real (diciembre) el panel y la app se conectan a él por MQTT.</span>
 </div>
 
 <div class="flujo">
   <section class="paso" style="--c:var(--sale)" aria-labelledby="p1">
     <span class="num" aria-hidden="true">1</span>
-    <p class="tag">P10 · el robot</p>
-    <h2 id="p1">Encender el ESP32 virtual</h2>
+    <p class="tag">P04 y P05 · el robot</p>
+    <h2 id="p1">Ver al robot en simulación</h2>
     <ol>
-      <li>Pulsa <b>"⚡ Encender ESP32 Virtual"</b>.</li>
-      <li>Espera la luz verde y mira a qué broker se conectó.</li>
+      <li>En <b>P04</b> mira la placa ESP32: un LED por sensor de línea.</li>
+      <li>En <b>P05</b> el robot aprende la ruta y la repite, también sin cinta.</li>
     </ol>
-    <p class="ves"><b>Lo que debes ver</b>Cada 2 s sale un mensaje de estado: batería, modo y posición de la línea.</p>
-    <a class="abrir" href="P10-simulador-esp32/" target="_blank" rel="noopener">1. Encender ESP32 Virtual (P10)&nbsp;↗</a>
+    <p class="ves"><b>Lo que debes ver</b>Los 4 LEDs se encienden según la cinta que pisa el robot, y en P05 el viaje se repite solo.</p>
+    <a class="abrir" href="P04-simulador-1-esp32/" target="_blank" rel="noopener">1. Abrir Simulador 1 + ESP32 (P04)&nbsp;↗</a>
+    <a class="alt" href="P05-gemelo-digital/index.html" target="_blank" rel="noopener">Abrir el Gemelo Digital (P05) ↗</a>
   </section>
 
   <section class="paso" style="--c:var(--qos)" aria-labelledby="p2">
     <span class="num" aria-hidden="true">2</span>
     <p class="tag">P01 · el panel de control</p>
-    <h2 id="p2">Ver el panel de control</h2>
+    <h2 id="p2">Ver cómo viajan los mensajes</h2>
     <ol>
-      <li>Pulsa <b>"Conectar al broker"</b>.</li>
-      <li>Mira el registro: ahí llegan los mensajes del robot.</li>
-      <li>Pulsa <b>"Enviar un pedido"</b>.</li>
+      <li>Abre la animación 3D y elige QoS 0, 1 o 2.</li>
+      <li>Con el ESP32 real encendido: en el panel pulsa <b>"Conectar al broker"</b> y luego <b>"Enviar un pedido"</b>.</li>
     </ol>
-    <p class="ves"><b>Lo que debes ver</b>El estado del P10 cada 2 s y, al pedir, "Confirmado P-0001 en … ms": el P10 recibió el pedido y lo confirmó.</p>
-    <a class="abrir" href="P01-mqtt-base/banco.html" target="_blank" rel="noopener">2. Ver Panel de Control (P01)&nbsp;↗</a>
-    <a class="alt" href="P01-mqtt-base/simulador-3d/simulador.html" target="_blank" rel="noopener">¿Cómo viajan los mensajes? Ver la animación 3D ↗</a>
+    <p class="ves"><b>Lo que debes ver</b>En la animación, cada mensaje y su confirmación. Con el robot real, "Confirmado P-0001 en … ms".</p>
+    <a class="abrir" href="P01-mqtt-base/simulador-3d/simulador.html" target="_blank" rel="noopener">2. Ver la animación de los mensajes (P01)&nbsp;↗</a>
+    <a class="alt" href="P01-mqtt-base/banco.html" target="_blank" rel="noopener">Panel de control (con el ESP32 real) ↗</a>
   </section>
 
   <section class="paso" style="--c:var(--pend)" aria-labelledby="p3">
@@ -86,10 +86,10 @@
     <p class="tag">P09 · la app</p>
     <h2 id="p3">Abrir la app móvil</h2>
     <ol>
-      <li>Espera unos segundos a que conecte.</li>
-      <li>Revisa arriba ("Enlace MQTT") que use el mismo broker que el P10.</li>
+      <li>Pulsa <b>"Modo Demo"</b> para ver el robot simulado sin red.</li>
+      <li>Con el ESP32 real: revisa arriba ("Enlace MQTT") que use el mismo broker que el robot.</li>
     </ol>
-    <p class="ves"><b>Lo que debes ver</b>La app sale del "Modo demo" y muestra la batería y la línea del robot en vivo.</p>
+    <p class="ves"><b>Lo que debes ver</b>El mapa de la pista y la opción de hacer un envío; con el robot real, su batería y su línea en vivo.</p>
     <a class="abrir oscuro" href="../app/" target="_blank" rel="noopener">3. Abrir App Móvil (P09)&nbsp;↗</a>
   </section>
 </div>
@@ -97,9 +97,9 @@
 <section class="aviso-pruebas" aria-labelledby="t-limites">
   <h2 id="t-limites">Si algo no aparece</h2>
   <ul>
-    <li><b>El panel (paso 2) no ve nada:</b> los 3 prueban HiveMQ, luego EMQX y luego Mosquitto. Revisa que el P10 y el panel digan el mismo broker; si no, pulsa "Reconectar" en el panel.</li>
-    <li><b>La app sigue en "Modo demo":</b> revisa que el P10 siga encendido y que los dos digan el mismo broker.</li>
-    <li><b>Un pedido no se confirma:</b> revisa que el P10 siga encendido. Si hay dos P10 abiertos (por ejemplo, otra persona probando a la vez), cada uno confirma y el panel marca el pedido como repetido.</li>
+    <li><b>El panel (paso 2) no ve nada:</b> sin el ESP32 real no hay robot que publique; usa la animación 3D. Con el robot real, el panel y el robot prueban HiveMQ, luego EMQX y luego Mosquitto: revisa que digan el mismo broker y pulsa "Reconectar".</li>
+    <li><b>La app no sale del "Modo demo":</b> es lo esperado sin robot real. Con el ESP32 encendido, revisa que los dos usen el mismo broker.</li>
+    <li><b>Un pedido no se confirma:</b> revisa que el ESP32 real siga encendido y conectado al mismo broker.</li>
   </ul>
 </section>
 </main>

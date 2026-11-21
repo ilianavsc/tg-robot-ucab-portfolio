@@ -1,4 +1,4 @@
-/* Pruebas de SIM2 V2 con las dos pistas de SIM1, la enseñanza real (Teach), el radar P03 y el estado del gemelo digital.
+/* Pruebas de P05 (Gemelo Digital) con las dos pistas de SIM1, la enseñanza real (Teach), el radar P03 y el estado del gemelo digital.
  * Lo carga simulador_movimiento.test.js (que es el que corre en CI): no se ejecuta solo.
  * Importa las pistas y la física de SIM1 tal cual (ESM), sin copiarlas. */
 "use strict";

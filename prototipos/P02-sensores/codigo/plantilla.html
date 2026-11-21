@@ -10,22 +10,24 @@
 </head>
 <body data-modo="auto">
 <div class="app" id="app">
-  <canvas id="lienzo" tabindex="0" aria-label="Vista 3D del robot: recorre solo la ruta o se maneja con W A S D, las flechas o el D-Pad" role="img"></canvas>
+  <canvas id="lienzo" tabindex="0" aria-label="Inspector 3D de los componentes del robot: toca una pieza para ver su ficha; se maneja con W A S D, las flechas o el D-Pad" role="img"></canvas>
   <svg id="guias" aria-hidden="true"></svg>
   <div id="etiquetas"></div>
 
   <div class="barra" role="toolbar" aria-label="Controles">
+    <button class="btn" id="b-xray" type="button" aria-pressed="false"><span aria-hidden="true">🩻</span><span class="largo"> Rayos X</span></button>
+    <button class="btn" id="b-etiq" type="button" aria-pressed="true" aria-label="Etiquetas"><span aria-hidden="true">🏷️</span><span class="largo"> Etiquetas</span></button>
+    <button class="btn" id="b-vista" type="button" aria-label="Cambiar la vista de la cámara"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Inspección</span></button>
     <div class="grupo" role="group" aria-label="Modo de manejo">
       <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
       <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
     </div>
     <button class="btn pri" id="b-pausa" type="button" aria-pressed="false" aria-label="Pausar"><span class="ic" aria-hidden="true"></span><span class="tx">Pausar</span></button>
-    <button class="btn" id="b-xray" type="button" aria-pressed="false"><span aria-hidden="true">🩻</span><span class="largo"> Rayos X</span></button>
-    <button class="btn" id="b-etiq" type="button" aria-pressed="true" aria-label="Etiquetas"><span aria-hidden="true">🏷️</span><span class="largo"> Etiquetas</span></button>
-    <button class="btn" id="b-vista" type="button" aria-label="Cambiar la vista de la cámara"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Inspección</span></button>
+    <button class="btn" id="b-consola" type="button" aria-pressed="false" aria-controls="consola"><span aria-hidden="true">📟</span> Consola de sensores</button>
   </div>
+  <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para ver su ficha</p>
 
-  <section class="consola" id="consola" aria-label="Consola de sensores en vivo">
+  <section class="consola" id="consola" aria-label="Consola de sensores en vivo" hidden>
     <div class="c-velo" id="velocimetro" role="img" aria-label="Velocímetro">
       <svg viewBox="0 0 80 46" aria-hidden="true">
         <path class="c-velo-pista" d="M 10 40 A 30 30 0 0 1 70 40"/>

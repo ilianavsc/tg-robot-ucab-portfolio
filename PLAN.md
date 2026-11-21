@@ -22,8 +22,8 @@ gantt
 
     section Fase II: Diseño del Sistema
     Arquitectura MQTT, CAD y esquemáticos     :active, f2, 2026-11-23, 2026-12-18
-    P03 (Control motor y Encoders)            :active, p03, 2026-11-23, 2026-12-05
-    P08 (Seguidor de línea óptico)            :active, p08, 2026-12-01, 2026-12-18
+    P02 (Control motor y Encoders)            :active, p03, 2026-11-23, 2026-12-05
+    P04 (Seguidor de línea óptico)            :active, p08, 2026-12-01, 2026-12-18
 
     section Fase III: Construcción & Firmware
     Montaje físico y Firmware integrado       :f3, 2026-12-21, 2027-02-05
@@ -32,12 +32,12 @@ gantt
 
     section Fase IV: Navegación Progresiva
     Mapeo, odometría y filtro Kalman          :f4, 2027-02-08, 2027-03-12
-    P04 (Balizas BLE (Extremos))            :p04, 2027-02-15, 2027-03-12
+    P14 (Balizas BLE (Extremos))            :p04, 2027-02-15, 2027-03-12
 
     section Fase V: App Móvil & Backend
     Ventana de Oro (Dedicación intensiva)     :crit, v_oro, 2027-03-15, 2027-04-09
     App en Flutter y enlace Firebase          :f5, 2027-03-15, 2027-04-16
-    P05 (Firebase)                            :p06, 2027-03-22, 2027-04-16
+    P06 (Firebase)                            :p06, 2027-03-22, 2027-04-16
 
     section Fase VI: Integración Total
     Alertas antirrobo y calibración física    :f6, 2027-04-19, 2027-05-07
@@ -64,28 +64,26 @@ gantt
 
 ---
 
-## 🤖 Catálogo de Prototipos de Ingeniería (P01 a P13)
+## 🤖 Catálogo de Prototipos de Ingeniería (P01 a P14)
 
 La lista oficial está en `datos/proyecto.js`. Estado al 19 nov 2026 (todo lo marcado como hecho o en pruebas es **SIL**; el **HIL** con el ESP32 real empieza en diciembre):
 
 | Código | Prototipo | Estado |
 | :--- | :--- | :--- |
 | P01 | Así se hablan el robot y la app (MQTT, QoS, LWT < 22 s) | Hecho |
-| P02 | Los sentidos del robot (4× TCRT5000 + 2× HC-SR04P) | En pruebas (simulación) |
-| P03 | Motores que van parejo (JGA25-371, PWM 20 kHz, encoders) | En pruebas (simulación) |
-| P04 | Balizas BLE (Extremos) (re-localización con 2 ESP32 fijos como balizas BLE; ver `docs/arquitectura/balizas-ble.md`) | Pendiente (diseño y simulación; BLE y MPU-6050 **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]**) |
-| P05 | Robot virtual y puente Firebase | Pendiente |
+| P02 | Inspector de hardware (4× TCRT5000, 2× HC-SR04P, MPU-6050, tracción JGA25-371 con encoders) | Hecho en simulación (falta HIL) |
+| P03 | Radar ultrasónico Frente/Atrás | Hecho en simulación |
+| P04 | Simulador 1 + ESP32 (seguir la línea, PD a 100 Hz, placa ESP32 con LEDs) | Hecho en simulación |
+| P05 | Gemelo Digital (teach & repeat sobre las pistas de P04) | Hecho en simulación |
+| P06 | Robot virtual y puente Firebase | En pruebas |
 | P07 | El cerebro completo (`firmware/robot_integrado.ino`) | En pruebas (10 escenarios SIL T1-T10 en PC y CI; falta HIL con el ESP32 real) |
-| P08 | Seguir la línea (PD a 100 Hz, simulador 3D) | En pruebas (simulación) |
 | **P09** | **App Flutter (v1 · Modo Demo)** (`app/`): Mapa de Pista, Freno Remoto, login/RBAC local (maqueta en memoria), perfiles y Aprendizaje de Ruta (Admin) | Hecho (SIL; sin backend de producción) |
-| **P10** | **Prueba ESP32 ↔ App Web** (robot falso en el navegador), con escenario híbrido de tramo sin cinta y RSSI BLE | Hecho (SIL) |
 | P11 | Centro de Alertas en la app (obstáculo, sensor sin eco, proximidad, batería) | En pruebas (simulación) |
 | P12 | Analítica de sesión y reporte CSV | En pruebas (simulación) |
-| P13 | Radar ultrasónico Frente/Atrás | En pruebas (simulación) |
+| P14 | Balizas BLE (Extremos) (re-localización con 2 ESP32 fijos como balizas BLE; ver `docs/arquitectura/balizas-ble.md`) | Pendiente (diseño y simulación; BLE y MPU-6050 **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]**) |
 
-**P09 ≠ P10:** P09 es la app que usa el operador; P10 es el ESP32 de mentira que le
-habla por MQTT. Juntos son el **Gemelo Digital** para llegar a diciembre con el software
-validado.
+La app (P09) muestra el robot en **Modo Demo**; el **Gemelo Digital (P05)** simula el movimiento
+(enseñar y repetir la ruta) para llegar a diciembre con el software validado.
 
 ### Seguridad que ya está en el firmware y en el Gemelo Digital
 - Obstáculo frontal < 20 cm: parada, alerta QoS 2, solo se permite retroceder con atrás ≥ 20 cm y sensor válido.
@@ -104,9 +102,9 @@ validado.
 Citas unificadas en **IEEE**. RF-05: «se detiene con el frente a < 20 cm». Autonomía **estimada** (≈ 3 h), no medida. RNF-04: 4,1 s de latencia es del banco P01 con broker público (SIL), no del sistema real. Detalle en `docs/tomo/auditoria-tesis-vs-sistema.md`.
 
 ### Cómo levantar el Gemelo Digital
-1. `prototipos/P10-simulador-esp32/index.html` → **Encender ESP32 Virtual**.
-2. App `https://ilianavsc.github.io/tg-robot-ucab/app/` → mismo broker → **Conectar**.
-3. Panel **Inyección de Eventos Virtuales (SIL)** del P10 → mirar el banner P11 y la tarjeta P12 en la app.
+1. `prototipos/P05-gemelo-digital/index.html` → elegir pista → enseñar la ruta y repetirla.
+2. App `https://ilianavsc.github.io/tg-robot-ucab/app/` → **Modo Demo** → mirar el banner P11 y la tarjeta P12.
+3. Con el ESP32 real (diciembre): app y robot en el mismo broker → **Conectar**.
 
 ---
 

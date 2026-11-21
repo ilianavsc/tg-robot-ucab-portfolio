@@ -3,7 +3,7 @@
 Prefijo común: `ucab-tg-sf/robot/`
 
 Fuente de verdad del contrato: `firmware/robot_integrado.ino`. El ESP32 virtual
-(`prototipos/P10-simulador-esp32/`) y la App Flutter (`app/lib/core/mqtt/mqtt_service.dart`)
+(el ESP32 virtual de los primeros prototipos, hoy retirado) y la App Flutter (`app/lib/core/mqtt/mqtt_service.dart`)
 usan exactamente estos nombres de campo.
 
 | Tópico | Quién lo envía | QoS | Retenido | Para qué |
@@ -34,7 +34,7 @@ usan exactamente estos nombres de campo.
 | `parada` | texto | Motivo de los motores en 0: `ninguna`, `obstaculo_frente`, `obstaculo_atras`, `fallo_sensor_frente`, `fallo_sensor_atras`, `corte_bateria`, `timeout`, `red`, `arranque` |
 | `t` | entero | `millis()` del robot |
 
-El P10 añade además `sensores` (`[0,1,1,0]`, lectura binaria de los 4 TCRT5000) para pintar la regleta.
+El ESP32 virtual (retirado) añadía además `sensores` (`[0,1,1,0]`, lectura binaria de los 4 TCRT5000) para pintar la regleta.
 
 ## `ultrasonido` (robot → app, QoS 0, cada 0,5 s)
 
@@ -56,7 +56,7 @@ asume camino libre**.
 
 Umbrales (RF-05): `< 20 cm` parada, `20–50 cm` aviso, `> 50 cm` despejado.
 
-> **Solo simulación:** P10 puede publicar `ucab-tg-sf/robot/ble_sim` (QoS 0, `{"baliza","rssi_dbm","simulado":true,"t"}`) en su escenario híbrido. No forma parte del contrato real ni del firmware (ver `balizas-ble.md`).
+> **Solo simulación:** el ESP32 virtual (retirado) publicaba `ucab-tg-sf/robot/ble_sim` (QoS 0, `{"baliza","rssi_dbm","simulado":true,"t"}`) en su escenario híbrido. No forma parte del contrato real ni del firmware (ver `balizas-ble.md`).
 
 Lectura alternada: ciclo par = frente, ciclo impar = atrás (100 ms por ciclo). Cada módulo
 tiene su propio TRIG (frente GPIO 23, atrás GPIO 15): solo emite el sensor de turno y
@@ -118,4 +118,4 @@ cuando llega la misma alerta por este tópico.
 - **QoS 2 (alertas):** una alerta debe llegar exactamente una vez.
 
 Probado en el prototipo P01 (ver `prototipos/P01-mqtt-base`) y en el Gemelo Digital
-(P10 + App P09).
+(App P09 en Modo Demo y Gemelo Digital P05).

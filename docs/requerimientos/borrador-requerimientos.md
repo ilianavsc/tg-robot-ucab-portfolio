@@ -53,9 +53,9 @@ Lleven cinta métrica, un teléfono para fotos (con permiso) y, si pueden, el ES
 | RF-01 | Recibir pedidos desde la app (componente, cantidad, ubicación) y confirmarlos | Cada confirmación trae el número del pedido; 0 pedidos perdidos en 50 | P01 (T3, T4) | Validado en simulación |
 | RF-02 | Informar su estado de forma periódica | Un mensaje cada 2 s | P01 (T2) | Validado en simulación |
 | RF-03 | Avisar si el robot se desconecta | Aviso en menos de 30 s | P01 (T6) | Validado en simulación (22 s) |
-| RF-04 | Ir por la línea del mostrador al estante y volver | Error de posición ≤ ? cm al llegar | P08, H4 | Pendiente |
+| RF-04 | Ir por la línea del mostrador al estante y volver | Error de posición ≤ ? cm al llegar | P04, H4 | Pendiente |
 | RF-05 | Detectar un obstáculo y detenerse | Se detiene cuando el obstáculo frontal está a < 20 cm | P02 | Pendiente (distancia final de parada: [PENDIENTE DE MEDICIÓN FÍSICA]) |
-| RF-06 | Re-localizarse en puntos de referencia | Corrige su posición en cada punto (2 balizas BLE en los extremos) | P04, Fase IV | Pendiente |
+| RF-06 | Re-localizarse en puntos de referencia | Corrige su posición en cada punto (2 balizas BLE en los extremos) | P14, Fase IV | Pendiente |
 | RF-07 | Transportar los componentes pedidos | Carga hasta ? g sin perder la línea | H5 | Pendiente |
 | RF-08 | Alarmar si alguien lo levanta o lo mueve sin una orden | La alarma llega a la app 1 sola vez; ≤ ? falsas alarmas en N recorridos | P11, H6 | Pendiente |
 | RF-09 | Permitir pedir, ver el estado y recibir avisos desde la app | Notificación en ≤ 5 s | P06, P09, P11 | Pendiente |
@@ -92,5 +92,5 @@ Cambios respecto a la lista v1: divisor de batería corregido, RPM de motores de
 | Movimiento y alarma | MPU6050 (GY-521) | Sin alternativa | Odometría y detección de levantamiento | Preguntar al laboratorio |
 | Ruedas | 65 mm con acople metálico de 4 mm | Cubo impreso en PLA | El cubo impreso suele patinar en el eje | Por comprar |
 | Rueda loca | Altura igual al eje de las ruedas | Sin alternativa | Mantiene los TCRT5000 a pocos mm del piso | Por comprar |
-| Re-localización | ESP32-C3 SuperMini como balizas BLE | Lector de QR (GM65) | Se decide con la prueba P04 | Abierta: Fase II |
+| Re-localización | ESP32-C3 SuperMini como balizas BLE | Lector de QR (GM65) | Se decide con la prueba P14 | Abierta: Fase II |
 | Mecanismo de carga | ? (bandeja o pinza) | ? | Depende del pedido típico (entrevista, pregunta 3) | Abierta |

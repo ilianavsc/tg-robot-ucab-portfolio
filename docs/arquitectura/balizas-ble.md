@@ -19,7 +19,7 @@ El pedido de hardware incluye 3 ESP32: uno para el robot y dos para las balizas.
 3. Mientras avanza, escanea la baliza del siguiente punto de control y mide su **RSSI**.
 4. Cuando el RSSI supera un umbral durante varias lecturas seguidas, la baliza **confirma proximidad**: el robot reacopla la cinta (o se detiene en la estación).
 
-## Supuestos usados en P10 (`p10_hibrido_modelo.js`)
+## Supuestos de simulación (antes en el ESP32 virtual, hoy en el Gemelo Digital P05)
 
 | Parámetro | Valor simulado |
 |---|---|
@@ -29,11 +29,11 @@ El pedido de hardware incluye 3 ESP32: uno para el robot y dos para las balizas.
 | Velocidad sin cinta | 0,35 m/s |
 | Sesgo del giroscopio / ganancia del hold | 0,30 °/s / 1,2 s⁻¹ |
 
-El modelo se prueba con `node prototipos/P10-simulador-esp32/p10_hibrido_modelo.test.js` (10 pruebas, también en CI). En P10, el panel *Simulación Híbrida (SIL)* muestra la fase, los TCRT5000, el desvío relativo, la deriva con y sin hold, y el RSSI de cada baliza.
+El modelo del ESP32 virtual (10 pruebas) se retiró junto con él; el tramo sin cinta, el heading hold y el RSSI de las 2 balizas se prueban hoy en el Gemelo Digital (`node prototipos/P05-gemelo-digital/simulador_movimiento.test.js`, también en CI). En el ESP32 virtual, el panel *Simulación Híbrida (SIL)* muestra la fase, los TCRT5000, el desvío relativo, la deriva con y sin hold, y el RSSI de cada baliza.
 
 ## Contrato MQTT
 
-El firmware **no publica** nada de BLE. Para la simulación, P10 puede publicar `ucab-tg-sf/robot/ble_sim` (QoS 0): `{"baliza":"cuarto"|"lab1","rssi_dbm":-78.4,"simulado":true,"t":<ms>}`. Ese tópico **no existe en el contrato real** (`topicos-mqtt.md`) y la app no lo usa.
+El firmware **no publica** nada de BLE. Para la simulación, el ESP32 virtual (retirado) publicaba `ucab-tg-sf/robot/ble_sim` (QoS 0): `{"baliza":"cuarto"|"lab1","rssi_dbm":-78.4,"simulado":true,"t":<ms>}`. Ese tópico **no existe en el contrato real** (`topicos-mqtt.md`) y la app no lo usa.
 
 ## En la app
 

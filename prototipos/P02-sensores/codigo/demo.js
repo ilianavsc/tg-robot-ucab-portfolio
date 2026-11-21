@@ -1,6 +1,6 @@
 // El robot del Inspector de hardware (P02): recorre solo la ruta cerrada (automático) o se maneja a mano
 // con la misma modalidad del Simulador 1 (P04): W A S D / flechas o D-Pad, Espacio frena.
-// No es la máquina de estados de teach-and-repeat (esa vive en specs/navegacion y en el Simulador 2 V2).
+// No es la máquina de estados de teach-and-repeat (esa vive en specs/navegacion y en el Gemelo Digital (P05)).
 import {R, VMAX, cinematica, dutyPara, encoderHz, motor, ruedas} from './model.js';
 import {GEO, OBSTACULOS, ZONAS, crearRuta, lineaSensores, ultrasonido, zonaDe} from './ruta.js';
 

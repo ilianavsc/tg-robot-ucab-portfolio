@@ -1,6 +1,7 @@
-// Inspector de hardware (P02): el robot recorre solo una ruta cerrada (Auto) o se maneja a mano con la misma
-// modalidad del Simulador 1 (P04): W A S D o flechas, Espacio frena, o el D-Pad táctil. La consola de sensores
-// muestra en vivo el velocímetro y los 4 sensores de línea; las fichas explican cada componente.
+// Inspector de hardware (P02): lo principal es la inspección de los componentes reales del robot (etiquetas 3D,
+// tira de piezas y ficha de cada una, rayos X). El robot recorre solo una ruta cerrada (Auto) o se maneja a mano con
+// la modalidad del Simulador 1 (P04): W A S D o flechas, Espacio frena, o el D-Pad. La consola de sensores
+// (velocímetro + 4 LEDs de línea) es opcional: empieza oculta y se abre con su botón.
 import * as THREE from 'three';
 import {SIN_WEBGL, crearAviso, vigilarContexto} from './arranque.js';
 import {crearDemo} from './demo.js';
@@ -234,6 +235,20 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   });
   canvas.addEventListener('pointerdown', () => window.focus());
 
+  // ---------------------------------------------------------------- consola de sensores (opcional)
+  const consola = $('#consola');
+  const bConsola = $('#b-consola');
+  const ponConsola = (on) => {
+    consola.hidden = !on;
+    bConsola.setAttribute('aria-pressed', String(on));
+    $('#app').classList.toggle('con-consola', on);
+    if (on) {
+      $('#app').style.setProperty('--ancho-consola', `${consola.offsetWidth}px`);
+      previo = '';
+    }
+  };
+  bConsola.addEventListener('click', () => ponConsola(consola.hidden));
+
   // ---------------------------------------------------------------- consola de sensores (estilo del radar P03)
   const VEL_MAX = 0.46; // misma escala que el velocímetro del radar (máx. del Simulador 1)
   const ARCO = 94.25;
@@ -246,6 +261,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const lineaLeds = $('#linea-leds');
   let previo = '';
   const refrescaConsola = () => {
+    if (consola.hidden) return;
     const v = Math.abs(est.v);
     const r = Math.max(0, Math.min(1, v / VEL_MAX));
     const color = est.bloqueado ? '#ef4444' : demo.zonaFrente() === 'precaucion' ? '#f59e0b' : '#22c55e';
@@ -277,6 +293,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const fCuerpo = $('#f-cuerpo');
   const abrirFicha = (id) => {
     ui.sel = id;
+    if (id) $('#pista-tocar').hidden = true;
     $$('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.comp === id)));
     $$('.et').forEach((e) => e.classList.toggle('act', e.dataset.comp === id));
     if (!id) {
@@ -571,7 +588,10 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   new ResizeObserver(medir).observe($('#consola'));
   resize();
   irA('inspeccion', true);
-  ponEtiquetas(canvas.clientWidth >= 640); // en el teléfono las etiquetas 3D empiezan apagadas: menos texto
+  ponEtiquetas(true); // la inspección es lo principal: etiquetas 3D encendidas en todos los tamaños
+  ponConsola(false); // la consola de sensores es opcional: empieza oculta
+  // en pantallas anchas se abre de entrada la ficha de la regleta de sensores
+  if (canvas.clientWidth >= 900) abrirFicha('tcrt');
   // pasos iniciales para que no arranque en cero
   for (let i = 0; i < 240; i++) {
     demo.paso(1 / 120);
@@ -592,6 +612,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ponPausa,
     ponEtiquetas,
     ponModo,
+    ponConsola,
     manual: MANUAL,
     vmax: VMAX,
     xray: (on) => {

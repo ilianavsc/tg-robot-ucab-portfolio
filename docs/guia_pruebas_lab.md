@@ -142,7 +142,7 @@ Incluye subida por Wi-Fi + broker público + procesamiento del robot + vuelta.
 
 ## Bloque D · Prueba física con la App Flutter (20 min)
 
-**Objetivo:** repetir con el ESP32 real el ciclo que ya funciona en el simulador P10: orden desde la app, recepción en el robot, ACK de vuelta. Flujo corto también en `docs/centro_de_pruebas.md`.
+**Objetivo:** repetir con el ESP32 real el ciclo que ya funcionaba con el ESP32 virtual (hoy retirado) y en el Modo Demo: orden desde la app, recepción en el robot, ACK de vuelta. Flujo corto también en `docs/centro_de_pruebas.md`.
 
 ### D.1 · Flujo
 1. [ ] **Conectar el ESP32** por USB; en el monitor deben salir `Wi-Fi listo` y `MQTT conectado`.

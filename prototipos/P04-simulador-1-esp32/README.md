@@ -1,6 +1,6 @@
 # P04 · Simulador 1 + ESP32 (seguir la línea)
 
-> **Fusión (P04):** el Simulador 1 de aprendizaje progresivo lleva dentro la **placa ESP32** del Simulador del ESP32: 4 LEDs (S1…S4, GPIO 36/39/34/35) encendidos con la misma lectura binaria del lazo PD, barras PWM de ENA/ENB y el LED TX de la telemetría cada 2 s. Se pintan en cada cuadro, sincronizados con el robot en la pista (`ledsEsp32()` en `codigo/sim.js`, 3 pruebas en `simulador1.test.js`). La prueba en vivo ESP32 ↔ App por MQTT sigue en [`P10`](../P10-simulador-esp32/index.html).
+> **Fusión (P04):** el Simulador 1 de aprendizaje progresivo lleva dentro la **placa ESP32** (antes un simulador aparte, hoy retirado): 4 LEDs (S1…S4, GPIO 36/39/34/35) encendidos con la misma lectura binaria del lazo PD, barras PWM de ENA/ENB y el LED TX de la telemetría cada 2 s. Se pintan en cada cuadro, sincronizados con el robot en la pista (`ledsEsp32()` en `codigo/sim.js`, 3 pruebas en `simulador1.test.js`).
 
 **Fase:** I (planificado para la semana 13)
 **Fecha:** 14 nov 2026
@@ -18,7 +18,7 @@ El simulador es ahora la **base modular** de los próximos simuladores, donde la
 - **Control:** teclado (`W A S D` o flechas, `Espacio` frena, `M` cambia de modo, `R` reinicia) y mini D-Pad táctil (▲ ▼ ◄ ► + STOP, clic sostenido o `pointerdown`/`touchstart`/`touchend`). Modo **Manual** o **Seguidor automático**.
 - **Dos pistas:** **A** (circuito histórico de 8,05 m, se conserva) y **B** (recorrido canónico de 9,0 m, Pasillo UCAB, de `specs/pista_canonica.json`, con tramos T1 a T4, rectas largas y curvas técnicas).
 - **Panel en vivo:** 4× TCRT5000 `[0/1,…]`, error lateral medido y real, velocidad, distancia, rumbo, tiempo de vuelta y de tramo, salidas de línea y una tabla de comparación por pista y modo.
-- **Preparación modular:** `pista.js` (definición de pistas, tramos y máscara de cinta, `ocultarTramo()`), `linea.js` (lectura de la línea y control PD), `model.js` (física) y `sim.js` (sesión). Este simulador no oculta cinta; no incluye teach-and-repeat (eso es del Simulador 2 V2).
+- **Preparación modular:** `pista.js` (definición de pistas, tramos y máscara de cinta, `ocultarTramo()`), `linea.js` (lectura de la línea y control PD), `model.js` (física) y `sim.js` (sesión). Este simulador no oculta cinta; no incluye teach-and-repeat (eso es del Gemelo Digital (P05)).
 - **Pruebas:** `node codigo/simulador1.test.js` (16) y `G=1 PISTA=B node codigo/pruebas.mjs 0.03 0.0015 0.8 18 60 11.1 70`. Con los valores del firmware: pista A 19,7 s (0,41 m/s), pista B 22,4 s (0,40 m/s), sin salidas. **[PENDIENTE DE MEDICIÓN FÍSICA]**
 - **Recompilar:** `cd codigo && npm install --no-save three@0.187.0 esbuild && node construir.mjs`.
 
