@@ -7,7 +7,7 @@
   Este archivo FUSIONA los tres prototipos del proyecto:
     P01 (robot_mqtt)        -> Wi-Fi, MQTT, pedidos + ack, alertas QoS 2, batería
     P03 (traccion_encoders) -> PWM del L298N, encoders por interrupción, PID opcional
-    P08 (seguidor_linea)    -> control PD del seguidor de línea a 100 Hz
+    P04 (seguidor_linea)    -> control PD del seguidor de línea a 100 Hz
 
   REGLAS DE ESTE FIRMWARE
     1. NO se usa delay() en ninguna parte. Todos los tiempos van con millis().
@@ -163,7 +163,7 @@ struct Pid { float integral = 0.0f; float errPrev = 0.0f; };
 Pid pidIzq, pidDer;
 
 // =====================================================================
-// 3. CONTROL DEL SEGUIDOR DE LÍNEA (PD de P08)
+// 3. CONTROL DEL SEGUIDOR DE LÍNEA (PD de P04)
 // =====================================================================
 // Ganancias del PD. Son las de la simulación: calibrar con el robot real
 // (primero KP hasta que no zigzaguee, después KD).
@@ -209,7 +209,7 @@ float xSensor(int i) { return (1.5f - i) * SEP_MM; }
 
 /*
   El corazón del modo autónomo: de las 4 lecturas a los PWM de cada motor.
-  Es la misma cuenta que control() del simulador (P08):
+  Es la misma cuenta que control() del simulador (P04):
 
     1. Normaliza cada lectura entre ADC_PISO y ADC_CINTA.
     2. Calcula la posición de la línea como promedio ponderado por la
@@ -220,7 +220,7 @@ float xSensor(int i) { return (1.5f - i) * SEP_MM; }
 
   Nota del signo: si la línea está a la izquierda (error positivo), la
   corrección positiva frena la rueda izquierda y acelera la derecha, o sea
-  el robot gira hacia la izquierda. Así venía en P08 y se conserva.
+  el robot gira hacia la izquierda. Así venía en P04 y se conserva.
 */
 SalidaLinea calcularControl(EstadoLinea &e, const int raw[4], float dt) {
   SalidaLinea s;
@@ -447,7 +447,7 @@ bool alertaObstaculoAtrasEnviada = false;
 
 // Umbrales de seguridad RF-05 (obstáculos):
 //   < UMBRAL_PARADA_CM       -> detener el robot
-//   UMBRAL_PARADA_CM..AVISO  -> zona de aviso (ámbar en el radar P13)
+//   UMBRAL_PARADA_CM..AVISO  -> zona de aviso (ámbar en el radar P03)
 //   > UMBRAL_AVISO_CM        -> despejado
 const float UMBRAL_PARADA_CM = 20.0f;
 const float UMBRAL_AVISO_CM  = 50.0f;
@@ -533,7 +533,7 @@ unsigned long ordenesDuplicadas = 0;
 
 // Cola de pedidos que falta confirmar (se confirma en loop, no en el callback).
 // Se guarda también cuántas órdenes llevaba el robot AL RECIBIR cada una, para
-// que "recibidas" sea el mismo número que manda el ESP32 virtual P10.
+// que "recibidas" sea el mismo número que manda el simulador P04.
 const int MAX_PENDIENTES = 60;
 String idsPendientes[MAX_PENDIENTES];
 unsigned long recibidasPendientes[MAX_PENDIENTES];
@@ -719,7 +719,7 @@ void gestionarRed() {
   }
 }
 
-// Arma la confirmación con el mismo JSON que el ESP32 virtual P10:
+// Arma la confirmación con el mismo JSON que el simulador P04:
 // {"id":"<id de la orden>","recibidas":N,"t":<millis>}
 String armarAck(const String &id, unsigned long recibidas, unsigned long t) {
   return "{\"id\":\"" + id + "\",\"recibidas\":" + String(recibidas) +
@@ -950,7 +950,7 @@ void controlar() {
   vIzq = vueltasIzq * PI * RUEDA_D;   // m/s, con signo (+ = adelante)
   vDer = vueltasDer * PI * RUEDA_D;
 
-  // --- 2) Espera de arranque (reemplaza el delay(2000) de P08) ---
+  // --- 2) Espera de arranque (reemplaza el delay(2000) de P04) ---
   if (ahora - inicioMs < ESPERA_ARRANQUE_MS) {
     frenarControl("arranque");
     return;

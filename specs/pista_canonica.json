@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "estado": "canonica",
   "unifica": [
-    { "origen": "P08", "longitudM": 8.05, "nota": "pista de simulación (perímetro)" },
+    { "origen": "P04", "longitudM": 8.05, "nota": "pista de simulación (perímetro)" },
     { "origen": "P09", "longitudM": 10.0, "nota": "app Flutter" },
-    { "origen": "P10", "longitudM": 8.0, "nota": "simulador ESP32 web" }
+    { "origen": "P04", "longitudM": 8.0, "nota": "simulador ESP32 web" }
   ],
   "longitudTotalM": 9.0,
   "anchoCintaMm": 19,

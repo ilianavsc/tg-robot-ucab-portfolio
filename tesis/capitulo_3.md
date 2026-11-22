@@ -38,7 +38,7 @@ En la clasificación de tipos de investigación de Hurtado de Barrera \[1\], est
 | Hay una necesidad real y levantada en campo | En la entrevista del 14/11/2026 al encargado del taller se constató que el estudiante siempre debe ir a buscar el componente (el taller lo entrega, pero nunca lo lleva) y que **no existe ningún registro** de quién se llevó qué ni para qué. |
 | Se produce un artefacto, no solo un diagnóstico | Robot móvil (ESP32, tracción diferencial, 4× TCRT5000 para seguir la línea y 2× HC-SR04P para obstáculos al frente y atrás, batería Li-Ion 3S), firmware, aplicación Flutter y contrato de mensajes MQTT. La MPU-6050 (IMU) forma parte del hardware elegido y cumple dos funciones previstas: el antirrobo con el acelerómetro y el mantenimiento de rumbo relativo (*heading hold*) con el giroscopio en los tramos sin cinta; su lectura está **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]** (solo existe el gancho para conectarla). |
 | La solución se valida contra criterios previos | Cada requerimiento (RF/RNF) tiene un criterio de aceptación definido **antes** de medir (sección III.3.3). |
-| Hay iteración con evidencia | 13 prototipos (P01 a P13) con ficha, registro de decisiones y bitácora semanal. |
+| Hay iteración con evidencia | 11 prototipos (P01 a P14) con ficha, registro de decisiones y bitácora semanal. |
 
 ### III.2.3 Alcance y límites
 
@@ -56,7 +56,7 @@ El diseño es de **desarrollo de prototipos evolutivos con validación experimen
 
 | Entorno | Qué es | Ejemplos en el proyecto | Qué permite afirmar |
 |---|---|---|---|
-| **SIL** (*Software In the Loop*) | La lógica se ejecuta sin hardware: el firmware compilado en el PC con imitaciones del ESP32, o emulado en el navegador | `firmware/pruebas_pc/` (10 escenarios, T1–T10), P10 (ESP32 virtual, con escenario híbrido de tramo sin cinta y RSSI BLE), Modo Demo de la app (simulación física, sección III.3.6), simuladores 3D de P01, P03 y P08, pruebas automáticas de la app (116 pruebas `flutter test` al 19/11/2026) | Que la **lógica** y el **contrato de mensajes** son correctos |
+| **SIL** (*Software In the Loop*) | La lógica se ejecuta sin hardware: el firmware compilado en el PC con imitaciones del ESP32, o emulado en el navegador | `firmware/pruebas_pc/` (10 escenarios, T1–T10), P05 (Gemelo Digital, con escenario híbrido de tramo sin cinta y RSSI BLE), Modo Demo de la app (simulación física, sección III.3.6), simuladores 3D de P01, P02 y P04, pruebas automáticas de la app (116 pruebas `flutter test` al 19/11/2026) | Que la **lógica** y el **contrato de mensajes** son correctos |
 | **HIL** (*Hardware In the Loop*) | El mismo firmware en el **ESP32 real** con los **sensores y motores reales** | Plantilla de mediciones `prototipos/P02-sensores/README.md` | Que el **sistema físico** cumple los criterios de aceptación |
 | **Campo** | El robot completo en el laboratorio de la UCAB | Fases VI y VII | Que el sistema funciona en el **entorno real** (Wi-Fi, piso, luz, personas) |
 
@@ -64,24 +64,23 @@ Regla de rigor: un resultado solo pasa de "validado en simulación" a "validado"
 
 ### III.3.2 Prototipos
 
-La numeración oficial es P01 a P13 (fuente: `datos/proyecto.js`). Estado al 19/11/2026:
+La numeración oficial es P01 a P14 (fuente: `datos/proyecto.js`). Estado al 19/11/2026:
 
 | Código | Prototipo | Propósito | Estado |
 |---|---|---|---|
 | P01 | MQTT base | Comunicación robot ↔ app (QoS, confirmaciones, última voluntad) | Hecho (simulación): 7/7 pruebas, 50/50 pedidos |
-| P02 | Los sentidos del robot | 4× TCRT5000 (línea) y 2× HC-SR04P (frente y atrás) | En pruebas (simulación); HIL en diciembre |
-| P03 | Motores que van parejo | Tracción diferencial, PWM, encoders, PID | En pruebas (simulación) |
-| P04 | Balizas BLE (Extremos) | Re-localización en puntos de referencia | Pendiente (Fase II) |
-| P05 | Robot virtual y puente | Puente MQTT a Firebase | Pendiente |
+| P02 | Inspector de hardware | Inspector interactivo de los componentes del robot (Auto/Manual + consola de sensores) | Hecho (simulación); HIL en diciembre |
+| P03 | Radar ultrasónico | Distancias frente y atrás + frenado ante obstáculos | Hecho (simulación) |
+| P04 | Simulador 1 + ESP32 | Simulador 1 con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT con la app | Hecho (simulación) |
+| P05 | Gemelo Digital | Calibra y aprende la pista; puntos de control en tercios en la 2ª vuelta | Hecho (simulación) |
+| P06 | Robot virtual y puente | Puente MQTT a Firebase | En pruebas |
 | P07 | El cerebro completo | Firmware integrado (`robot_integrado.ino`) | En pruebas (lógica validada en PC) |
-| P08 | Seguir la línea | Control PD a 100 Hz sobre 4 sensores | En pruebas (simulación) |
-| P09 | App Flutter (v1 · Modo Demo) | App Flutter Web (*Autonomous Laboratory Cockpit*): Dashboard con Mapa de Pista, Controles, Radar y Alertas; acceso local con roles Operador y Administrador; analítica y CSV | Hecho (simulación); sin backend ni Firebase |
-| P10 | Prueba ESP32 ↔ App Web | Robot virtual en el navegador (gemelo digital) | Hecho |
+| P09 | App Flutter (v1 · Modo Demo) | App Flutter Web (*Autonomous Laboratory Cockpit*): Dashboard con Mapa de Pista, Controles, Radar y Alertas; acceso local con roles Operador y Administrador | Hecho (simulación); sin backend ni Firebase |
 | P11 | La alarma llega al teléfono | Centro de alertas en la app | En pruebas (simulación) |
 | P12 | Pruebas y estadística | Analítica de sesión y reporte CSV | En pruebas (simulación) |
-| P13 | Radar ultrasónico | Distancias frente y atrás, zonas de aviso y parada | En pruebas (simulación) |
+| P14 | Balizas BLE (Extremos) | Re-localización en puntos de referencia | Pendiente (Fase II) |
 
-> **P09 ≠ P10.** P09 es la aplicación que usa el operador; P10 es el robot virtual que le habla por MQTT. Juntos forman el *gemelo digital* con el que se valida el software antes de recibir el hardware (pedido de Amazon: llegada estimada a Miami entre el 15 y el 28 de diciembre de 2026).
+> **P09 ≠ P05.** P09 es la aplicación que usa el operador; P05 (Gemelo Digital) simula la navegación y publica el estado MQTT para validar el software antes de recibir el hardware (pedido de Amazon: llegada estimada a Miami entre el 15 y el 28 de diciembre de 2026). La confirmación de órdenes en vivo (ACK) queda para el ESP32 real; hasta entonces la app se valida en Modo Demo.
 
 ### III.3.3 Variables, indicadores y criterios de aceptación
 
@@ -109,13 +108,13 @@ Cada decisión técnica se registra con **fecha, decisión, razón y evidencia**
 
 ### III.3.6 Estado del sistema y de la aplicación al 19/11/2026
 
-Esta sección describe lo que el sistema hace hoy y fija qué es simulación, para que ningún resultado del Modo Demo ni de P10 se lea como medida del robot real.
+Esta sección describe lo que el sistema hace hoy y fija qué es simulación, para que ningún resultado del Modo Demo ni del Gemelo Digital (P05) se lea como medida del robot real.
 
-**SIL y HIL.** Todo lo validado hasta hoy es **SIL** (*Software In the Loop*): los 10 escenarios (T1–T10) del firmware compilado en el PC, el simulador P10, el Modo Demo y las pruebas de la aplicación. **HIL** (*Hardware In the Loop*), es decir, el mismo firmware en el ESP32 real con los sensores y motores reales, **no se ha hecho**: empieza cuando llegue el hardware (diciembre). Ningún valor de simulación se extrapola al robot físico.
+**SIL y HIL.** Todo lo validado hasta hoy es **SIL** (*Software In the Loop*): los 10 escenarios (T1–T10) del firmware compilado en el PC, el Gemelo Digital (P05), el Modo Demo y las pruebas de la aplicación. **HIL** (*Hardware In the Loop*), es decir, el mismo firmware en el ESP32 real con los sensores y motores reales, **no se ha hecho**: empieza cuando llegue el hardware (diciembre). Ningún valor de simulación se extrapola al robot físico.
 
 **Hardware y arquitectura.** El sistema se compone de **1 ESP32 móvil** (el robot) y **2 ESP32 fijos** que actuarán como **balizas BLE de proximidad** (*anchors*), uno en el Cuarto de Componentes y otro en el Laboratorio 1. El robot móvil lleva: ESP32-WROOM-32; 4× TCRT5000 en ADC1 (GPIO 36, 39, 34 y 35, de izquierda a derecha, separados 18 mm); 2× HC-SR04P con **TRIG separado** (frontal en GPIO 23 y trasero en GPIO 15) y ECO frontal en GPIO 33 y trasero en GPIO 5; MPU-6050 por I²C (GPIO 21 y 22); motores con encoders, L298N y batería Li-Ion 3S (9,90 a 12,60 V). No hay LiDAR ni magnetómetro: el robot no tiene brújula ni localización absoluta, por lo que ninguna pantalla muestra rumbo. Las balizas BLE y la lectura de la MPU-6050 están **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]**.
 
-**Rol de la MPU-6050 y de las balizas.** En los tramos donde se retire la cinta, el robot mantendría el **rumbo relativo** que tenía al perderla (*heading hold*, con el giroscopio; sin magnetómetro) y avanzaría hasta que la baliza BLE del siguiente punto de control confirme proximidad por RSSI. La confirmación exige varias lecturas seguidas por encima de un umbral. Este esquema solo se ha representado en simulación (P10 y la vista previa de "Reducción progresiva de cinta"); sus umbrales, la deriva del giroscopio y la distancia de detección son supuestos que hay que medir. **[PENDIENTE DE MEDICIÓN FÍSICA]**
+**Rol de la MPU-6050 y de las balizas.** En los tramos donde se retire la cinta, el robot mantendría el **rumbo relativo** que tenía al perderla (*heading hold*, con el giroscopio; sin magnetómetro) y avanzaría hasta que la baliza BLE del siguiente punto de control confirme proximidad por RSSI. La confirmación exige varias lecturas seguidas por encima de un umbral. Este esquema solo se ha representado en simulación (P05 y la vista previa de "Reducción progresiva de cinta"); sus umbrales, la deriva del giroscopio y la distancia de detección son supuestos que hay que medir. **[PENDIENTE DE MEDICIÓN FÍSICA]**
 
 **Reglas de seguridad (firmware y aplicación).** Parada crítica con el eco frontal a menos de **20 cm**; zona de precaución de **20 a 50 cm** (solo aviso en el firmware real); corte por batería a 9,90 V con rearme por encima de 10,10 V; en modo manual, 5 s sin órdenes detienen el robot. En la aplicación estos umbrales se muestran en el Perfil del Administrador como **solo lectura**: no hay botón para editarlos ni para anularlos.
 
@@ -138,7 +137,7 @@ Siguiendo a Arias \[2\], una **técnica** es el procedimiento o la forma particu
 | 1 | **Entrevista semiestructurada** | Guía de 13 preguntas en 5 bloques: el pedido de hoy, dónde están las cosas, quién y cómo, el robot en el laboratorio y material | Demanda, tamaño y peso de los pedidos, horarios, reglas, red Wi-Fi, carga, preocupaciones de seguridad | `docs/requerimientos/borrador-requerimientos.md`; `TG.entrevista` (realizada el 14/11/2026) |
 | 2 | **Observación directa** | Hoja de observación de 10 aspectos (recorrido, pasillos, piso, luz, obstáculos, estantes, demanda, Wi-Fi, carga, fotos) | Medidas y condiciones del entorno de operación | `TG.observacion`; resultados **[POR COMPLETAR]** |
 | 3 | **Revisión documental** | Hojas de datos de los componentes (ESP32-WROOM-32, JGA25-371, L298N, HC-SR04P, TCRT5000, BMS 3S) y la especificación MQTT 3.1.1 \[3\] | Parámetros eléctricos y límites de operación | Capítulo II; `docs/tomo/objetivo-2-seleccion-hardware.md`; `docs/sensores.md` |
-| 4 | **Experimentación en simulación (SIL)** | Banco de pruebas P01, simuladores 3D (P01, P03, P08), ESP32 virtual P10, pruebas del firmware en el PC (10 escenarios, T1–T10), pruebas de la app (`flutter test`, 116 al 19/11/2026) | Resultados de pruebas, tiempos, conteos de mensajes | `prototipos/*/evidencias/`, `prototipos/P01-mqtt-base/datos/*.csv`, `firmware/pruebas_pc/` |
+| 4 | **Experimentación en simulación (SIL)** | Banco de pruebas P01, simuladores 3D (P01, P02, P04), Gemelo Digital P05, pruebas del firmware en el PC (10 escenarios, T1–T10), pruebas de la app (`flutter test`, 116 al 19/11/2026) | Resultados de pruebas, tiempos, conteos de mensajes | `prototipos/*/evidencias/`, `prototipos/P01-mqtt-base/datos/*.csv`, `firmware/pruebas_pc/` |
 | 5 | **Medición en banco y campo (HIL)** | Monitor Serie (115200), MQTTX, multímetro, cinta métrica, cronómetro y video; plantilla `prototipos/P02-sensores/README.md`; lista de cotejo eléctrica y de flasheo | Calibración ADC, exactitud de distancia, latencia de parada, tensión de corte, repeticiones | `docs/guia_pruebas_lab.md`, `docs/checklist_hardware.md`, `docs/checklist_flasheo.md`, `docs/sensores.md` |
 | 6 | **Registro automático de sesión** | Analítica de Sesión de la app (P12) con exportación CSV | Velocidad media y máxima, distancia frontal mínima válida, error medio absoluto de línea, paquetes y paradas de emergencia | Archivo `sesion_robot_AAAAMMDD_HHMMSS.csv` por sesión |
 | 7 | **Registro de proceso** | Bitácora semanal y registro de decisiones | Qué se hizo, qué se aprendió, qué sigue y por qué se decidió | Páginas *Bitácora* y *Decisiones*; historial de Git |
@@ -190,7 +189,7 @@ El trabajo se organiza en **7 fases** durante **32 semanas** (26/10/2026 al 11/0
 ### III.5.3 Detalle por fase
 
 **Fase I · Revisión y levantamiento (en curso)**
-- *Actividades:* revisión documental, entrevista al encargado del taller (14/11/2026), observación en el laboratorio, prueba H0 de Wi-Fi, selección y compra de hardware, prototipos P01, P03 y P08 en simulación, firmware integrado y gemelo digital (P09 y P10).
+- *Actividades:* revisión documental, entrevista al encargado del taller (14/11/2026), observación en el laboratorio, prueba H0 de Wi-Fi, selección y compra de hardware, prototipos P01, P02 y P04 en simulación, firmware integrado y gemelo digital (P09 y P05).
 - *Instrumentos:* guía de entrevista, hoja de observación, hojas de datos, banco de pruebas P01.
 - *Producto:* documento de requerimientos y matriz de hardware v2 (20/11/2026).
 - *Criterio de cierre:* requerimientos con criterio de aceptación; hardware pedido; P01 cerrado (7/7 pruebas, 50/50 pedidos en simulación).
