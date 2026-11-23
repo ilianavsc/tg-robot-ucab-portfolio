@@ -48,6 +48,8 @@ a.proto:hover{transform:translate(-2px,-2px)}
     P09: "Flutter"
   };
   function claseEstado(e) { return e === "listo" ? "hecho" : e === "en_pruebas" ? "pruebas" : "pendiente"; }
+  function hrefDe(u) { return /^https?:\/\//.test(u) ? u : "../" + u; }
+  function attrsExt(u) { return /^https?:\/\//.test(u) ? ' target="_blank" rel="noopener"' : ""; }
   D.fases.forEach(function(f){
     var ps = D.prototipos.filter(function(p){ return !p.principal && U.faseDe(U.inicioSemana(p.semana)).id === f.id; });
     if (!ps.length) return;
@@ -56,7 +58,7 @@ a.proto:hover{transform:translate(-2px,-2px)}
       var et = p.estado === "listo" ? "Listo" : p.estado === "en_pruebas" ? "En pruebas" : "Pendiente";
       var titulo = (D.protoResumen && D.protoResumen[p.codigo]) ? D.protoResumen[p.codigo].corto : p.nombre;
       var inner = '<span class="cod">' + (categorias[p.codigo] || p.tema) + "</span><h3>" + titulo + "</h3><p>Semana " + p.semana + " · desde el " + U.corto(U.inicioSemana(p.semana)) + '</p><span class="chip ' + claseEstado(p.estado) + '">' + et + "</span>";
-      html += p.url ? '<a class="proto" href="../' + p.url + '">' + inner + "</a>" : '<div class="proto pendiente">' + inner + "</div>";
+      html += p.url ? '<a class="proto" href="' + hrefDe(p.url) + '"' + attrsExt(p.url) + ">" + inner + "</a>" : '<div class="proto pendiente">' + inner + "</div>";
     });
     html += "</div>";
   });
@@ -67,7 +69,7 @@ a.proto:hover{transform:translate(-2px,-2px)}
     var p = D.prototipos.filter(function(x){ return x.codigo === cod; })[0];
     if (!p) return "";
     var titulo = (D.protoResumen && D.protoResumen[p.codigo]) ? D.protoResumen[p.codigo].corto : p.nombre;
-    return '<a class="proto" href="../' + p.url + '"><span class="cod">' + (categorias[p.codigo] || p.tema) + "</span><h3>" + titulo + "</h3><p>" + p.simuladorTexto + (p.ino ? " · código ESP32" : "") + "</p></a>";
+    return '<a class="proto" href="' + hrefDe(p.url) + '"' + attrsExt(p.url) + '><span class="cod">' + (categorias[p.codigo] || p.tema) + "</span><h3>" + titulo + "</h3><p>" + p.simuladorTexto + (p.ino ? " · código ESP32" : "") + "</p></a>";
   }).join("");
 })();
 </script>

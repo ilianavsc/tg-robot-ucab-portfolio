@@ -73,4 +73,31 @@ for (const slug of ['capitulo-1', 'marco-preliminar', 'capitulo-2']) {
   assert.equal(meta.estado, 'entregada', `metadata.json de ${slug} debe indicar entregada`);
 }
 
-console.log('contratos + tokens + entregas académicas: OK');
+// 5. Blindaje de enlaces activos hacia tg-robot-ucab-app y ausencia de rutas al repo viejo
+const archivosWebActivos = [
+  'index.html',
+  'arquitectura.html',
+  'bitacora.html',
+  'cronograma.html',
+  'decisiones.html',
+  'hardware.html',
+  'requerimientos.html',
+  'tesis.html',
+  'assets/sitio.js',
+  'datos/proyecto.js',
+  'prototipos/index.html',
+  'prototipos/centro-pruebas.html',
+];
+const patronAppVieja = /tg-robot-ucab\/app\b|href=["'](?:\.\.\/)*app\/["']|href=["']\.\.\/https?:\/\//i;
+const patronRepoViejo = /https?:\/\/(?:github\.com\/ilianavsc|ilianavsc\.github\.io)\/tg-robot-ucab(?:\/|["'\s)])/i;
+for (const rel of archivosWebActivos) {
+  const contenido = leer(rel);
+  assert.ok(!patronAppVieja.test(contenido), `enlace mal formado o relativo hacia la app en ${rel}`);
+  assert.ok(!patronRepoViejo.test(contenido), `URL activa apuntando al repo viejo /tg-robot-ucab/ en ${rel}`);
+}
+assert.ok(
+  leer('assets/sitio.js').includes('https://ilianavsc.github.io/tg-robot-ucab-app/'),
+  'assets/sitio.js debe apuntar exactamente a https://ilianavsc.github.io/tg-robot-ucab-app/'
+);
+
+console.log('contratos + tokens + entregas académicas + enlaces app: OK');

@@ -217,7 +217,7 @@
     }
     var href = enlace.getAttribute("href") || "";
     if (!href || href.hasAttribute && enlace.hasAttribute("download")) return null;
-    var ghMatch = href.match(/^https?:\/\/github\.com\/ilianavsc\/tg-robot-ucab\/blob\/main\/(.+\.md)$/i);
+    var ghMatch = href.match(/^https?:\/\/github\.com\/ilianavsc\/tg-robot-ucab-portfolio\/blob\/main\/(.+\.md)$/i);
     if (ghMatch) return base + ghMatch[1];
     if (/^https?:\/\//i.test(href)) return null;
     if (/\.md(#.*)?$/i.test(href)) return href.split("#")[0];
@@ -271,7 +271,7 @@
     var href = a.getAttribute("href") || "";
     if (location.protocol === "file:" && /(^|\/)app\/?$/.test(href)) {
       ev.preventDefault();
-      window.open("https://ilianavsc.github.io/tg-robot-ucab/app/", "_blank", "noopener");
+      window.open(APP_URL, "_blank", "noopener");
       return;
     }
     var rutaMd = normalizarRutaMd(a);
