@@ -8,14 +8,15 @@
 /*CSS*/
 </style>
 </head>
-<body data-modo="auto">
+<body data-modo="auto" data-conexion="local" data-encendido="0">
 <div class="app" id="app">
   <canvas id="lienzo" tabindex="0" aria-label="Vista 3D del robot seguidor de línea sobre la pista seleccionada" role="img"></canvas>
 
   <header class="barra" role="toolbar" aria-label="Controles del simulador">
+    <button class="btn encender" type="button" id="b-encender" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span id="encender-txt">⚡ Encender</span></button>
     <div class="grupo" role="group" aria-label="Pista">
       <button class="btn" type="button" data-pista="A" aria-pressed="true"><span><span class="largo">Pista </span>A · 8,05 m</span></button>
-      <button class="btn" type="button" data-pista="B" aria-pressed="false"><span><span class="largo">Pista </span>B · 9,0 m</span></button>
+      <button class="btn" type="button" data-pista="B" aria-pressed="false"><span><span class="largo">Pista </span>B · 9,00 m</span></button>
     </div>
     <div class="grupo" role="group" aria-label="Modo de control">
       <button class="btn" type="button" data-modo="manual" aria-pressed="false">Manual</button>
@@ -24,6 +25,7 @@
     <button class="btn suave" type="button" id="b-reiniciar" aria-label="Reiniciar en la salida"><span class="ic" aria-hidden="true">↺</span><span class="largo">Reiniciar</span></button>
     <button class="btn suave" type="button" id="b-vista">Vista: Seguir</button>
     <button class="btn suave solo-ancho" type="button" id="b-dpad" aria-pressed="false">D-Pad</button>
+    <button class="btn suave" type="button" id="b-config" aria-label="Cambiar modo de operación o pista"><span aria-hidden="true">⚙</span><span class="largo"> Modo/Pista</span></button>
   </header>
   <p class="modo-txt" id="modo-txt" role="status"></p>
   <p class="aviso-teclado" id="aviso-teclado" hidden>Haz clic en la pista para activar el teclado</p>
@@ -55,6 +57,14 @@
             <span class="mqtt-est"><i class="mqtt-dot" id="mqtt-dot" aria-hidden="true"></i><span id="mqtt-estado">Desconectado</span></span>
             <button class="mqtt-btn" type="button" id="b-mqtt" aria-pressed="false">Conectar App</button>
           </div>
+        </div>
+        <div class="minimapa" id="minimapa" role="region" aria-label="Mini-mapa de la ruta estilo Gemelo Digital">
+          <div class="minimapa-cab">
+            <span class="minimapa-tit"><i class="mm-dot" aria-hidden="true"></i>Gemelo Digital</span>
+            <span class="minimapa-pista mono" id="minimapa-pista">Pista A · 8,05 m</span>
+          </div>
+          <canvas id="minimapa-canvas" width="280" height="118" aria-label="Trazado de la pista con INICIO, PC1, PC2, PC3 y posición en vivo del robot"></canvas>
+          <div class="minimapa-leyenda mono" id="minimapa-leyenda"></div>
         </div>
         <div class="fila tcrt"><span class="k">Sensores S1…S4</span><b class="v mono" id="v-bin">[0, 0, 0, 0]</b></div>
         <div class="fila"><span class="k">Error medido</span><b class="v mono" id="v-emed">+0,0 mm</b></div>
@@ -106,6 +116,55 @@
     </aside>
   </div>
 </div>
+
+<dialog class="menu-inicio" id="menu-inicio" aria-labelledby="menu-inicio-titulo">
+  <form method="dialog" class="menu-card" id="form-inicio">
+    <div class="menu-cab">
+      <span class="menu-badge mono">P04 · Simulador 1 + ESP32</span>
+      <h2 id="menu-inicio-titulo">Configurar sesión</h2>
+      <p class="menu-sub">El robot iniciará detenido hasta que pulses <b>⚡ Encender</b>.</p>
+    </div>
+    <fieldset class="menu-grupo">
+      <legend>1. Modo de operación</legend>
+      <label class="opcion-card">
+        <input type="radio" name="pre-conexion" value="app">
+        <span class="opcion-cuerpo">
+          <strong>Con conexión a la App (MQTT)</strong>
+          <small>Manejo remoto desde la App vía MQTT; oculta el D-Pad local y mantiene la placa ESP32.</small>
+        </span>
+      </label>
+      <label class="opcion-card">
+        <input type="radio" name="pre-conexion" value="local" checked>
+        <span class="opcion-cuerpo">
+          <strong>Sin conexión (local)</strong>
+          <small>Control local con D-Pad táctil, teclado (WASD/flechas) o seguidor automático.</small>
+        </span>
+      </label>
+    </fieldset>
+    <fieldset class="menu-grupo">
+      <legend>2. Pista</legend>
+      <label class="opcion-card">
+        <input type="radio" name="pre-pista" value="A" checked>
+        <span class="opcion-cuerpo">
+          <strong>Pista A · 8,05 m</strong>
+          <small>Circuito histórico · PC1 (2,68 m) · PC2 (5,37 m) · PC3 (8,05 m)</small>
+        </span>
+      </label>
+      <label class="opcion-card">
+        <input type="radio" name="pre-pista" value="B">
+        <span class="opcion-cuerpo">
+          <strong>Pista B · 9,00 m</strong>
+          <small>Pasillo UCAB canónica · PC1 (3,00 m) · PC2 (6,00 m) · PC3 (9,00 m)</small>
+        </span>
+      </label>
+    </fieldset>
+    <div class="menu-acciones">
+      <button type="submit" value="cancelar" class="btn-sec" id="b-cancelar" hidden>Cancelar</button>
+      <button type="submit" value="confirmar" class="btn-entrar" id="b-entrar" autofocus>Entrar al simulador</button>
+    </div>
+  </form>
+</dialog>
+
 <script type="module">
 /*JS*/
 </script>

@@ -37,6 +37,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   const granitos = {};
   const sim = crearSim({
     pistaId: 'A',
+    encendido: false,
     fabricaGran: (P) => {
       const g = (granitos[P.id] ||= crearGranito(P));
       ponerPiso(g.canvas, P.zona);
@@ -44,7 +45,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     },
   });
   const anim = {ang: {izq: 0, der: 0}, arm: {izq: 0, der: 0}, flow: {}, act: {}, hall: {izq: [false, false], der: [false, false]}};
-  const ui = {vista: 'seguir', t: 0, teclas: new Set(), botones: new Set(), aviso: ''};
+  const ui = {vista: 'seguir', t: 0, teclas: new Set(), botones: new Set(), aviso: '', conexion: 'local', configurado: false, dpadDeseado: false};
 
   // ---------------------------------------------------------------- cámara
   const yaw = new THREE.Vector3(0, 1, 0);
@@ -127,10 +128,13 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     mqtt.cancelarRemoto();
     if (sim.modo === 'auto') ponModo('manual', 'Control manual: tomaste el mando');
   };
+  const menuInicio = $('#menu-inicio');
   addEventListener('keydown', (e) => {
+    if (menuInicio.open) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'KeyR' && !e.repeat) return reiniciar();
     if (e.code === 'KeyM' && !e.repeat) return ponModo(sim.modo === 'auto' ? 'manual' : 'auto');
+    if (ui.conexion === 'app' || !sim.encendido) return;
     const k = MAPA[e.code];
     if (!k) return;
     e.preventDefault();
@@ -157,6 +161,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
 
   // D-Pad: clic sostenido (pointer), y touchstart/touchend como respaldo. Pulsar o soltar es idempotente.
   const pulsa = (k) => {
+    if (ui.conexion === 'app' || !sim.encendido) return;
     if (ui.botones.has(k)) return;
     ui.botones.add(k);
     tomaControl();
@@ -228,11 +233,73 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   bMqtt.addEventListener('click', () => mqtt.alternar());
 
   // ---------------------------------------------------------------- botones de la barra
+  const bEncender = $('#b-encender');
+  const encenderTxt = $('#encender-txt');
+  const dpad = $('#dpad');
+  const bDpad = $('#b-dpad');
+  const esTactilOAngosto = () => matchMedia('(pointer:coarse)').matches || innerWidth < 900;
+  ui.dpadDeseado = esTactilOAngosto();
+  const sincronizaDpad = () => {
+    if (ui.conexion === 'app') {
+      dpad.hidden = true;
+      dpad.classList.add('oculto');
+      bDpad.hidden = true;
+      bDpad.setAttribute('aria-pressed', 'false');
+      return;
+    }
+    dpad.hidden = false;
+    bDpad.hidden = false;
+    const mostrar = esTactilOAngosto() || ui.dpadDeseado;
+    dpad.classList.toggle('oculto', !mostrar);
+    bDpad.setAttribute('aria-pressed', String(mostrar));
+  };
+
+  const actualizaModoTxt = (texto = '') => {
+    if (texto) {
+      $('#modo-txt').textContent = texto;
+      return;
+    }
+    const base = !sim.encendido
+      ? 'Robot detenido · pulsa ⚡ Encender para iniciar'
+      : ui.conexion === 'app'
+        ? 'Modo App (MQTT): control remoto desde la App'
+        : sim.modo === 'auto'
+          ? 'Seguidor automático: el robot sigue la línea solo'
+          : 'Modo manual: W A S D o flechas · Espacio frena';
+    $('#modo-txt').textContent = base;
+  };
+  const ponEncendido = (activo) => {
+    const on = Boolean(activo);
+    if (on) sim.encender();
+    else sim.detener();
+    document.body.dataset.encendido = on ? '1' : '0';
+    bEncender.setAttribute('aria-pressed', String(on));
+    encenderTxt.textContent = on ? '⏹ Detener' : '⚡ Encender';
+    if (!on) soltarTodo();
+    else if (mqtt.conectado) mqtt.publicarTelemetria();
+    actualizaModoTxt();
+    pintaPlaca(0);
+    refresca();
+    pintaMinimapa();
+  };
+  const ponConexion = (tipo) => {
+    const modo = tipo === 'app' ? 'app' : 'local';
+    ui.conexion = modo;
+    document.body.dataset.conexion = modo;
+    sincronizaDpad();
+    if (modo === 'app') {
+      soltarTodo();
+      mqtt.conectar();
+    } else {
+      mqtt.desconectar();
+    }
+    actualizaModoTxt();
+  };
   const ponModo = (m, texto = '') => {
     sim.setModo(m);
     $$('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === m)));
     document.body.dataset.modo = m;
-    $('#modo-txt').textContent = texto || (m === 'auto' ? 'Seguidor automático: el robot sigue la línea solo' : 'Modo manual: W A S D o flechas · Espacio frena');
+    actualizaModoTxt(texto);
   };
   const ponPista = (id) => {
     soltarTodo();
@@ -240,14 +307,22 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     $$('[data-pista]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pista === id)));
     $('#pista-desc').textContent = PISTAS[id].descripcion;
     construyeBarra();
+    actualizaLeyendaMinimapa();
     irA(ui.vista, true);
+    pintaPlaca(0);
+    refresca();
+    pintaMinimapa();
   };
   const reiniciar = () => {
     mqtt.cancelarRemoto();
     soltarTodo();
     sim.reiniciar();
     irA(ui.vista, true);
+    pintaPlaca(0);
+    refresca();
+    pintaMinimapa();
   };
+  bEncender.addEventListener('click', () => ponEncendido(!sim.encendido));
   $$('[data-modo]').forEach((b) =>
     b.addEventListener('click', () => {
       mqtt.cancelarRemoto();
@@ -267,24 +342,50 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     bMas.setAttribute('aria-expanded', String(abierto));
     bMas.textContent = abierto ? 'Menos datos ▾' : 'Más datos ▴';
   });
-  const dpad = $('#dpad');
-  const bDpad = $('#b-dpad');
   bDpad.addEventListener('click', () => {
-    const v = dpad.classList.toggle('oculto');
-    bDpad.setAttribute('aria-pressed', String(!v));
-    if (v) soltarTodo();
+    if (ui.conexion === 'app') return;
+    const oculto = dpad.classList.toggle('oculto');
+    ui.dpadDeseado = !oculto;
+    bDpad.setAttribute('aria-pressed', String(!oculto));
+    if (oculto) soltarTodo();
   });
-  // el D-Pad se muestra de entrada en pantallas táctiles o angostas
-  const tactil = matchMedia('(pointer:coarse)').matches || innerWidth < 900;
-  dpad.classList.toggle('oculto', !tactil);
-  bDpad.setAttribute('aria-pressed', String(tactil));
+  sincronizaDpad();
+
+  // menú pre-inicio (modo de operación + pista)
+  const bCancelar = $('#b-cancelar');
+  const abrirMenuInicio = (inicial = false) => {
+    const rCon = $(`input[name="pre-conexion"][value="${ui.conexion}"]`, menuInicio);
+    if (rCon) rCon.checked = true;
+    const rPista = $(`input[name="pre-pista"][value="${sim.pistaId}"]`, menuInicio);
+    if (rPista) rPista.checked = true;
+    bCancelar.hidden = inicial;
+    menuInicio.returnValue = '';
+    if (!menuInicio.open) menuInicio.showModal();
+  };
+  menuInicio.addEventListener('cancel', (e) => {
+    if (!ui.configurado) e.preventDefault();
+  });
+  menuInicio.addEventListener('close', () => {
+    const accion = menuInicio.returnValue;
+    menuInicio.returnValue = '';
+    if (accion !== 'confirmar') return;
+    const conSel = $('input[name="pre-conexion"]:checked', menuInicio)?.value || 'local';
+    const pistaSel = $('input[name="pre-pista"]:checked', menuInicio)?.value || 'A';
+    ui.configurado = true;
+    if (pistaSel !== sim.pistaId) ponPista(pistaSel);
+    ponConexion(conSel);
+    pintaPlaca(0);
+    refresca();
+    pintaMinimapa();
+  });
+  $('#b-config').addEventListener('click', () => abrirMenuInicio(false));
   canvas.addEventListener('pointerdown', () => {
     window.focus();
     $('#aviso-teclado').hidden = true;
   });
-  const avisoTeclado = () => ($('#aviso-teclado').hidden = document.hasFocus() || tactil);
+  const avisoTeclado = () => ($('#aviso-teclado').hidden = document.hasFocus() || esTactilOAngosto());
   addEventListener('focus', avisoTeclado);
-  addEventListener('blur', () => ($('#aviso-teclado').hidden = tactil));
+  addEventListener('blur', () => ($('#aviso-teclado').hidden = esTactilOAngosto()));
 
   // ---------------------------------------------------------------- ajustes del PD
   const aj = [
@@ -345,6 +446,130 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   const construyeBarra = () => {
     const P = sim.P;
     barra.innerHTML = P.tramos.map((t, i) => `<i style="flex:${t.hastaM - t.desdeM}" class="t${i % 4}" title="${t.id}"><b>${t.id}</b></i>`).join('') + '<span id="marca"></span>';
+  };
+
+  // ---------------------------------------------------------------- mini-mapa estilo Gemelo Digital
+  const mmCanvas = $('#minimapa-canvas');
+  const mmCtx = mmCanvas ? mmCanvas.getContext('2d') : null;
+  const mmPistaEl = $('#minimapa-pista');
+  const mmLeyendaEl = $('#minimapa-leyenda');
+  const COLORES_PC = {PC1: '#E8B90C', PC2: '#A78BFA', PC3: '#2DD4BF'};
+  const actualizaLeyendaMinimapa = () => {
+    const P = sim.P;
+    if (mmPistaEl) mmPistaEl.textContent = `Pista ${P.id} · ${f(P.largoNominal || P.largo, 2)} m`;
+    if (mmLeyendaEl) {
+      const items = [`<span><i style="background:#F2603D"></i>INICIO</span>`];
+      for (const pc of P.puntosControl || []) {
+        items.push(`<span><i style="background:${COLORES_PC[pc.id] || '#2DD4BF'}"></i>${pc.id} ${f(pc.distanciaM, 2)} m</span>`);
+      }
+      mmLeyendaEl.innerHTML = items.join('');
+    }
+  };
+  const pintaMinimapa = () => {
+    if (!mmCanvas || !mmCtx) return;
+    const rect = mmCanvas.getBoundingClientRect();
+    const cssW = Math.max(160, Math.round(rect.width || mmCanvas.width));
+    const cssH = Math.max(76, Math.round(rect.height || mmCanvas.height));
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (mmCanvas.width !== Math.round(cssW * dpr) || mmCanvas.height !== Math.round(cssH * dpr)) {
+      mmCanvas.width = Math.round(cssW * dpr);
+      mmCanvas.height = Math.round(cssH * dpr);
+    }
+    const ctx = mmCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    // fondo con retícula sutil estilo Gemelo Digital
+    ctx.fillStyle = '#07101f';
+    ctx.fillRect(0, 0, cssW, cssH);
+    ctx.strokeStyle = 'rgba(56,189,248,0.09)';
+    ctx.lineWidth = 1;
+    for (let x = 20; x < cssW; x += 24) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, cssH); ctx.stroke();
+    }
+    for (let y = 18; y < cssH; y += 22) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cssW, y); ctx.stroke();
+    }
+
+    const P = sim.P;
+    let xMin = Infinity, xMax = -Infinity, zMin = Infinity, zMax = -Infinity;
+    for (let i = 0; i < P.N; i += 4) {
+      if (P.X[i] < xMin) xMin = P.X[i];
+      if (P.X[i] > xMax) xMax = P.X[i];
+      if (P.Z[i] < zMin) zMin = P.Z[i];
+      if (P.Z[i] > zMax) zMax = P.Z[i];
+    }
+    const padX = 24;
+    const padY = 18;
+    const esc = Math.min((cssW - padX * 2) / Math.max(0.1, xMax - xMin), (cssH - padY * 2) / Math.max(0.1, zMax - zMin));
+    const ox = (cssW - (xMax - xMin) * esc) / 2;
+    const oy = (cssH - (zMax - zMin) * esc) / 2;
+    const sx = (x) => ox + (x - xMin) * esc;
+    const sy = (z) => oy + (z - zMin) * esc;
+
+    // halo y trazo de la pista
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < P.N; i += 4) {
+      const px = sx(P.X[i]);
+      const py = sy(P.Z[i]);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(45,212,191,0.22)';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // puntos de control PC1–PC3 y marca INICIO
+    const progM = sim.idx * P.paso;
+    ctx.font = '700 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.textBaseline = 'middle';
+    const dibujarNodo = (x, z, color, etiqueta, dy = -10, activo = false) => {
+      const px = sx(x);
+      const py = sy(z);
+      ctx.beginPath();
+      ctx.arc(px, py, activo ? 4.5 : 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#07101f';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#e2e8f0';
+      ctx.textAlign = 'center';
+      const ly = Math.max(9, Math.min(cssH - 8, py + dy));
+      const lx = Math.max(20, Math.min(cssW - 20, px));
+      ctx.fillText(etiqueta, lx, ly);
+    };
+    dibujarNodo(P.X[0], P.Z[0], '#F2603D', 'INICIO', -11, true);
+    for (const pc of P.puntosControl || []) {
+      const dy = pc.id === 'PC3' ? 12 : (pc.z < (zMin + zMax) / 2 ? -10 : 11);
+      dibujarNodo(pc.x, pc.z, COLORES_PC[pc.id] || '#2DD4BF', pc.id, dy, progM >= pc.distanciaM);
+    }
+
+    // posición y orientación en vivo del robot
+    const rx = sx(sim.eje.x);
+    const ry = sy(sim.eje.z);
+    const ang = Math.atan2(Math.cos(sim.eje.th), Math.sin(sim.eje.th));
+    ctx.save();
+    ctx.translate(rx, ry);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(7, 0);
+    ctx.lineTo(-5, -4.5);
+    ctx.lineTo(-3, 0);
+    ctx.lineTo(-5, 4.5);
+    ctx.closePath();
+    ctx.fillStyle = sim.encendido ? '#4ade80' : '#facc15';
+    ctx.fill();
+    ctx.strokeStyle = '#07101f';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
   };
   const refresca = () => {
     const L = sim.lectura();
@@ -413,10 +638,12 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   const bucle = (ahora) => {
     const dt = Math.min(0.25, (ahora - ultimo) / 1000);
     ultimo = ahora;
-    ui.t += dt;
-    mqtt.avanzar(dt);
-    sim.avanzar(dt);
-    animar(dt);
+    if (sim.encendido) {
+      ui.t += dt;
+      mqtt.avanzar(dt);
+      sim.avanzar(dt);
+      animar(dt);
+    }
     // el eje de las ruedas está ZA delante del centro del chasis
     pose.position.set(sim.eje.x - Math.sin(sim.eje.th) * ZA, 0, sim.eje.z - Math.cos(sim.eje.th) * ZA);
     pose.rotation.y = sim.eje.th;
@@ -429,11 +656,14 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     seguirCamara(dt);
     controls.update();
     renderer.render(scene, camera);
-    pintaPlaca(dt);
-    acRef += dt;
-    if (acRef > 0.1) {
-      acRef = 0;
-      refresca();
+    if (sim.encendido) {
+      pintaPlaca(dt);
+      pintaMinimapa();
+      acRef += dt;
+      if (acRef > 0.1) {
+        acRef = 0;
+        refresca();
+      }
     }
     requestAnimationFrame(bucle);
   };
@@ -442,16 +672,20 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   new ResizeObserver(() => {
     resize();
     desplazaVista();
+    sincronizaDpad();
+    pintaMinimapa();
   }).observe(canvas);
   resize();
   desplazaVista();
   ponModo('auto');
   ponPista('A');
+  ponEncendido(false);
   irA('seguir', true);
   aviso.listo();
+  abrirMenuInicio(true);
   requestAnimationFrame(bucle);
   avisoTeclado();
 
   // ayuda para capturas y pruebas del navegador
-  window.SIM1 = {sim, ui, mqtt, irA, ponModo, ponPista, reiniciar, camera, controls, pulsa, suelta, IDS_PISTA, repintado};
+  window.SIM1 = {sim, ui, mqtt, irA, ponModo, ponPista, ponEncendido, ponConexion, abrirMenuInicio, pintaMinimapa, reiniciar, camera, controls, pulsa, suelta, IDS_PISTA, repintado};
 }

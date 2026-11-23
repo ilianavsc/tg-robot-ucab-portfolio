@@ -17,6 +17,12 @@ button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visi
 .btn:hover{background:#1c2d52}
 .btn[aria-pressed="true"]{background:var(--verde)}
 .btn.suave[aria-pressed="false"]{background:var(--vidrio)}
+.btn.encender{background:#0b7a66;border-color:var(--tinta);color:#fff}
+.btn.encender:hover{background:#096655}
+.btn.encender[aria-pressed="true"]{background:#d94826}
+.btn.encender[aria-pressed="true"]:hover{background:#bd391a}
+.est-dot{width:9px;height:9px;border-radius:50%;background:#fde047;border:1.5px solid rgba(20,33,61,.55);flex:0 0 auto}
+.btn.encender[aria-pressed="true"] .est-dot{background:#4ade80;box-shadow:0 0 8px #4ade80}
 .btn.chico{min-height:34px;padding:4px 10px;font-size:13px}
 .grupo{display:inline-flex;border-radius:12px;box-shadow:var(--sombra)}
 .grupo .btn{border-radius:0;box-shadow:none;margin-left:-2px}
@@ -32,7 +38,8 @@ button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visi
 .dock{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:8px;align-items:flex-end;pointer-events:none;z-index:3}
 .dock>*{pointer-events:auto}
 .dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);grid-template-areas:". u ." "l s r" ". d .";gap:4px;flex:none;touch-action:none;user-select:none;-webkit-user-select:none}
-.dpad.oculto{display:none}
+.dpad.oculto,.dpad[hidden]{display:none}
+body[data-conexion="app"] .dpad,body[data-conexion="app"] #b-dpad{display:none!important}
 .dp{border-radius:12px;border:2px solid var(--tinta);background:rgba(20,33,61,.82);color:#fff;font-weight:700;font-size:18px;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .dp.on{background:var(--verde)}
 .dp.stop{background:rgba(242,96,61,.92);font-size:12.5px;letter-spacing:.02em}
@@ -70,6 +77,41 @@ button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visi
 .mqtt-btn{flex:0 0 auto;border:1px solid rgba(167,243,208,.45);background:rgba(15,23,42,.55);color:#ecfdf5;border-radius:7px;padding:4px 8px;min-height:26px;font:700 10.5px/1 ui-monospace,monospace;cursor:pointer;white-space:nowrap}
 .mqtt-btn:hover{background:rgba(15,23,42,.82);border-color:#6ee7b7}
 .mqtt-btn[aria-pressed="true"]{background:rgba(34,197,94,.22);border-color:#4ade80;color:#fff}
+/* mini-mapa estilo Gemelo Digital */
+.minimapa{background:#0b1526;border:2px solid #1e3a5f;border-radius:12px;padding:6px 8px 7px;margin:0 0 6px;color:#e2e8f0;box-shadow:inset 0 0 0 1px rgba(56,189,248,.14)}
+.minimapa-cab{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;font-size:11px;line-height:1.1}
+.minimapa-tit{display:inline-flex;align-items:center;gap:5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#7dd3fc}
+.mm-dot{width:7px;height:7px;border-radius:50%;background:#2dd4bf;box-shadow:0 0 6px #2dd4bf;display:inline-block}
+.minimapa-pista{font-size:10.5px;color:#cbd5e1;white-space:nowrap}
+#minimapa-canvas{width:100%;height:118px;display:block;border-radius:8px;background:#07101f;border:1px solid rgba(56,189,248,.22)}
+.minimapa-leyenda{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px;margin-top:4px;font-size:9.5px;line-height:1.2;color:#94a3b8}
+.minimapa-leyenda span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.minimapa-leyenda i{width:6px;height:6px;border-radius:50%;display:inline-block}
+/* menú pre-inicio nativo <dialog> */
+dialog.menu-inicio{padding:0;border:2px solid var(--tinta);border-radius:18px;background:#fff;color:var(--tinta);width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 18px 48px rgba(11,21,38,.45);overflow:auto}
+dialog.menu-inicio:modal{overscroll-behavior:contain}
+dialog.menu-inicio::backdrop{background:rgba(11,21,38,.72);backdrop-filter:blur(4px);overflow:hidden;overscroll-behavior:contain}
+.menu-card{padding:16px 18px 18px;display:grid;gap:12px}
+.menu-cab{display:grid;gap:4px}
+.menu-badge{display:inline-flex;align-items:center;width:fit-content;padding:3px 8px;border-radius:999px;background:#e6f7f2;color:#0b7a66;border:1px solid #99e2cf;font-size:11px;font-weight:700}
+.menu-cab h2{margin:2px 0 0;font:700 20px/1.2 'Bricolage Grotesque',system-ui,sans-serif}
+.menu-sub{margin:0;font-size:13px;line-height:1.4;color:#475569}
+.menu-grupo{margin:0;padding:0;border:0;display:grid;gap:7px}
+.menu-grupo legend{font:700 12px/1.2 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin-bottom:4px;padding:0}
+.opcion-card{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:2px solid #cbd5e1;border-radius:12px;background:#f8fafc;cursor:pointer;transition:border-color .12s ease,background-color .12s ease}
+.opcion-card:hover{border-color:#64748b;background:#f1f5f9}
+.opcion-card:has(input:checked){border-color:var(--verde);background:#ecfdf5;box-shadow:0 0 0 1px var(--verde)}
+.opcion-card input{margin:3px 0 0;flex:0 0 auto;accent-color:var(--verde);width:16px;height:16px}
+.opcion-cuerpo{display:grid;gap:2px;min-width:0}
+.opcion-cuerpo strong{font-size:14px;line-height:1.25;color:var(--tinta)}
+.opcion-cuerpo small{font-size:12px;line-height:1.35;color:#475569}
+.menu-acciones{display:flex;justify-content:flex-end;gap:8px;margin-top:2px}
+.btn-entrar,.btn-sec{min-height:42px;padding:8px 16px;border-radius:12px;border:2px solid var(--tinta);font-weight:700;font-size:14px;box-shadow:var(--sombra)}
+.btn-entrar{background:var(--verde);color:#fff;flex:1}
+.btn-entrar:hover{background:#0b7a66}
+.btn-sec{background:#f1f5f9;color:var(--tinta)}
+.btn-sec:hover{background:#e2e8f0}
+.btn-sec[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){.placa-cab .tx.pulso{animation:none}}
 .sq{width:15px;height:15px;border-radius:3px;border:2px solid var(--tinta);background:#fff;display:inline-block}
 .sq.on{background:var(--verde)}
@@ -115,7 +157,8 @@ details summary{cursor:pointer;font-weight:700;font-size:13px;min-height:32px;di
   .datos .resumen .fila{flex-direction:column;align-items:flex-start;gap:0}
   .datos .resumen .fila .v{text-align:left;font-size:13.5px}
   .datos .resumen .fila.tcrt{grid-column:1/3;flex-direction:row;align-items:center}
-  .datos .resumen .placa{grid-column:1/3}
+  .datos .resumen .placa,.datos .resumen .minimapa{grid-column:1/3}
+  #minimapa-canvas{height:88px}
   .datos .resumen .fila.tcrt .sqs{margin-left:6px}
   .datos .resumen .fila.tcrt .v{margin-left:auto}
   .datos:not(.abierto) .extra{display:none}

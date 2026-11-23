@@ -28,10 +28,11 @@ const DEBOUNCE_VUELTA = 0.1;
 const lim = (x) => Math.max(-1, Math.min(1, x));
 
 // fabricaGran(P) -> función gran(x, z) del granito (o null para piso liso)
-export function crearSim({pistaId = 'A', modo = 'auto', vbat = R.bat.nominal, fabricaGran = () => null} = {}) {
+export function crearSim({pistaId = 'A', modo = 'auto', vbat = R.bat.nominal, encendido = false, fabricaGran = () => null} = {}) {
   const S = {
     modo,
     vbat,
+    encendido: Boolean(encendido),
     pd: {...PD},
     entrada: {f: 0, t: 0, freno: false},
     cmd: {f: 0, t: 0},
@@ -81,6 +82,16 @@ export function crearSim({pistaId = 'A', modo = 'auto', vbat = R.bat.nominal, fa
   };
 
   S.setPista = (id) => cargarPista(id);
+  S.encender = () => {
+    S.encendido = true;
+  };
+  S.detener = () => {
+    S.encendido = false;
+  };
+  S.alternarEncendido = () => {
+    S.encendido = !S.encendido;
+    return S.encendido;
+  };
   S.setModo = (m) => {
     if (m === S.modo) return;
     S.modo = m;
@@ -191,6 +202,7 @@ export function crearSim({pistaId = 'A', modo = 'auto', vbat = R.bat.nominal, fa
 
   // avanza la simulación dt segundos (física a 500 Hz, control a 100 Hz)
   S.avanzar = (dt) => {
+    if (!S.encendido) return;
     let resto = Math.min(dt, 0.25);
     while (resto > 1e-9) {
       const h = Math.min(PASO_FISICA, resto);
@@ -219,6 +231,11 @@ export function crearSim({pistaId = 'A', modo = 'auto', vbat = R.bat.nominal, fa
     return {
       pistaId: S.pistaId,
       modo: S.modo,
+      encendido: S.encendido,
+      x: S.eje.x,
+      z: S.eje.z,
+      th: S.eje.th,
+      puntosControl: P.puntosControl,
       raw: S.lect.map((l) => l.raw),
       n: S.ctrl.n,
       bin: binarios(S.ctrl.n),

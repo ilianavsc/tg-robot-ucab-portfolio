@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {crearGranito} from './granito.js';
 import {leerSensores, binarios} from './linea.js';
 import {R} from './model.js';
-import {IDS_PISTA, PISTAS, ZONA, ZONA_B, crearPista, ocultarTramo, tramoEn} from './pista.js';
+import {IDS_PISTA, PISTAS, ZONA, ZONA_B, calcularPuntosControl, crearPista, ocultarTramo, tramoEn} from './pista.js';
 import {GEOM, PINES_TCRT, crearSim, ledsEsp32} from './sim.js';
 import {BROKERS, TOPICOS, TIMEOUT_MANUAL_S, crearPuenteMqtt} from './mqtt_puente.js';
 
@@ -81,7 +81,7 @@ prueba('el tramo T2 de la pista B es recto (listo para retirar la cinta con head
 });
 
 prueba('automático: da vueltas en la pista A con los resultados históricos (≈ 19,7 s, 0,41 m/s, 0 salidas)', () => {
-  const s = crearSim({pistaId: 'A', modo: 'auto', fabricaGran: conGranito});
+  const s = crearSim({pistaId: 'A', modo: 'auto', encendido: true, fabricaGran: conGranito});
   correr(s, 62);
   const L = s.lectura();
   assert.ok(L.vueltas >= 3, `vueltas ${L.vueltas}`);
@@ -93,7 +93,7 @@ prueba('automático: da vueltas en la pista A con los resultados históricos (�
 });
 
 prueba('automático: da vueltas en la pista B (9,0 m) sin salirse y dentro de 0,35–0,6 m/s', () => {
-  const s = crearSim({pistaId: 'B', modo: 'auto', fabricaGran: conGranito});
+  const s = crearSim({pistaId: 'B', modo: 'auto', encendido: true, fabricaGran: conGranito});
   correr(s, 70);
   const L = s.lectura();
   assert.ok(L.vueltas >= 3, `vueltas ${L.vueltas}`);
@@ -106,7 +106,7 @@ prueba('automático: da vueltas en la pista B (9,0 m) sin salirse y dentro de 0,
 });
 
 prueba('los 4 TCRT5000 muestran [0/1,0/1,0/1,0/1]: centrado en la cinta lee [0,1,1,0] y el error lateral cambia con el lado', () => {
-  const s = crearSim({pistaId: 'A', modo: 'auto'}); // piso liso
+  const s = crearSim({pistaId: 'A', modo: 'auto', encendido: true}); // piso liso
   const L0 = s.lectura();
   assert.strictEqual(L0.bin.length, 4);
   assert.ok(L0.bin.every((b) => b === 0 || b === 1));
@@ -145,7 +145,7 @@ prueba('la lectura de la línea respeta la máscara de cinta: retirar T2 deja lo
 });
 
 prueba('manual: W/↑ avanza, A/D giran, S retrocede y Espacio frena de inmediato', () => {
-  const s = crearSim({pistaId: 'A', modo: 'manual'});
+  const s = crearSim({pistaId: 'A', modo: 'manual', encendido: true});
   s.entrada.f = 1;
   correr(s, 2);
   assert.ok(s.v > 0.4 && s.v < 0.5, `v ${s.v}`);
@@ -168,7 +168,7 @@ prueba('manual: W/↑ avanza, A/D giran, S retrocede y Espacio frena de inmediat
 });
 
 prueba('manual y automático se alternan; manual fuera de la cinta cuenta una salida de línea', () => {
-  const s = crearSim({pistaId: 'A', modo: 'auto', fabricaGran: conGranito});
+  const s = crearSim({pistaId: 'A', modo: 'auto', encendido: true, fabricaGran: conGranito});
   correr(s, 3);
   assert.strictEqual(s.modo, 'auto');
   s.setModo('manual');
@@ -185,7 +185,7 @@ prueba('manual y automático se alternan; manual fuera de la cinta cuenta una sa
 });
 
 prueba('la comparación guarda datos separados por pista y modo, y reiniciar vuelve a la salida', () => {
-  const s = crearSim({pistaId: 'A', modo: 'auto'});
+  const s = crearSim({pistaId: 'A', modo: 'auto', encendido: true});
   correr(s, 5);
   s.setPista('B');
   assert.strictEqual(s.pistaId, 'B');
@@ -199,7 +199,7 @@ prueba('la comparación guarda datos separados por pista y modo, y reiniciar vue
 });
 
 prueba('el panel tiene todos los datos: lectura, error, velocidad, distancia, rumbo, vuelta/tramo y salidas', () => {
-  const s = crearSim({pistaId: 'B', modo: 'auto'});
+  const s = crearSim({pistaId: 'B', modo: 'auto', encendido: true});
   correr(s, 4);
   const L = s.lectura();
   for (const k of ['bin', 'raw', 'eMedido', 'eReal', 'v', 'distancia', 'rumbo', 'tVuelta', 'vuelta', 'tramo', 'salidas', 'pwm']) assert.ok(k in L, k);
@@ -241,7 +241,7 @@ prueba('terminología: aprendizaje progresivo y teach-and-repeat; sin términos 
 prueba('placa ESP32: los 4 LEDs de línea siguen en cada paso la misma lectura del lazo PD', () => {
   const crear = crearSim;
   assert.deepStrictEqual(PINES_TCRT, ['GPIO 36', 'GPIO 39', 'GPIO 34', 'GPIO 35']);
-  const s = crear({pistaId: 'A', modo: 'auto'});
+  const s = crear({pistaId: 'A', modo: 'auto', encendido: true});
   let encendidos = 0;
   let cambios = 0;
   let previo = '';
@@ -262,7 +262,7 @@ prueba('placa ESP32: los 4 LEDs de línea siguen en cada paso la misma lectura d
 
 prueba('placa ESP32: fuera de la cinta los LEDs se apagan y al retroceder marca el sentido de los motores', () => {
   const crear = crearSim;
-  const s = crear({pistaId: 'B', modo: 'manual'});
+  const s = crear({pistaId: 'B', modo: 'manual', encendido: true});
   s.entrada.t = 1; // gira sobre sí mismo hasta salir de la cinta
   for (let k = 0; k < 120; k++) s.avanzar(1 / 60);
   s.entrada.t = 0;
@@ -295,7 +295,7 @@ prueba('puente MQTT: tópicos y brokers coinciden con la App Flutter (HiveMQ →
 });
 
 prueba('puente MQTT: comandos de movimiento y freno mueven el robot en tiempo real, publican telemetría y responden ACK', () => {
-  const s = crearSim({pistaId: 'A', modo: 'auto'});
+  const s = crearSim({pistaId: 'A', modo: 'auto', encendido: true});
   const publicados = [];
   const suscritos = [];
   const listeners = {};
@@ -361,6 +361,88 @@ prueba('puente MQTT: comandos de movimiento y freno mueven el robot en tiempo re
 
   puente.desconectar();
   assert.strictEqual(puente.estado, 'desconectado');
+});
+
+// ---- Fase 1: inicio estático, menú pre-inicio, D-Pad condicional, PC1–PC3 y mini-mapa
+prueba('inicio estático (encendido=false) + transición Encender / Detener congela dinámica, tiempo y MQTT', () => {
+  const s = crearSim({pistaId: 'A', modo: 'auto'});
+  assert.strictEqual(s.encendido, false);
+  assert.strictEqual(s.v, 0);
+  const x0 = s.eje.x;
+  const z0 = s.eje.z;
+  correr(s, 2);
+  assert.strictEqual(s.eje.x, x0, 'no debe moverse estando detenido');
+  assert.strictEqual(s.eje.z, z0);
+  assert.strictEqual(s.t, 0, 'el tiempo debe permanecer congelado');
+  assert.strictEqual(s.dist, 0);
+  assert.strictEqual(s.pwm.izq, 0);
+  assert.strictEqual(s.pwm.der, 0);
+
+  // Al conectar MQTT estando detenido no publica telemetría hasta Encender
+  const publicados = [];
+  const listeners = {};
+  const clienteMock = {
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    subscribe() {},
+    publish(topic, payload) { publicados.push({topic, payload: JSON.parse(payload)}); },
+    removeAllListeners() {},
+    end() {},
+  };
+  const puente = crearPuenteMqtt({sim: s, crearCliente: () => clienteMock});
+  puente.conectar();
+  listeners.connect.forEach((fn) => fn());
+  for (let t = 0; t < 3; t += 0.1) puente.avanzar(0.1);
+  assert.strictEqual(publicados.length, 0, 'MQTT congelado mientras encendido=false');
+
+  // Encender reanuda dinámica, tiempo y publicaciones MQTT
+  s.encender();
+  assert.strictEqual(s.encendido, true);
+  for (let t = 0; t < 2; t += 0.05) { puente.avanzar(0.05); s.avanzar(0.05); }
+  assert.ok(s.dist > 0.5 && s.t > 1.9, `debe avanzar al encender (dist=${s.dist}, t=${s.t})`);
+  assert.ok(publicados.length >= 2, 'MQTT debe publicar al reanudar');
+
+  // Detener congela todo de nuevo
+  s.detener();
+  assert.strictEqual(s.encendido, false);
+  const tCongelado = s.t;
+  const dCongelada = s.dist;
+  const pubsAntes = publicados.length;
+  for (let t = 0; t < 3; t += 0.1) { puente.avanzar(0.1); s.avanzar(0.1); }
+  assert.strictEqual(s.t, tCongelado);
+  assert.strictEqual(s.dist, dCongelada);
+  assert.strictEqual(publicados.length, pubsAntes);
+  puente.desconectar();
+});
+
+prueba('menú pre-inicio y D-Pad condicional: oculto en modo App (MQTT), visible en modo local', () => {
+  const html = leer('plantilla.html');
+  const css = leer('style.css');
+  const main = leer('main.js');
+  assert.ok(/<dialog[^>]*id="menu-inicio"/.test(html), 'usa <dialog> nativo para menú pre-inicio');
+  assert.ok(/name="pre-conexion"[^>]*value="app"/.test(html) && /name="pre-conexion"[^>]*value="local"/.test(html));
+  assert.ok(/name="pre-pista"[^>]*value="A"/.test(html) && /name="pre-pista"[^>]*value="B"/.test(html));
+  assert.ok(/id="b-entrar"/.test(html) && /id="b-config"/.test(html));
+  assert.ok(/id="b-encender"[^>]*aria-pressed="false"/.test(html) && html.includes('⚡ Encender'));
+  assert.ok(main.includes('⏹ Detener') && main.includes('⚡ Encender'));
+  assert.ok(/body\[data-conexion="app"\] \.dpad/.test(css), 'CSS oculta D-Pad en modo App');
+  assert.ok(main.includes("dpad.hidden = true") && main.includes("dpad.hidden = false"), 'main.js alterna visibilidad del D-Pad según modo');
+  assert.ok(/id="minimapa"/.test(html) && /id="minimapa-canvas"/.test(html) && main.includes('pintaMinimapa'));
+});
+
+prueba('puntos de control PC1–PC3 en tercios para Pista A (2,68 / 5,37 / 8,05 m) y Pista B (3,00 / 6,00 / 9,00 m)', () => {
+  const A = crearPista('A');
+  const B = crearPista('B');
+  const pcA = calcularPuntosControl(A);
+  const pcB = calcularPuntosControl(B);
+  assert.deepStrictEqual(pcA.map((p) => [p.id, p.distanciaM]), [['PC1', 2.68], ['PC2', 5.37], ['PC3', 8.05]]);
+  assert.deepStrictEqual(pcB.map((p) => [p.id, p.distanciaM]), [['PC1', 3.0], ['PC2', 6.0], ['PC3', 9.0]]);
+  for (const [P, pcs] of [[A, pcA], [B, pcB]]) {
+    assert.strictEqual(P.puntosControl.length, 3);
+    for (const pc of pcs) {
+      assert.ok(Number.isFinite(pc.x) && Number.isFinite(pc.z));
+      assert.ok(Math.hypot(pc.x - P.X[pc.idx], pc.z - P.Z[pc.idx]) < 1e-9);
+    }
+  }
 });
 
 console.log(`\nP04 Simulador 1: ${ok}/${ok} pruebas pasaron`);

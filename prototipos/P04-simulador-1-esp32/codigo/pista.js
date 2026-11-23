@@ -193,12 +193,14 @@ function armar(xs, zs, def) {
   let rmin = Infinity;
   for (let i = 0; i < N; i++) rmin = Math.min(rmin, RAD[i]);
   const largo = N * PASO;
+  const largoNominal = def.largoNominal || largo;
   // los tramos de la definición, cortados a la longitud real de la pista
   const tramos = def.tramos.map((t) => ({...t, hastaM: Math.min(t.hastaM, largo), linea: true}));
-  return {
+  const P = {
     id: def.id,
     nombre: def.nombre,
     corto: def.corto,
+    largoNominal,
     descripcion: def.descripcion,
     X,
     Z,
@@ -213,6 +215,27 @@ function armar(xs, zs, def) {
     zona: def.id === 'B' ? ZONA_B : ZONA, // área del piso con granito y cinta
     cinta: new Uint8Array(N).fill(1), // 1 = hay cinta en esa muestra
   };
+  P.puntosControl = calcularPuntosControl(P);
+  return P;
+}
+
+// 3 puntos de control estimados en tercios (L/3, 2L/3, L), mismo criterio que P05 y app/
+export function calcularPuntosControl(P) {
+  const L = P.largoNominal || P.largo;
+  return [1, 2, 3].map((n) => {
+    const distanciaM = Number(((L * n) / 3).toFixed(2));
+    const idx = n === 3 ? 0 : Math.min(P.N - 1, Math.round((P.largo * n) / 3 / P.paso));
+    return {
+      id: `PC${n}`,
+      distanciaM,
+      fraccion: n / 3,
+      idx,
+      x: P.X[idx],
+      z: P.Z[idx],
+      tx: P.TX[idx],
+      tz: P.TZ[idx],
+    };
+  });
 }
 
 export function crearPista(id = 'A') {

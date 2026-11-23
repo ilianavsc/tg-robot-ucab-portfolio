@@ -134,6 +134,56 @@ function pintar(canvas, img, P) {
       ctx.fillRect(x - 3, y - 3, 6, 6);
     }
   }
+  // etiquetas visuales de INICIO y puntos de control PC1–PC3 en tercios (solo textura visual, G no cambia)
+  const pintarEtiqueta = (wx, wz, texto, colorBg, colorTxt = '#ffffff') => {
+    const [px, py] = toPx(wx, wz);
+    ctx.save();
+    ctx.font = '700 22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    const w = ctx.measureText(texto).width + 20;
+    const h = 32;
+    const rx = Math.max(8, Math.min(PX - w - 8, px - w / 2));
+    const ry = Math.max(8, Math.min(PY - h - 8, py - h / 2));
+    ctx.fillStyle = colorBg;
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, w, h, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#14213D';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = colorTxt;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(texto, rx + w / 2, ry + h / 2 + 1);
+    ctx.restore();
+  };
+  const fmtM = (v) => `${v.toFixed(2).replace('.', ',')} m`;
+  pintarEtiqueta(P.X[0] + P.TZ[0] * 0.14, P.Z[0] - P.TX[0] * 0.14, 'INICIO', '#F2603D', '#ffffff');
+  const coloresPc = {PC1: '#E8B90C', PC2: '#6B4EE6', PC3: '#0F9D84'};
+  const textoPc = {PC1: '#14213D', PC2: '#ffffff', PC3: '#ffffff'};
+  for (const pc of P.puntosControl || []) {
+    const color = coloresPc[pc.id] || '#0F9D84';
+    // marcas transversales a ambos lados de la cinta
+    ctx.fillStyle = color;
+    for (const lado of [1, -1]) {
+      const ox = pc.tz * lado;
+      const oz = -pc.tx * lado;
+      for (let k = 0; k < 3; k++) {
+        const off = 0.042 + k * 0.011;
+        const [mx, my] = toPx(pc.x + ox * off, pc.z + oz * off);
+        ctx.fillRect(mx - 4, my - 4, 8, 8);
+      }
+    }
+    // PC3 coincide con salida en circuito cerrado: se dibuja en el lado opuesto a INICIO
+    const ladoEtiq = pc.id === 'PC3' ? -1 : 1;
+    const distEtiq = 0.14;
+    pintarEtiqueta(
+      pc.x + pc.tz * ladoEtiq * distEtiq,
+      pc.z - pc.tx * ladoEtiq * distEtiq,
+      `${pc.id} · ${fmtM(pc.distanciaM)}`,
+      color,
+      textoPc[pc.id] || '#ffffff'
+    );
+  }
 }
 
 // Un cuadro de granito de 0,5 m que se repite fuera de la zona de la pista (sin cinta), con sus bordes empalmados

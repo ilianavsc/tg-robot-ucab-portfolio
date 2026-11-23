@@ -152,7 +152,7 @@ export function crearPuenteMqtt({
   });
 
   const publicarTelemetria = () => {
-    if (!cliente || estado !== 'conectado') return null;
+    if (!cliente || estado !== 'conectado' || sim.encendido === false) return null;
     const est = construirEstado();
     const us = construirUltrasonido();
     try {
@@ -355,6 +355,7 @@ export function crearPuenteMqtt({
   };
 
   const avanzar = (dt) => {
+    if (sim.encendido === false) return;
     if (remoto.activo) {
       if (remoto.restanteS > 0) {
         remoto.restanteS -= dt;
