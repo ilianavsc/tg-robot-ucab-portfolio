@@ -33,8 +33,8 @@ Máquina de estados determinista y pura (`paso(nav, entradas)`), portable 1:1 a 
 | `4` | `REACQUIRE_LINE` | Búsqueda controlada (`VEL_BUSQUEDA = 0,30`) para reenganchar la cinta al terminar un tramo sin línea. |
 
 ### 2.2 Umbrales y reglas de seguridad (Capa 1)
-- **Ultrasonido frontal (`HC-SR04P`):** `< 20 cm` → frenado crítico inmediato (`v = 0`, estado lógico intacto; reanuda al despejar); `20–50 cm` → precaución (velocidad a la mitad).
-- **Balizas BLE (solo extremos, sin emparejamiento GATT):** detección `RSSI >= -80 dBm`, llegada `RSSI >= -52 dBm`. Solo valida llegada después de haber salido del inicio (`haSalidoDeInicio = true`).
+- **Ultrasonido frontal (`HC-SR04P`):** `< 20 cm` (`teach_and_repeat.js:L35`, `pista_canonica.json:L49`) → frenado crítico inmediato (`v = 0`, estado lógico intacto; reanuda al despejar); `20–50 cm` (`teach_and_repeat.js:L36`, `pista_canonica.json:L50`) → precaución (velocidad a la mitad).
+- **Balizas BLE (solo extremos, sin emparejamiento GATT):** detección `RSSI >= -80 dBm` (`specs/navegacion/teach_and_repeat.js:L46`, `specs/pista_canonica.json:L51`) y llegada `RSSI >= -52 dBm` (`specs/navegacion/teach_and_repeat.js:L47`, `specs/pista_canonica.json:L52`). Solo valida llegada después de haber salido del inicio (`haSalidoDeInicio = true`).
 - **Transición directa `HEADING_HOLD → WAIT_BEACON`:** si el hueco sin cinta termina en el extremo y se detecta `RSSI >= -80 dBm` (tras salir del inicio), salta directamente a `WAIT_BEACON` sin pasar por `REACQUIRE_LINE`.
 - **Latches terminales de seguridad (`paradaSeguridad = true`, sin reanudación automática):**
   - Timeout sin línea: `TIEMPO_MAX_SIN_LINEA_MS = 4000 ms` (inmutable; huecos `> ~4,5 m` a velocidad base terminan en `timeout_sin_linea`).
@@ -97,10 +97,6 @@ stateDiagram-v2
     [*] --> SIN_RUTA
     SIN_RUTA --> ESCANEO_IDA : iniciar_escaneo
 
-    state ESCANEO_IDA {
-        [*] --> CapturaIda
-    }
-
     ESCANEO_IDA --> OPERACION_BUCLE : ruta_cerrada_sin_parada_ok
     ESCANEO_IDA --> OPERACION_CON_PARADA : ruta_cerrada_con_parada_ok
     ESCANEO_IDA --> ESPERA_REPOSICION : ruta_lineal_fin_ida
@@ -108,24 +104,24 @@ stateDiagram-v2
     ESPERA_REPOSICION --> ESCANEO_RETORNO : confirmacion_manual_operador
     ESCANEO_RETORNO --> OPERACION_CON_PARADA : ruta_lineal_doble_escaneo_ok
 
-    OPERACION_BUCLE --> OPERACION_BUCLE : uso_completado (usos < 3)
-    OPERACION_BUCLE --> REESCANEO_PARADA : usos_completados >= 3 y solicitar_parada
+    OPERACION_BUCLE --> OPERACION_BUCLE : uso_completado_menor_3
+    OPERACION_BUCLE --> REESCANEO_PARADA : usos_3_y_solicitar_parada
     REESCANEO_PARADA --> OPERACION_CON_PARADA : parada_configurada_ok
 
     OPERACION_BUCLE --> PAUSA_OBSTACULO : obstaculo_menor_20cm
     OPERACION_CON_PARADA --> PAUSA_OBSTACULO : obstaculo_menor_20cm
-    PAUSA_OBSTACULO --> OPERACION_BUCLE : obstaculo_despejado (sin_parada)
-    PAUSA_OBSTACULO --> OPERACION_CON_PARADA : obstaculo_despejado (con_parada)
+    PAUSA_OBSTACULO --> OPERACION_BUCLE : despejado_sin_parada
+    PAUSA_OBSTACULO --> OPERACION_CON_PARADA : despejado_con_parada
 
-    ESCANEO_IDA --> ERROR_SEGURIDAD : mpu6050_critico / freno_remoto
-    ESCANEO_RETORNO --> ERROR_SEGURIDAD : mpu6050_critico / freno_remoto
-    OPERACION_BUCLE --> ERROR_SEGURIDAD : mpu6050_critico / freno_remoto
-    OPERACION_CON_PARADA --> ERROR_SEGURIDAD : mpu6050_critico / freno_remoto
-    PAUSA_OBSTACULO --> ERROR_SEGURIDAD : mpu6050_critico / freno_remoto
+    ESCANEO_IDA --> ERROR_SEGURIDAD : mpu6050_critico_o_freno_remoto
+    ESCANEO_RETORNO --> ERROR_SEGURIDAD : mpu6050_critico_o_freno_remoto
+    OPERACION_BUCLE --> ERROR_SEGURIDAD : mpu6050_critico_o_freno_remoto
+    OPERACION_CON_PARADA --> ERROR_SEGURIDAD : mpu6050_critico_o_freno_remoto
+    PAUSA_OBSTACULO --> ERROR_SEGURIDAD : mpu6050_critico_o_freno_remoto
 
     ERROR_SEGURIDAD --> RECUPERACION_MANUAL : operador_inicia_inspeccion
-    RECUPERACION_MANUAL --> OPERACION_BUCLE : sistema_seguro (sin_parada)
-    RECUPERACION_MANUAL --> OPERACION_CON_PARADA : sistema_seguro (con_parada)
+    RECUPERACION_MANUAL --> OPERACION_BUCLE : sistema_seguro_sin_parada
+    RECUPERACION_MANUAL --> OPERACION_CON_PARADA : sistema_seguro_con_parada
     RECUPERACION_MANUAL --> SIN_RUTA : reset_ruta
 ```
 
@@ -142,14 +138,14 @@ Ortogonal a la Máquina de Rutas. Solo puede salir de `SIN_PEDIDO` cuando la Má
 ```mermaid
 stateDiagram-v2
     [*] --> SIN_PEDIDO
-    SIN_PEDIDO --> SOLICITADO : crear_pedido [ruta == OPERACION_CON_PARADA]
+    SIN_PEDIDO --> SOLICITADO : crear_pedido_con_parada_activa
     SOLICITADO --> EN_TRANSITO : despacho_confirmado
     SOLICITADO --> SIN_PEDIDO : cancelar_antes_de_salir
 
     EN_TRANSITO --> ENTREGADO : llegada_parada_y_confirmacion
-    EN_TRANSITO --> CANCELACION_SEGURA : cancelar_pedido / error_seguridad
+    EN_TRANSITO --> CANCELACION_SEGURA : cancelar_pedido_o_error_seguridad
 
-    CANCELACION_SEGURA --> SIN_PEDIDO : robot_detenido_en_seguro (ruta_conservada)
+    CANCELACION_SEGURA --> SIN_PEDIDO : robot_detenido_ruta_conservada
     ENTREGADO --> SIN_PEDIDO : cierre_entrega
 ```
 
