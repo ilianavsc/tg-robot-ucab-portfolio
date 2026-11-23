@@ -1,0 +1,111 @@
+{
+  "version": "1.0.0",
+  "linea": "Línea B — Cronograma Académico",
+  "descripcion": "Entregas formales de la materia Trabajo de Grado ante Escuela y tutor. Es independiente de la Línea A (Avance Técnico), donde los prototipos, simuladores y app están adelantados.",
+  "notaFechas": "Fechas oficiales pendientes de confirmación por Escuela/tutor. No se asumen ni inventan fechas.",
+  "estadosPermitidos": [
+    "planificada",
+    "en_preparacion",
+    "en_revision",
+    "entregada",
+    "aprobada"
+  ],
+  "entregas": [
+    {
+      "id": "E1",
+      "orden": 1,
+      "entrega": "capitulo-1",
+      "titulo": "Capítulo I — El Problema",
+      "estado": "entregada",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": "tesis/entregas/capitulo-1/",
+      "metadata": "tesis/entregas/capitulo-1/metadata.json",
+      "borrador_md": "tesis/capitulo_1.md",
+      "notas": "Planteamiento del problema, objetivos, justificación y alcance entregados."
+    },
+    {
+      "id": "E2",
+      "orden": 2,
+      "entrega": "marco-preliminar",
+      "titulo": "Marco Preliminar (Marco Teórico)",
+      "estado": "entregada",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": "tesis/entregas/marco-preliminar/",
+      "metadata": "tesis/entregas/marco-preliminar/metadata.json",
+      "borrador_md": "tesis/marco_teorico.md",
+      "notas": "Antecedentes, bases teóricas y marco conceptual entregados."
+    },
+    {
+      "id": "E3",
+      "orden": 3,
+      "entrega": "capitulo-2",
+      "titulo": "Capítulo II — Marco Metodológico",
+      "estado": "entregada",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": "tesis/entregas/capitulo-2/",
+      "metadata": "tesis/entregas/capitulo-2/metadata.json",
+      "borrador_md": "tesis/capitulo_2.md",
+      "notas": "Diseño metodológico, arquitectura preliminar y protocolo de validación entregados."
+    },
+    {
+      "id": "E4",
+      "orden": 4,
+      "entrega": "capitulo-3",
+      "titulo": "Capítulo III — Diseño e Implementación del Sistema",
+      "estado": "en_preparacion",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": null,
+      "metadata": null,
+      "borrador_md": "tesis/capitulo_3.md",
+      "notas": "Borrador técnico en preparación; el desarrollo de simuladores y app avanza por separado en Línea A."
+    },
+    {
+      "id": "E5",
+      "orden": 5,
+      "entrega": "capitulo-4",
+      "titulo": "Capítulo IV — Integración y Pruebas",
+      "estado": "planificada",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": null,
+      "metadata": null,
+      "borrador_md": null,
+      "notas": "Integración hardware-in-the-loop (HIL) y protocolo de pruebas en pista real."
+    },
+    {
+      "id": "E6",
+      "orden": 6,
+      "entrega": "capitulo-5",
+      "titulo": "Capítulo V — Análisis de Resultados",
+      "estado": "planificada",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": null,
+      "metadata": null,
+      "borrador_md": null,
+      "notas": "Análisis estadístico de corridas en pista, latencia MQTT y precisión de retorno."
+    },
+    {
+      "id": "E7",
+      "orden": 7,
+      "entrega": "capitulo-6",
+      "titulo": "Capítulo VI — Conclusiones y Recomendaciones",
+      "estado": "planificada",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": null,
+      "metadata": null,
+      "borrador_md": null,
+      "notas": "Síntesis de cumplimiento de objetivos, limitaciones y líneas futuras."
+    },
+    {
+      "id": "E8",
+      "orden": 8,
+      "entrega": "tomo-final",
+      "titulo": "Tomo Final y Defensa",
+      "estado": "planificada",
+      "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
+      "carpeta": null,
+      "metadata": null,
+      "borrador_md": null,
+      "notas": "Compilación definitiva del tomo, anexos y defensa ante jurado."
+    }
+  ]
+}

@@ -130,6 +130,243 @@
     min-height: 36px;
   }
 }
+
+/* ==========================================================================
+   DOBLE CRONOGRAMA DESACOPLADO (Línea A: Técnico · Línea B: Académico)
+   Consume tokens compartidos de assets/css/tokens.css
+   ========================================================================== */
+.doble-linea-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.linea-resumen {
+  background: var(--tg-surface-alt);
+  border: 2px solid var(--tg-border-strong);
+  border-radius: var(--tg-radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.linea-resumen.linea-a {
+  border-left: 6px solid var(--tg-accent);
+}
+.linea-resumen.linea-b {
+  border-left: 6px solid var(--tg-info);
+}
+.linea-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  font-family: var(--tg-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: var(--tg-radius-full);
+}
+.linea-etiqueta.tecnica {
+  background: var(--tg-accent-soft);
+  color: var(--tg-accent-hover);
+  border: 1px solid var(--tg-accent);
+}
+.linea-etiqueta.academica {
+  background: #eff6ff;
+  color: var(--tg-info);
+  border: 1px solid var(--tg-info);
+}
+.linea-resumen h2 {
+  margin: 0;
+  font-family: var(--tg-font-display);
+  font-size: 19px;
+  color: var(--tg-text);
+}
+.linea-resumen p {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--tg-text-muted);
+  line-height: 1.45;
+}
+.linea-salto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tg-touch-min);
+  padding: 8px 14px;
+  margin-top: auto;
+  width: fit-content;
+  border-radius: var(--tg-radius-md);
+  border: 2px solid var(--tg-border-strong);
+  background: var(--tg-surface);
+  color: var(--tg-text);
+  font-family: var(--tg-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.linea-salto:hover {
+  background: var(--tg-accent-soft);
+  border-color: var(--tg-accent);
+}
+.linea-salto:focus-visible,
+.entrega-accion:focus-visible {
+  outline: 3px solid var(--tg-accent);
+  outline-offset: 2px;
+}
+
+.seccion-linea-cab {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.seccion-linea-cab h2 {
+  margin: 4px 0 0;
+}
+.aviso-fechas {
+  background: var(--tg-warning-bg);
+  border: 1.5px solid var(--tg-warning);
+  border-radius: var(--tg-radius-md);
+  padding: 12px 16px;
+  margin: 0 0 18px;
+  font-size: 14.5px;
+  color: var(--tg-text);
+  line-height: 1.45;
+}
+.entregas-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.entrega-kpi {
+  font-family: var(--tg-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--tg-radius-full);
+  background: var(--tg-surface);
+  border: 1.5px solid var(--tg-border);
+  color: var(--tg-text);
+  font-variant-numeric: tabular-nums;
+}
+.entregas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.entrega-card {
+  background: var(--tg-surface);
+  border: 2px solid var(--tg-border-strong);
+  border-radius: var(--tg-radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 3px 3px 0px var(--tg-border-strong);
+}
+.entrega-card.estado-planificada {
+  border-color: var(--tg-border);
+  box-shadow: none;
+  background: var(--tg-surface-alt);
+}
+.entrega-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.entrega-id {
+  font-family: var(--tg-font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--tg-text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.entrega-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--tg-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--tg-radius-full);
+  border: 1.5px solid transparent;
+}
+.entrega-pill.entregada,
+.entrega-pill.aprobada {
+  background: var(--tg-accent-soft);
+  color: var(--tg-accent-hover);
+  border-color: var(--tg-accent);
+}
+.entrega-pill.en_preparacion,
+.entrega-pill.en_revision {
+  background: var(--tg-warning-bg);
+  color: #92400e;
+  border-color: var(--tg-warning);
+}
+.entrega-pill.planificada {
+  background: var(--tg-surface);
+  color: var(--tg-neutral);
+  border-color: var(--tg-border);
+}
+.entrega-card h3 {
+  margin: 0;
+  font-family: var(--tg-font-display);
+  font-size: 17.5px;
+  line-height: 1.25;
+  color: var(--tg-text);
+}
+.entrega-fecha {
+  margin: 0;
+  font-family: var(--tg-font-mono);
+  font-size: 12.5px;
+  color: var(--tg-text-subtle);
+}
+.entrega-notas {
+  margin: 0;
+  font-size: 14px;
+  color: var(--tg-text-muted);
+  line-height: 1.45;
+}
+.entrega-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+.entrega-accion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tg-touch-min);
+  padding: 6px 12px;
+  border-radius: var(--tg-radius-md);
+  border: 1.5px solid var(--tg-border-strong);
+  background: var(--tg-surface);
+  color: var(--tg-text);
+  font-family: var(--tg-font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.entrega-accion:hover {
+  background: var(--tg-accent-soft);
+  border-color: var(--tg-accent);
+  color: var(--tg-accent-hover);
+}
+.entrega-accion.secundaria {
+  border-color: var(--tg-border);
+  color: var(--tg-text-muted);
+}
 </style>
 </head>
 <body data-pagina="cronograma" data-base="">
@@ -137,35 +374,78 @@
 
 <main>
   <!-- ====================================================================
-       1. CABECERA Y BARRA DE PROGRESO GENERAL (32 SEMANAS)
+       1. CABECERA: DOBLE CRONOGRAMA DESACOPLADO (LÍNEA B ACADÉMICA · LÍNEA A TÉCNICA)
        ==================================================================== -->
   <section class="crono-hero" aria-labelledby="t-crono">
-    <p class="ceja" style="margin:0 0 6px">Cronograma · 32 semanas · Oct 2026 – Jun 2027</p>
-    <h1 id="t-crono" style="margin:0 0 8px">Las 32 semanas en <em>4 fases visuales</em></h1>
-    <p class="bajada linea-2" id="resumen" style="margin:0 0 18px"></p>
+    <p class="ceja" style="margin:0 0 6px">Doble cronograma · Seguimiento independiente</p>
+    <h1 id="t-crono" style="margin:0 0 8px">Avance técnico y <em>calendario académico</em> por separado</h1>
+    <p class="bajada" style="margin:0">El desarrollo de ingeniería (simuladores, firmware y app) corre adelantado respecto al calendario formal de entregas de la materia. Ambas líneas se muestran desacopladas para evitar mezclar hitos técnicos con evaluaciones oficiales.</p>
 
-    <div class="hero-progreso" style="max-width:100%;margin:0">
-      <div class="hero-progreso-top">
-        <span id="progreso-sem-label">Avance del cronograma</span>
-        <span id="progreso-sem-pct">0 %</span>
-      </div>
-      <div class="barra-avance" role="progressbar" aria-valuemin="0" aria-valuemax="32" aria-valuenow="3" id="progreso-sem-aria">
-        <div class="barra-avance-fill" id="progreso-sem-fill" style="width:10%"></div>
-      </div>
-      <div class="tira-semanas" id="tira-32" aria-label="Mapa de las 32 semanas"></div>
-      <div class="leyenda-tira">
-        <span><i style="background:#0F9D84"></i>Completada</span>
-        <span><i style="background:#f43f5e"></i>Semana actual</span>
-        <span><i style="background:#e2e8f0;border:1px solid #cbd5e1"></i>Por venir</span>
-      </div>
+    <div class="doble-linea-grid">
+      <article class="linea-resumen linea-b">
+        <span class="linea-etiqueta academica">Línea B · Calendario oficial</span>
+        <h2>Cronograma Académico (8 entregas)</h2>
+        <p>Entregas formales de Trabajo de Grado ante Escuela y tutor: Capítulo I, Marco Preliminar y Capítulo II ya entregados; fechas oficiales pendientes de confirmación.</p>
+        <a class="linea-salto" href="#linea-b-academica">Ver las 8 entregas →</a>
+      </article>
+      <article class="linea-resumen linea-a">
+        <span class="linea-etiqueta tecnica">Línea A · Desarrollo adelantado</span>
+        <h2>Avance Técnico (32 semanas · 4 fases)</h2>
+        <p>Construcción de prototipos P01–P05, contrato MQTT/pista, firmware y app Flutter. Refleja el progreso real de ingeniería fuera del ritmo mínimo de la materia.</p>
+        <a class="linea-salto" href="#linea-a-tecnica">Ver avance técnico →</a>
+      </article>
     </div>
   </section>
 
   <!-- ====================================================================
-       2. LAS 4 FASES VISUALES CON ACORDEONES DE SEMANAS
+       2. LÍNEA B — CRONOGRAMA ACADÉMICO (8 ENTREGAS FORMALES)
        ==================================================================== -->
-  <section aria-labelledby="t-fases">
-    <h2 id="t-fases">Las 4 Fases del Proyecto</h2>
+  <section id="linea-b-academica" aria-labelledby="t-linea-b" style="margin-bottom:36px">
+    <div class="seccion-linea-cab">
+      <div>
+        <span class="linea-etiqueta academica">Línea B · Calendario oficial de la materia</span>
+        <h2 id="t-linea-b">Cronograma Académico — 8 Entregas de Tesis</h2>
+      </div>
+    </div>
+    <p class="bajada" id="academico-desc" style="margin:0 0 12px">Cargando entregas académicas…</p>
+    <div class="aviso-fechas" id="academico-nota" role="note">
+      Fechas oficiales pendientes de confirmación por Escuela/tutor. No se asumen ni inventan fechas.
+    </div>
+    <div class="entregas-kpis" id="academico-kpis" aria-live="polite"></div>
+    <div class="entregas-grid" id="academico-grid"></div>
+  </section>
+
+  <!-- ====================================================================
+       3. LÍNEA A — AVANCE TÉCNICO (32 SEMANAS Y 4 FASES DE INGENIERÍA)
+       ==================================================================== -->
+  <section id="linea-a-tecnica" aria-labelledby="t-linea-a">
+    <div class="crono-hero" style="margin-bottom:24px">
+      <div class="seccion-linea-cab">
+        <div>
+          <span class="linea-etiqueta tecnica">Línea A · Desarrollo adelantado de ingeniería</span>
+          <h2 id="t-linea-a" style="font-size:26px">Avance Técnico · 32 semanas en 4 fases</h2>
+        </div>
+      </div>
+      <p class="bajada linea-2" id="resumen" style="margin:0 0 18px"></p>
+
+      <div class="hero-progreso" style="max-width:100%;margin:0">
+        <div class="hero-progreso-top">
+          <span id="progreso-sem-label">Avance del cronograma técnico</span>
+          <span id="progreso-sem-pct">0 %</span>
+        </div>
+        <div class="barra-avance" role="progressbar" aria-valuemin="0" aria-valuemax="32" aria-valuenow="3" id="progreso-sem-aria">
+          <div class="barra-avance-fill" id="progreso-sem-fill" style="width:10%"></div>
+        </div>
+        <div class="tira-semanas" id="tira-32" aria-label="Mapa de las 32 semanas del plan técnico"></div>
+        <div class="leyenda-tira">
+          <span><i style="background:#0F9D84"></i>Completada</span>
+          <span><i style="background:#f43f5e"></i>Semana actual</span>
+          <span><i style="background:#e2e8f0;border:1px solid #cbd5e1"></i>Por venir</span>
+        </div>
+      </div>
+    </div>
+
+    <h3 id="t-fases" style="font-size:22px;margin:0 0 6px">Las 4 Fases Técnicas del Proyecto</h3>
     <p class="bajada linea-2" style="margin-bottom:18px">Pulsa "Ver semanas" dentro de cualquier fase para desplegar el detalle semanal.</p>
     <div class="etapas-grid" id="etapas-4"></div>
   </section>
@@ -442,6 +722,78 @@
   document.getElementById("eventos").innerHTML = D.eventos.map(function (ev) {
     return '<div class="tarjeta" style="padding:14px 16px"><span class="chip ' + (ev.tipo === "oro" ? "aviso" : "hecho") + '">' + U.corto(U.fecha(ev.inicio)) + " al " + U.largo(U.fecha(ev.fin)) + '</span><h3 style="margin:8px 0 4px;font-size:17px">' + ev.nombre + '</h3><p class="linea-2" style="margin:0;font-size:14.5px;color:var(--text-muted)">' + ev.nota + "</p></div>";
   }).join("");
+
+  /* 4. Línea B — Cronograma Académico (datos/entregas_academicas.json) */
+  var ETIQUETAS_ACAD = {
+    planificada: "Planificada",
+    en_preparacion: "En preparación",
+    en_revision: "En revisión",
+    entregada: "Entregada",
+    aprobada: "Aprobada"
+  };
+  function escHtml(txt) {
+    return String(txt || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  fetch("datos/entregas_academicas.json")
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      var descEl = document.getElementById("academico-desc");
+      var notaEl = document.getElementById("academico-nota");
+      var kpisEl = document.getElementById("academico-kpis");
+      var gridEl = document.getElementById("academico-grid");
+      if (descEl && data.descripcion) descEl.textContent = data.descripcion;
+      if (notaEl && data.notaFechas) notaEl.textContent = "Aviso de fechas: " + data.notaFechas;
+
+      var lista = Array.isArray(data.entregas) ? data.entregas : [];
+      var conteo = { entregada: 0, aprobada: 0, en_revision: 0, en_preparacion: 0, planificada: 0 };
+      lista.forEach(function (it) {
+        if (Object.prototype.hasOwnProperty.call(conteo, it.estado)) conteo[it.estado]++;
+      });
+      var completadas = conteo.entregada + conteo.aprobada;
+
+      if (kpisEl) {
+        kpisEl.innerHTML =
+          '<span class="entrega-kpi">Entregadas: ' + completadas + " / " + lista.length + "</span>" +
+          (conteo.en_revision ? '<span class="entrega-kpi">En revisión: ' + conteo.en_revision + "</span>" : "") +
+          '<span class="entrega-kpi">En preparación: ' + conteo.en_preparacion + "</span>" +
+          '<span class="entrega-kpi">Planificadas: ' + conteo.planificada + "</span>";
+      }
+
+      if (gridEl) {
+        gridEl.innerHTML = lista.map(function (it) {
+          var estado = ETIQUETAS_ACAD[it.estado] ? it.estado : "planificada";
+          var etq = ETIQUETAS_ACAD[estado];
+          var acciones = "";
+          if (it.borrador_md) {
+            acciones += '<a class="entrega-accion" href="' + escHtml(it.borrador_md) + '" data-md="' + escHtml(it.borrador_md) + '">Ver borrador (.md)</a>';
+          }
+          if (it.metadata) {
+            acciones += '<a class="entrega-accion secundaria" href="' + escHtml(it.metadata) + '" target="_blank" rel="noopener">metadata.json</a>';
+          }
+          return '<article class="entrega-card estado-' + estado + '">' +
+            '<div class="entrega-top">' +
+              '<span class="entrega-id">' + escHtml(it.id) + " · Entrega " + escHtml(it.orden) + " de " + lista.length + "</span>" +
+              '<span class="entrega-pill ' + estado + '">' + etq + "</span>" +
+            "</div>" +
+            "<h3>" + escHtml(it.titulo) + "</h3>" +
+            '<p class="entrega-fecha">Fecha oficial: ' + escHtml(it.fecha_entrega) + "</p>" +
+            '<p class="entrega-notas">' + escHtml(it.notas) + "</p>" +
+            (acciones ? '<div class="entrega-acciones">' + acciones + "</div>" : "") +
+          "</article>";
+        }).join("");
+      }
+    })
+    .catch(function (err) {
+      var descEl = document.getElementById("academico-desc");
+      if (descEl) descEl.textContent = "No se pudo cargar datos/entregas_academicas.json (" + err.message + ").";
+    });
 })();
 </script>
 </body>

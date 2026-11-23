@@ -48,7 +48,7 @@
   var actual = document.body.getAttribute("data-pagina") || "";
   /* Menú en 5 grupos: tipo "enlace" va solo, tipo "grupo" despliega sus hijos.
      Cada hijo es [clave de data-pagina, texto, url]. */
-  var APP_URL = "https://ilianavsc.github.io/tg-robot-ucab/app/"; // la app Flutter vive en su propia subcarpeta de GitHub Pages
+  var APP_URL = "https://ilianavsc.github.io/tg-robot-ucab-app/"; // app Flutter desplegada en su repositorio independiente
   var grupos = [
     { tipo: "enlace", clave: "inicio", texto: "Inicio", url: "index.html" },
     { tipo: "grupo", id: "proyecto", texto: "El Proyecto", hijos: [
@@ -79,7 +79,8 @@
       '<nav id="menu-nav" aria-label="Secciones"><ul class="menu-lista">';
     grupos.forEach(function (g) {
       if (g.tipo === "enlace") {
-        html += '<li><a' + (g.destacado ? ' class="menu-app"' : "") + ' href="' + urlDe(g.url) + '"' + (g.clave === actual ? ' aria-current="page"' : "") + ">" + g.texto + "</a></li>";
+        var ext = /^https?:\/\//.test(g.url) ? ' target="_blank" rel="noopener"' : "";
+        html += '<li><a' + (g.destacado ? ' class="menu-app"' : "") + ' href="' + urlDe(g.url) + '"' + ext + (g.clave === actual ? ' aria-current="page"' : "") + ">" + g.texto + "</a></li>";
         return;
       }
       var activo = g.hijos.some(function (h) { return h[0] === actual; });

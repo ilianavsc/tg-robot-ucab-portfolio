@@ -53,4 +53,24 @@ assert.ok(tokensCss.includes('--tg-bg: #F8FAFC') && tokensCss.includes('--tg-acc
 assert.ok(tokensCss.includes('tabular-nums') && tokensCss.includes('--tg-touch-min: 44px'));
 assert.ok(styleCss.includes('@import url("./tokens.css")'), 'style.css debe importar tokens.css');
 
-console.log('contratos + tokens: OK');
+// 4. Cronograma Académico (Línea B) y metadata de entregas de tesis
+const estadosValidos = new Set(['planificada', 'en_preparacion', 'en_revision', 'entregada', 'aprobada']);
+const acad = JSON.parse(leer('datos/entregas_academicas.json'));
+assert.equal(acad.entregas.length, 8, 'Línea B debe tener exactamente 8 entregas formales');
+for (const e of acad.entregas) {
+  assert.ok(estadosValidos.has(e.estado), `estado inválido en ${e.id}: ${e.estado}`);
+  assert.ok(typeof e.titulo === 'string' && e.titulo.length > 0, `título en ${e.id}`);
+  assert.ok(typeof e.fecha_entrega === 'string' && e.fecha_entrega.length > 0, `fecha_entrega en ${e.id}`);
+}
+for (const slug of ['capitulo-1', 'marco-preliminar', 'capitulo-2']) {
+  const item = acad.entregas.find((e) => e.entrega === slug);
+  assert.ok(item, `debe existir entrega ${slug} en entregas_academicas.json`);
+  assert.equal(item.estado, 'entregada', `${slug} debe estar marcada como entregada`);
+  const meta = JSON.parse(leer(`tesis/entregas/${slug}/metadata.json`));
+  for (const campo of ['entrega', 'titulo', 'estado', 'fecha_entrega', 'archivo_original', 'notas']) {
+    assert.ok(campo in meta, `falta campo ${campo} en tesis/entregas/${slug}/metadata.json`);
+  }
+  assert.equal(meta.estado, 'entregada', `metadata.json de ${slug} debe indicar entregada`);
+}
+
+console.log('contratos + tokens + entregas académicas: OK');
