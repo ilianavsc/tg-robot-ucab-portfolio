@@ -21,10 +21,12 @@ button:focus-visible{outline:3px solid #FFD23F;outline-offset:2px}
 .btn{min-height:42px;padding:8px 14px;border-radius:12px;border:2px solid var(--tinta);background:var(--vidrio);color:#fff;font-weight:700;font-size:14.5px;display:inline-flex;align-items:center;gap:8px;box-shadow:var(--sombra)}
 .btn:hover{background:#1c2d52}
 .btn[aria-pressed="true"]:not(.pri){background:var(--verde);border-color:var(--tinta)}
-.btn.pri{background:var(--coral);color:#fff}
-.btn.pri.en-pausa{background:var(--verde)}
-.btn .ic{width:12px;height:14px;display:inline-block;background:linear-gradient(90deg,#fff 0 35%,transparent 35% 65%,#fff 65%)}
-.btn.en-pausa .ic{background:#fff;clip-path:polygon(0 0,100% 50%,0 100%)}
+.btn.pri{background:#0b7a66;color:#fff}
+.btn.pri:hover{background:#096655}
+.btn.pri[aria-pressed="true"]{background:#dc2626;border-color:var(--tinta)}
+.btn.pri[aria-pressed="true"]:hover{background:#b91c1c}
+.est-dot{width:9px;height:9px;border-radius:50%;background:#fde047;border:1.5px solid rgba(20,33,61,.5);flex:none}
+.btn.pri[aria-pressed="true"] .est-dot{background:#4ade80;box-shadow:0 0 8px #4ade80}
 .grupo{display:inline-flex;border-radius:12px;box-shadow:var(--sombra)}
 .grupo .btn{border-radius:0;box-shadow:none;margin-left:-2px}
 .grupo .btn:first-child{border-radius:12px 0 0 12px;margin-left:0}
@@ -37,23 +39,35 @@ button:focus-visible{outline:3px solid #FFD23F;outline-offset:2px}
 
 /* consola de sensores (opcional, botón "Consola de sensores"): mismo estilo oscuro que el radar de P03 */
 .consola[hidden]{display:none}
-.consola{position:absolute;left:10px;bottom:calc(var(--alto-tira,64px) + 18px);display:flex;gap:10px;align-items:stretch;padding:8px 10px;border-radius:14px;background:#0f172a;border:2px solid #334155;box-shadow:0 6px 16px rgba(2,6,23,.35);color:#e2e8f0}
-.c-velo{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:92px;padding:4px 6px;border-radius:10px;background:#0b1424;border:1.5px solid rgba(148,163,184,.26);transition:border-color .2s ease-out}
-.c-velo svg{width:84px;height:46px;display:block;overflow:visible}
+.consola{position:absolute;left:10px;bottom:calc(var(--alto-tira,64px) + 18px);display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:14px;background:#0f172a;border:2px solid #334155;box-shadow:0 6px 16px rgba(2,6,23,.35);color:#e2e8f0;max-width:calc(100vw - 20px)}
+.c-vinculo{font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#f8fafc;padding:4px 8px;border-radius:8px;background:rgba(56,189,248,.14);border-left:4px solid var(--c-vinc,#38bdf8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-vinculo[hidden]{display:none}
+.c-bloques{display:flex;gap:8px;align-items:stretch}
+.c-velo{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:90px;padding:4px 6px;border-radius:10px;background:#0b1424;border:1.5px solid rgba(148,163,184,.26);transition:border-color .2s ease-out,box-shadow .2s ease-out}
+.c-velo svg{width:82px;height:44px;display:block;overflow:visible}
 .c-velo-pista{fill:none;stroke:#1e293b;stroke-width:6;stroke-linecap:round}
 .c-velo-arco{fill:none;stroke:#22c55e;stroke-width:6;stroke-linecap:round;transition:stroke .2s ease-out}
 .c-velo-aguja{stroke:#f8fafc;stroke-width:2.2;stroke-linecap:round}
 .c-velo-pivote{fill:#f8fafc}
-.c-velo-val{font:700 15px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;color:#22c55e;white-space:nowrap}
+.c-velo-val{font:700 14.5px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;color:#22c55e;white-space:nowrap}
 .c-velo-val small{font-size:10px;font-weight:600;color:#94a3b8;margin-left:3px}
-.c-linea{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 8px;border-radius:10px;background:#0b1424;border:1.5px solid rgba(148,163,184,.26)}
-.c-leds,.c-leds-et{display:grid;grid-template-columns:repeat(4,26px);gap:6px;justify-items:center}
-.c-leds i{width:22px;height:22px;border-radius:50%;background:#1e293b;border:2px solid #334155;transition:background-color .12s ease-out,box-shadow .12s ease-out,border-color .12s ease-out}
+.c-linea{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 8px;border-radius:10px;background:#0b1424;border:1.5px solid rgba(148,163,184,.26);transition:border-color .2s ease-out,box-shadow .2s ease-out}
+.c-leds,.c-leds-et{display:grid;grid-template-columns:repeat(4,24px);gap:5px;justify-items:center}
+.c-leds i{width:20px;height:20px;border-radius:50%;background:#1e293b;border:2px solid #334155;transition:background-color .12s ease-out,box-shadow .12s ease-out,border-color .12s ease-out}
 .c-leds i.on{background:#facc15;border-color:#facc15;box-shadow:0 0 12px rgba(250,204,21,.85)}
 .c-leds-et{font:700 10px/1 ui-monospace,monospace;color:#94a3b8}
-.c-modo{font:700 10.5px/1 ui-monospace,monospace;letter-spacing:.08em;padding:4px 8px;border-radius:999px;background:rgba(34,197,94,.16);color:#86efac;border:1px solid rgba(34,197,94,.45)}
+.c-modo{font:700 10px/1 ui-monospace,monospace;letter-spacing:.06em;padding:4px 8px;border-radius:999px;background:rgba(34,197,94,.16);color:#86efac;border:1px solid rgba(34,197,94,.45);transition:box-shadow .2s ease-out}
+.c-modo.apagado{background:rgba(148,163,184,.16);color:#cbd5e1;border-color:rgba(148,163,184,.4)}
 .c-modo.manual{background:rgba(107,78,230,.25);color:#c4b5fd;border-color:rgba(167,139,250,.6)}
 .c-modo.bloq{background:rgba(185,28,28,.9);color:#fff;border-color:#f87171}
+.c-dist{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:96px;padding:5px 8px;border-radius:10px;background:#0b1424;border:1.5px solid rgba(148,163,184,.26);font:600 11px/1.2 ui-monospace,monospace;transition:border-color .2s ease-out,box-shadow .2s ease-out}
+.c-dist-tit{font-size:9.5px;letter-spacing:.06em;color:#94a3b8;text-transform:uppercase}
+.c-dist-fila{display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+.c-dist-fila b{color:#e2e8f0}
+.c-dist-fila b[data-zona="critica"]{color:#f87171}
+.c-dist-fila b[data-zona="precaucion"]{color:#fbbf24}
+.c-dist-fila b[data-zona="libre"]{color:#4ade80}
+.consola [data-bloque].vinculado{border-color:var(--c-vinc,#38bdf8)!important;box-shadow:0 0 0 2px var(--c-vinc,#38bdf8)}
 
 /* D-Pad: la misma modalidad del Simulador 1 (P04); con la consola abierta se corre a su derecha */
 .app.con-consola .dpad{left:calc(var(--ancho-consola,260px) + 22px)}
@@ -65,8 +79,9 @@ button:focus-visible{outline:3px solid #FFD23F;outline-offset:2px}
 
 /* tira de componentes */
 .tira{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:8px;flex-wrap:wrap}
-.chip{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-height:46px;padding:6px 11px;border-radius:12px;border:2px solid var(--tinta);border-left:6px solid var(--c);background:rgba(255,255,255,.95);color:var(--tinta);text-align:left;box-shadow:var(--sombra)}
-.chip b{font-size:13px;line-height:1.2}
+.chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:48px;padding:6px 10px;border-radius:12px;border:2px solid var(--tinta);border-left:6px solid var(--c);background:rgba(255,255,255,.95);color:var(--tinta);text-align:left;box-shadow:var(--sombra)}
+.chip b{font-size:13px;line-height:1.15}
+.chip .res{font-size:11px;line-height:1.2;color:#475569;max-width:170px}
 .chip .v{font:600 12px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#33415f;display:flex;gap:3px;align-items:center;min-height:15px;white-space:nowrap}
 .chip[aria-pressed="true"]{background:#FFD23F}
 .chip .sq{width:14px;height:14px;border-radius:3px;border:2px solid var(--tinta);background:#fff}
@@ -89,6 +104,11 @@ button:focus-visible{outline:3px solid #FFD23F;outline-offset:2px}
 .ficha dd{margin:0}
 .ficha .vivo dd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600}
 .ficha .nota{margin:12px 0 0;padding:8px 10px;border-radius:8px;background:#f1f5f4;font-size:13px;color:#33415f}
+.ficha-vinculo{margin:12px 0 0;padding:9px 11px;border-radius:10px;background:#0f172a;color:#e2e8f0;border-left:5px solid var(--c);display:grid;gap:4px}
+.ficha-vinculo strong{font:700 12px/1.2 ui-monospace,monospace;color:#7dd3fc}
+.ficha-vinculo p{margin:0;font-size:12.5px;line-height:1.35;color:#cbd5e1}
+.btn-vinc{margin-top:4px;min-height:34px;padding:5px 10px;border-radius:8px;border:1.5px solid #38bdf8;background:rgba(56,189,248,.16);color:#f8fafc;font:700 12px/1.2 ui-monospace,monospace;text-align:center}
+.btn-vinc:hover{background:rgba(56,189,248,.28)}
 .chip-estado{display:inline-block;font:700 11.5px/1 ui-monospace,monospace;padding:4px 8px;border-radius:999px;border:2px solid var(--tinta);margin-top:2px}
 .chip-estado.hecho{background:#c9f0e6}
 .chip-estado.aviso{background:#ffe7a8}
@@ -99,13 +119,15 @@ button:focus-visible{outline:3px solid #FFD23F;outline-offset:2px}
   .btn{min-height:40px;padding:6px 10px;font-size:13.5px}
   .btn .largo{display:none}
   .pista-tocar{font-size:12.5px;padding:6px 11px;bottom:calc(var(--alto-tira,64px) + 176px)}
-  .consola{flex-direction:column;gap:6px;padding:6px}
-  .c-velo{min-width:0}
+  .consola{padding:6px;max-width:calc(100vw - 164px)}
+  .c-bloques{flex-direction:column;gap:6px}
+  .c-velo,.c-dist{min-width:0}
   .c-leds,.c-leds-et{grid-template-columns:repeat(4,22px);gap:4px}
   .c-leds i{width:18px;height:18px}
   .app .dpad,.app.con-consola .dpad{left:auto;right:10px;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}
   .tira{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
   .chip{flex:none}
+  .chip .res{display:none}
   .ficha{top:auto;right:10px;left:10px;width:auto;bottom:74px;max-height:46%}
   .et{font-size:11px;padding:4px 7px;max-width:150px}
 }

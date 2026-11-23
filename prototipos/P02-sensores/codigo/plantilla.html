@@ -8,7 +8,7 @@
 /*CSS*/
 </style>
 </head>
-<body data-modo="auto">
+<body data-modo="auto" data-encendido="0">
 <div class="app" id="app">
   <canvas id="lienzo" tabindex="0" aria-label="Inspector 3D de los componentes del robot: toca una pieza para ver su ficha; se maneja con W A S D, las flechas o el D-Pad" role="img"></canvas>
   <svg id="guias" aria-hidden="true"></svg>
@@ -22,25 +22,33 @@
       <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
       <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
     </div>
-    <button class="btn pri" id="b-pausa" type="button" aria-pressed="false" aria-label="Pausar"><span class="ic" aria-hidden="true"></span><span class="tx">Pausar</span></button>
+    <button class="btn pri en-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
     <button class="btn" id="b-consola" type="button" aria-pressed="false" aria-controls="consola"><span aria-hidden="true">📟</span> Consola de sensores</button>
   </div>
   <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para ver su ficha</p>
 
   <section class="consola" id="consola" aria-label="Consola de sensores en vivo" hidden>
-    <div class="c-velo" id="velocimetro" role="img" aria-label="Velocímetro">
-      <svg viewBox="0 0 80 46" aria-hidden="true">
-        <path class="c-velo-pista" d="M 10 40 A 30 30 0 0 1 70 40"/>
-        <path id="velo-arco" class="c-velo-arco" d="M 10 40 A 30 30 0 0 1 70 40" stroke-dasharray="94.25" stroke-dashoffset="94.25"/>
-        <line id="velo-aguja" class="c-velo-aguja" x1="40" y1="40" x2="40" y2="15" transform="rotate(-90 40 40)"/>
-        <circle class="c-velo-pivote" cx="40" cy="40" r="3"/>
-      </svg>
-      <b class="c-velo-val" id="velo-val">0,00<small>m/s</small></b>
-    </div>
-    <div class="c-linea" role="img" id="linea-leds" aria-label="Sensores de línea">
-      <div class="c-leds" aria-hidden="true"><i data-s="0"></i><i data-s="1"></i><i data-s="2"></i><i data-s="3"></i></div>
-      <div class="c-leds-et" aria-hidden="true"><span>S1</span><span>S2</span><span>S3</span><span>S4</span></div>
-      <span class="c-modo" id="c-modo">AUTO</span>
+    <div class="c-vinculo" id="consola-vinculo" hidden></div>
+    <div class="c-bloques">
+      <div class="c-velo" id="velocimetro" data-bloque="velo" role="img" aria-label="Velocímetro">
+        <svg viewBox="0 0 80 46" aria-hidden="true">
+          <path class="c-velo-pista" d="M 10 40 A 30 30 0 0 1 70 40"/>
+          <path id="velo-arco" class="c-velo-arco" d="M 10 40 A 30 30 0 0 1 70 40" stroke-dasharray="94.25" stroke-dashoffset="94.25"/>
+          <line id="velo-aguja" class="c-velo-aguja" x1="40" y1="40" x2="40" y2="15" transform="rotate(-90 40 40)"/>
+          <circle class="c-velo-pivote" cx="40" cy="40" r="3"/>
+        </svg>
+        <b class="c-velo-val" id="velo-val">0,00<small>m/s</small></b>
+      </div>
+      <div class="c-linea" role="img" id="linea-leds" data-bloque="linea" aria-label="Sensores de línea">
+        <div class="c-leds" aria-hidden="true"><i data-s="0"></i><i data-s="1"></i><i data-s="2"></i><i data-s="3"></i></div>
+        <div class="c-leds-et" aria-hidden="true"><span>S1</span><span>S2</span><span>S3</span><span>S4</span></div>
+        <span class="c-modo" id="c-modo" data-bloque="modo">APAGADO</span>
+      </div>
+      <div class="c-dist" id="c-dist" data-bloque="distancia" role="group" aria-label="Distancias HC-SR04P">
+        <span class="c-dist-tit">HC-SR04P</span>
+        <div class="c-dist-fila"><span>Frente</span><b id="c-dist-f">—</b></div>
+        <div class="c-dist-fila"><span>Atrás</span><b id="c-dist-r">—</b></div>
+      </div>
     </div>
   </section>
 

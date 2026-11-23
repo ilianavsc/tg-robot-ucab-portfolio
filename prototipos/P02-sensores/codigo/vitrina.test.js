@@ -20,7 +20,7 @@ const prueba = (nombre, f) => {
 
 // Corre la demo y junta lo que pasa en la vuelta
 function correr(seg, alPaso) {
-  const d = crearDemo();
+  const d = crearDemo({encendido: true});
   for (let t = 0; t < seg; t += 1 / 120) {
     d.paso(1 / 120);
     alPaso && alPaso(d, t);
@@ -126,7 +126,7 @@ prueba('manual: usa los mismos valores del Simulador 1 y avanza recto a ≈ 0,46
   const m = /MANUAL = \{avance: ([\d.]+), giro: ([\d.]+), suavizado: ([\d.]+)\}/.exec(sim1);
   assert.ok(m, 'el Simulador 1 define MANUAL');
   assert.deepStrictEqual([MANUAL.avance, MANUAL.giro, MANUAL.suavizado], [+m[1], +m[2], +m[3]]);
-  const d = crearDemo();
+  const d = crearDemo({encendido: true});
   d.est.x = 0;
   d.est.z = -2.4; // lejos de la cinta y de los bidones
   d.est.th = 0;
@@ -139,7 +139,7 @@ prueba('manual: usa los mismos valores del Simulador 1 y avanza recto a ≈ 0,46
 });
 
 prueba('manual: gira a la izquierda, retrocede y Espacio frena; no sale del piso', () => {
-  const d = crearDemo();
+  const d = crearDemo({encendido: true});
   d.est.x = 0;
   d.est.z = -2.4;
   d.est.th = 0;
@@ -155,7 +155,7 @@ prueba('manual: gira a la izquierda, retrocede y Espacio frena; no sale del piso
 });
 
 prueba('manual: con un obstáculo a < 20 cm no deja avanzar ni girar, solo retroceder (como el firmware)', () => {
-  const d = crearDemo();
+  const d = crearDemo({encendido: true});
   const o = OBSTACULOS[0];
   d.est.x = o.x;
   d.est.z = o.z - 0.42;
@@ -172,7 +172,7 @@ prueba('manual: con un obstáculo a < 20 cm no deja avanzar ni girar, solo retro
 });
 
 prueba('manual en la cinta: los 4 sensores de línea se encienden en vivo y al volver a automático sigue la ruta', () => {
-  const d = crearDemo();
+  const d = crearDemo({encendido: true});
   for (let k = 0; k < 240; k++) d.paso(1 / 120);
   d.setModo('manual');
   manejar(d, 0, 0, 0.5);
@@ -222,6 +222,54 @@ prueba('la consola de sensores empieza oculta y se abre o se cierra con su botó
   assert.ok(/consola\.hidden = !on/.test(main) && /setAttribute\('aria-pressed', String\(on\)\)/.test(main));
   const css = readFileSync(join(aqui, 'style.css'), 'utf8');
   assert.ok(!/(^|\n)\.estado\{/.test(css), 'sin la regla .estado');
+});
+
+// ---- Fase 3: inicio apagado con Encender/Detener + tarjetas integradas vinculadas a la consola
+prueba('inicio apagado (encendido=false) y transición ⚡ Encender / ⏹ Detener congela dinámica y tiempo', () => {
+  const d = crearDemo();
+  assert.strictEqual(d.est.encendido, false, 'P02 inicia apagado');
+  assert.strictEqual(d.est.v, 0);
+  assert.strictEqual(d.est.t, 0);
+  const x0 = d.est.x;
+  const z0 = d.est.z;
+  for (let i = 0; i < 120; i++) d.paso(1 / 120);
+  assert.strictEqual(d.est.x, x0, 'estático mientras encendido=false');
+  assert.strictEqual(d.est.z, z0);
+  assert.strictEqual(d.est.t, 0, 'tiempo congelado');
+  assert.strictEqual(d.est.v, 0);
+
+  // Encender activa movimiento
+  d.encender();
+  assert.strictEqual(d.est.encendido, true);
+  for (let i = 0; i < 180; i++) d.paso(1 / 120);
+  assert.ok(d.est.t > 1.4 && Math.abs(d.est.v) > 0.2, `debe moverse al encender (t=${d.est.t}, v=${d.est.v})`);
+
+  // Detener congela dinámica y tiempo
+  d.detener();
+  assert.strictEqual(d.est.encendido, false);
+  const tCong = d.est.t;
+  const xCong = d.est.x;
+  for (let i = 0; i < 120; i++) d.paso(1 / 120);
+  assert.strictEqual(d.est.t, tCong);
+  assert.strictEqual(d.est.x, xCong);
+
+  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
+  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
+  assert.ok(/id="b-pausa"[^>]*aria-pressed="false"/.test(html) && html.includes('⚡ Encender'));
+  assert.ok(main.includes('⏹ Detener') && main.includes('cancelAnimationFrame(rafId)'));
+});
+
+prueba('las 7 tarjetas están integradas en el inspector y vinculadas visualmente a la consola de sensores', () => {
+  const indexHtml = readFileSync(join(aqui, '../index.html'), 'utf8');
+  assert.ok(!/id="piezas"/.test(indexHtml), 'elimina las tarjetas externas desconectadas del iframe');
+  for (const id of ORDEN) {
+    const f = FICHAS[id];
+    assert.ok(f.resumen && f.consola && f.consola.bloque && f.consola.titulo, `vínculo consola faltante en ${id}`);
+  }
+  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
+  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
+  assert.ok(/id="consola-vinculo"/.test(html) && /data-bloque="velo"/.test(html) && /data-bloque="linea"/.test(html) && /data-bloque="distancia"/.test(html));
+  assert.ok(main.includes('sincronizaVinculoConsola') && main.includes('b-ver-consola'));
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

@@ -17,23 +17,25 @@ export const MANUAL = {avance: 0.8, giro: 0.45, suavizado: 0.08};
 export const LIMITES = {x: 4.2, z: 3.0};
 const lim1 = (x) => Math.max(-1, Math.min(1, x));
 
-export function crearDemo() {
+export function crearDemo({encendido = false} = {}) {
   const ruta = crearRuta();
   const obstaculos = OBSTACULOS;
   const p0 = ruta.en(0);
+  const th0 = Math.atan2(p0.tx, p0.tz);
   const est = {
     x: p0.x,
     z: p0.z,
-    th: Math.atan2(p0.tx, p0.tz),
+    th: th0,
     t: 0,
+    encendido: Boolean(encendido),
     vIzq: 0,
     vDer: 0,
     hint: 0,
     vuelta: 0,
     sPrev: 0,
-    sens: [0, 1, 1, 0],
-    frente: Infinity,
-    atras: Infinity,
+    sens: lineaSensores(ruta, p0.x, p0.z, th0, 0),
+    frente: ultrasonido(p0.x, p0.z, th0, 'frente', obstaculos),
+    atras: ultrasonido(p0.x, p0.z, th0, 'atras', obstaculos),
     w: 0,
     v: 0,
     eLat: 0,
@@ -42,6 +44,17 @@ export function crearDemo() {
     cmd: {f: 0, t: 0},
     pwm: {izq: 0, der: 0},
     bloqueado: false, // frente a < 20 cm: el firmware no deja avanzar ni girar (solo retroceder)
+  };
+
+  const encender = () => {
+    est.encendido = true;
+  };
+  const detener = () => {
+    est.encendido = false;
+  };
+  const alternarEncendido = () => {
+    est.encendido = !est.encendido;
+    return est.encendido;
   };
 
   // Cambia entre 'auto' y 'manual'. Al volver a automático busca el punto de la ruta más cercano en toda la vuelta.
@@ -70,6 +83,7 @@ export function crearDemo() {
   };
 
   const paso = (dt) => {
+    if (!est.encendido) return est;
     est.t += dt;
     // a mano el robot puede salir de la cinta y volver por otro lado: se busca en toda la vuelta
     const c = ruta.cercano(est.x, est.z, est.hint, est.modo === 'manual' ? ruta.N >> 1 : 90);
@@ -141,7 +155,7 @@ export function crearDemo() {
     };
   };
 
-  return {ruta, obstaculos, est, paso, motores, setModo, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
+  return {ruta, obstaculos, est, paso, motores, setModo, encender, detener, alternarEncendido, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
 }
 
 export {GEO};

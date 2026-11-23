@@ -22,7 +22,9 @@ export const FICHAS = {
   tcrt: {
     nombre: 'Regleta de 4 sensores TCRT5000',
     corto: 'TCRT5000 ×4',
+    resumen: 'Ven la cinta negra del piso.',
     color: '#0F9D84',
+    consola: {bloque: 'linea', titulo: 'LEDs S1–S4 de línea', desc: 'Cada LED amarillo en la consola refleja en vivo S1…S4.'},
     rol: 'Cuatro sensores reflectivos infrarrojos, al frente y bajo el chasis. Miden el contraste de la cinta negra de 19 mm sobre el piso claro: cada uno entrega 1 si ve la cinta y 0 si no.',
     datos: [
       ['Pines (ADC1)', 'GPIO 36 (VP) · 39 (VN) · 34 · 35'],
@@ -41,7 +43,9 @@ export const FICHAS = {
   us_front: {
     nombre: 'HC-SR04P frontal',
     corto: 'HC-SR04P frontal',
+    resumen: 'Mide la distancia al frente.',
     color: '#E8B90C',
+    consola: {bloque: 'distancia', titulo: 'Distancia y bloqueo frontal', desc: 'Actualiza la distancia al frente y activa el bloqueo crítico (< 20 cm).'},
     rol: 'Ultrasonido que vigila el frente. Mide el tiempo del eco y lo convierte en distancia, con un haz de ±15°.',
     datos: [
       ['Pines', 'TRIG GPIO 23 · ECHO GPIO 33'],
@@ -60,7 +64,9 @@ export const FICHAS = {
   us_rear: {
     nombre: 'HC-SR04P trasero',
     corto: 'HC-SR04P trasero',
+    resumen: 'Vigila atrás antes de retroceder.',
     color: '#E8B90C',
+    consola: {bloque: 'distancia', titulo: 'Distancia trasera (≥ 20 cm)', desc: 'Muestra la distancia trasera en consola para habilitar retroceso seguro.'},
     rol: 'Ultrasonido que vigila la retaguardia. El firmware solo permite retroceder si atrás hay ≥ 20 cm y el sensor es válido.',
     datos: [
       ['Pines', 'TRIG GPIO 15 (separado del frontal) · ECHO GPIO 5'],
@@ -79,7 +85,9 @@ export const FICHAS = {
   esp32: {
     nombre: 'ESP32 móvil (DevKit de 30 pines)',
     corto: 'ESP32 móvil',
+    resumen: 'El cerebro: decide y habla con la app.',
     color: '#6B4EE6',
+    consola: {bloque: 'modo', titulo: 'Modo AUTO/MANUAL y control', desc: 'Coordina el modo activo en consola, los sensores S1–S4 y el PWM.'},
     rol: 'Controlador principal del robot: lee los sensores, calcula el control diferencial de las ruedas y se comunica con la app por MQTT. Es el único microcontrolador a bordo.',
     datos: [
       ['Firmware', 'robot_integrado.ino: modo autónomo (PD a 100 Hz) y modo manual por MQTT'],
@@ -98,7 +106,9 @@ export const FICHAS = {
   mpu: {
     nombre: 'MPU-6050 (IMU)',
     corto: 'MPU-6050',
+    resumen: 'Siente los giros para no perder el rumbo.',
     color: '#2c4fb8',
+    consola: {bloque: 'velo', titulo: 'Dinámica y velocímetro', desc: 'Mide el giro angular mientras el velocímetro refleja la traslación.'},
     rol: 'Acelerómetro y giroscopio de 6 ejes en el centro del chasis. Está pensado para mantener el rumbo relativo (heading hold) con el giroscopio en los tramos sin cinta; no hay magnetómetro.',
     datos: [
       ['Bus I²C', 'SDA GPIO 21 · SCL GPIO 22 · INT GPIO 2'],
@@ -115,7 +125,9 @@ export const FICHAS = {
   traccion: {
     nombre: 'Tracción diferencial + chasis PLA',
     corto: 'Tracción + chasis PLA',
+    resumen: 'Dos motores con encoder y rueda loca.',
     color: '#F2603D',
+    consola: {bloque: 'velo', titulo: 'Velocímetro (0,00–0,46 m/s)', desc: 'Impulsa la aguja del velocímetro y el sentido de marcha en la consola.'},
     rol: 'Dos motores DC con caja reductora, uno por rueda, sobre un chasis impreso en PLA con una rueda loca atrás. Para girar, una rueda va más rápido que la otra.',
     datos: [
       ['Motor', 'Emoshayoga JGA25-371 «Speed 200»: 280 rpm en vacío a 12 V, reducción 1:21,3'],
@@ -137,7 +149,9 @@ export const FICHAS = {
   bateria: {
     nombre: 'Batería 3S Li-Ion (3 × 18650)',
     corto: 'Batería 3S',
+    resumen: 'Da energía a todo el robot.',
     color: '#2a7fb8',
+    consola: {bloque: 'velo', titulo: 'Energía de tracción (11,1 V)', desc: 'Alimenta L298N y motores cuya velocidad se muestra en el velocímetro.'},
     rol: 'Alimenta todo el robot: unos 12 V al L298N y, a través del regulador LM2596, 5 V al ESP32. Va en la zona trasera del chasis.',
     datos: [
       ['Rango', '9,90 V (corte) a 12,60 V (llena); nominal 11,1 V'],

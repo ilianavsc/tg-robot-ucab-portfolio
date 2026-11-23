@@ -22,7 +22,7 @@ aviso.cargando();
 const canvas = $('#lienzo');
 let mundo;
 try {
-  const demo = crearDemo();
+  const demo = crearDemo({encendido: false});
   mundo = {demo, ...crearMundo(canvas, demo.ruta, demo.obstaculos)};
 } catch (e) {
   console.error(e);
@@ -44,7 +44,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const est = demo.est;
 
   // ---------------------------------------------------------------- estado de la interfaz
-  const ui = {pausa: false, xray: 0, xrayMeta: 0, etiquetas: true, vista: 'inspeccion', sel: null, t: 0};
+  const ui = {encendido: false, pausa: true, xray: 0, xrayMeta: 0, etiquetas: true, vista: 'inspeccion', sel: null, t: 0};
+  let rafId = null;
   const anim = {
     ang: {izq: 0, der: 0},
     arm: {izq: 0, der: 0},
@@ -125,17 +126,35 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
 
   // ---------------------------------------------------------------- botones
   const bPausa = $('#b-pausa');
-  const ponPausa = (p) => {
-    ui.pausa = p;
-    bPausa.setAttribute('aria-pressed', String(p));
-    $('.tx', bPausa).textContent = p ? 'Reanudar' : 'Pausar';
-    bPausa.classList.toggle('en-pausa', p);
+  const ponEncendido = (on) => {
+    const activo = Boolean(on);
+    ui.encendido = activo;
+    ui.pausa = !activo;
+    if (activo) demo.encender();
+    else demo.detener();
+    document.body.dataset.encendido = activo ? '1' : '0';
+    bPausa.setAttribute('aria-pressed', String(activo));
+    $('.tx', bPausa).textContent = activo ? '⏹ Detener' : '⚡ Encender';
+    bPausa.classList.toggle('en-pausa', !activo);
+    previo = '';
+    if (!activo) {
+      soltarTodo();
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      renderizarCuadro(0);
+    } else {
+      solicitarCuadro();
+    }
   };
-  bPausa.addEventListener('click', () => ponPausa(!ui.pausa));
+  const ponPausa = (p) => ponEncendido(!p);
+  bPausa.addEventListener('click', () => ponEncendido(!ui.encendido));
   const bX = $('#b-xray');
   bX.addEventListener('click', () => {
     ui.xrayMeta = ui.xrayMeta ? 0 : 1;
     bX.setAttribute('aria-pressed', String(!!ui.xrayMeta));
+    solicitarCuadro();
   });
   const bE = $('#b-etiq');
   const ponEtiquetas = (on) => {
@@ -143,11 +162,13 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     bE.setAttribute('aria-pressed', String(on));
     $('#etiquetas').hidden = !on;
     $('#guias').style.display = on ? '' : 'none';
+    if (on) solicitarCuadro();
   };
   bE.addEventListener('click', () => ponEtiquetas(!ui.etiquetas));
   $('#b-vista').addEventListener('click', () => {
     const orden = ['inspeccion', 'seguir', 'general'];
     irA(orden[(orden.indexOf(ui.vista) + 1) % orden.length]);
+    solicitarCuadro();
   });
 
   // ---------------------------------------------------------------- manejo: la modalidad del Simulador 1 (P04)
@@ -169,15 +190,25 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     $$('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === m)));
     aplicaEntrada();
   };
-  // tocar un control toma el mando (pasa a manual) y quita la pausa
+  // tocar un control toma el mando (pasa a manual) cuando está encendido
   const tomaControl = () => {
+    if (!ui.encendido) return;
     if (est.modo !== 'manual') ponModo('manual');
-    if (ui.pausa) ponPausa(false);
   };
-  $$('[data-modo]').forEach((b) => b.addEventListener('click', () => ponModo(b.dataset.modo)));
+  $$('[data-modo]').forEach((b) => b.addEventListener('click', () => {
+    ponModo(b.dataset.modo);
+    previo = '';
+    refrescaConsola();
+  }));
   addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.code === 'KeyM' && !e.repeat) return ponModo(est.modo === 'auto' ? 'manual' : 'auto');
+    if (e.code === 'KeyM' && !e.repeat) {
+      ponModo(est.modo === 'auto' ? 'manual' : 'auto');
+      previo = '';
+      refrescaConsola();
+      return;
+    }
+    if (!ui.encendido) return;
     const k = MAPA[e.code];
     if (!k) return;
     e.preventDefault();
@@ -203,6 +234,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   document.addEventListener('visibilitychange', () => document.hidden && soltarTodo());
   // D-Pad: pulsación sostenida (pointer) y touch como respaldo, igual que el Simulador 1
   const pulsa = (k) => {
+    if (!ui.encendido) return;
     if (botones.has(k)) return;
     botones.add(k);
     tomaControl();
@@ -238,13 +270,36 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   // ---------------------------------------------------------------- consola de sensores (opcional)
   const consola = $('#consola');
   const bConsola = $('#b-consola');
+  const consolaVinculo = $('#consola-vinculo');
+  const sincronizaVinculoConsola = () => {
+    const f = ui.sel ? FICHAS[ui.sel] : null;
+    const bloque = f && f.consola ? f.consola.bloque : null;
+    $$('[data-bloque]', consola).forEach((el) => {
+      const on = Boolean(bloque && el.dataset.bloque === bloque);
+      el.classList.toggle('vinculado', on);
+    });
+    if (f && f.consola) {
+      consola.style.setProperty('--c-vinc', f.color);
+      consolaVinculo.textContent = `Vínculo: ${f.corto} → ${f.consola.titulo}`;
+      consolaVinculo.hidden = false;
+    } else {
+      consolaVinculo.hidden = true;
+    }
+    const bVinc = $('#b-ver-consola');
+    if (bVinc) {
+      bVinc.textContent = consola.hidden ? '📟 Ver en consola de sensores' : '✨ Resaltado en consola · Ocultar';
+      bVinc.setAttribute('aria-pressed', String(!consola.hidden));
+    }
+  };
   const ponConsola = (on) => {
     consola.hidden = !on;
     bConsola.setAttribute('aria-pressed', String(on));
     $('#app').classList.toggle('con-consola', on);
+    sincronizaVinculoConsola();
     if (on) {
       $('#app').style.setProperty('--ancho-consola', `${consola.offsetWidth}px`);
       previo = '';
+      refrescaConsola();
     }
   };
   bConsola.addEventListener('click', () => ponConsola(consola.hidden));
@@ -259,17 +314,23 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const leds = $$('.c-leds i');
   const cModo = $('#c-modo');
   const lineaLeds = $('#linea-leds');
+  const cDistF = $('#c-dist-f');
+  const cDistR = $('#c-dist-r');
   let previo = '';
   const refrescaConsola = () => {
     if (consola.hidden) return;
-    const v = Math.abs(est.v);
+    const v = ui.encendido ? Math.abs(est.v) : 0;
     const r = Math.max(0, Math.min(1, v / VEL_MAX));
-    const color = est.bloqueado ? '#ef4444' : demo.zonaFrente() === 'precaucion' ? '#f59e0b' : '#22c55e';
+    const zF = demo.zonaFrente();
+    const zR = demo.zonaAtras();
+    const color = !ui.encendido ? '#64748b' : est.bloqueado ? '#ef4444' : zF === 'precaucion' ? '#f59e0b' : '#22c55e';
     velArco.setAttribute('stroke-dashoffset', (ARCO * (1 - r)).toFixed(2));
     velArco.style.stroke = color;
     velAguja.setAttribute('transform', `rotate(${(-90 + r * 180).toFixed(1)} 40 40)`);
-    const txt = `${est.v < -0.005 ? '−' : ''}${num(v)}`;
-    const clave = `${txt}|${est.sens.join('')}|${est.modo}|${est.bloqueado}|${color}`;
+    const txt = `${ui.encendido && est.v < -0.005 ? '−' : ''}${num(v)}`;
+    const dfTxt = fmtDist(est.frente);
+    const drTxt = fmtDist(est.atras);
+    const clave = `${txt}|${est.sens.join('')}|${est.modo}|${est.bloqueado}|${ui.encendido}|${color}|${dfTxt}|${drTxt}`;
     if (clave === previo) return;
     previo = clave;
     velVal.innerHTML = `${txt}<small>m/s</small>`;
@@ -278,8 +339,16 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     velCaja.setAttribute('aria-label', `Velocímetro: ${txt} metros por segundo`);
     leds.forEach((l, i) => l.classList.toggle('on', !!est.sens[i]));
     lineaLeds.setAttribute('aria-label', `Sensores de línea S1 a S4: ${est.sens.join(', ')}`);
-    cModo.textContent = est.bloqueado ? '■ < 20 cm' : est.modo === 'manual' ? 'MANUAL' : 'AUTO';
-    cModo.className = 'c-modo' + (est.bloqueado ? ' bloq' : est.modo === 'manual' ? ' manual' : '');
+    cModo.textContent = !ui.encendido ? 'APAGADO' : est.bloqueado ? '■ < 20 cm' : est.modo === 'manual' ? 'MANUAL' : 'AUTO';
+    cModo.className = 'c-modo' + (!ui.encendido ? ' apagado' : est.bloqueado ? ' bloq' : est.modo === 'manual' ? ' manual' : '');
+    if (cDistF) {
+      cDistF.textContent = dfTxt;
+      cDistF.dataset.zona = zF;
+    }
+    if (cDistR) {
+      cDistR.textContent = drTxt;
+      cDistR.dataset.zona = zR;
+    }
   };
 
   // ---------------------------------------------------------------- tira de componentes y ficha
@@ -288,7 +357,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   tira.innerHTML = ORDEN.map((id) => {
     const f = FICHAS[id];
     const extra = id === 'tcrt' ? '<span class="sq" aria-hidden="true"></span>'.repeat(4) : '';
-    return `<button class="chip" data-comp="${id}" style="--c:${f.color}" aria-pressed="false"><b>${esc(f.corto)}</b><span class="v" data-v="${id}">${extra}</span></button>`;
+    return `<button class="chip" data-comp="${id}" style="--c:${f.color}" aria-pressed="false"><b>${esc(f.corto)}</b><span class="res">${esc(f.resumen || '')}</span><span class="v" data-v="${id}">${extra}</span></button>`;
   }).join('');
   const fCuerpo = $('#f-cuerpo');
   const abrirFicha = (id) => {
@@ -298,24 +367,34 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     $$('.et').forEach((e) => e.classList.toggle('act', e.dataset.comp === id));
     if (!id) {
       ficha.hidden = true;
+      sincronizaVinculoConsola();
       desplazaVista();
+      solicitarCuadro();
       return;
     }
     const f = FICHAS[id];
     ficha.style.setProperty('--c', f.color);
     $('#f-titulo').textContent = f.nombre;
     const est2 = f.estado;
+    const vinc = f.consola
+      ? `<div class="ficha-vinculo" id="ficha-vinculo"><strong>📟 ${esc(f.consola.titulo)}</strong><p>${esc(f.consola.desc)}</p><button type="button" class="btn-vinc" id="b-ver-consola" aria-pressed="${String(!consola.hidden)}">${consola.hidden ? '📟 Ver en consola de sensores' : '✨ Resaltado en consola · Ocultar'}</button></div>`
+      : '';
     fCuerpo.innerHTML = `
       <span class="chip-estado ${est2[0]}">${esc(est2[1])}</span>
       <p class="rol">${esc(f.rol)}</p>
+      ${vinc}
       <h3>En vivo</h3><dl class="vivo" id="f-vivo"></dl>
       <h3>Datos del proyecto</h3>
       <dl class="datos">${f.datos.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
       <p class="nota">${esc(f.nota)}</p>`;
+    const bVinc = $('#b-ver-consola');
+    if (bVinc) bVinc.addEventListener('click', () => ponConsola(consola.hidden));
     refrescaFicha();
     ficha.hidden = false;
+    sincronizaVinculoConsola();
     desplazaVista();
     fCuerpo.scrollTop = 0;
+    solicitarCuadro();
   };
   $('#f-cerrar').addEventListener('click', () => abrirFicha(null));
   addEventListener('keydown', (e) => {
@@ -369,6 +448,10 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   canvas.addEventListener('pointermove', (ev) => {
     if (ev.buttons) return;
     movPend = ev;
+    if (!ui.encendido) {
+      canvas.style.cursor = pick(movPend) ? 'pointer' : '';
+      movPend = null;
+    }
   });
 
   // ---------------------------------------------------------------- lectura en vivo
@@ -513,16 +596,14 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     }
   };
 
-  // ---------------------------------------------------------------- bucle
+  // ---------------------------------------------------------------- bucle (pausa rAF al estar detenido; inspección bajo demanda)
   let ultimo = performance.now();
   let acRefresco = 0;
   let acPaso = 0;
   const PASO = 1 / 120;
-  const bucle = (ahora) => {
-    const dt = Math.min(0.25, (ahora - ultimo) / 1000);
-    ultimo = ahora;
-    ui.t += dt;
-    if (!ui.pausa) {
+  function renderizarCuadro(dt) {
+    if (ui.encendido) {
+      ui.t += dt;
       // paso fijo de 1/120 s: el control no depende de los cuadros por segundo del navegador
       acPaso += dt;
       while (acPaso >= PASO) {
@@ -531,8 +612,10 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
         acPaso -= PASO;
       }
     }
-    ui.xray += (ui.xrayMeta - ui.xray) * Math.min(1, dt * 6);
-    if (aro.visible) aro.scale.setScalar(1 + 0.12 * Math.sin(ui.t * 4));
+    const pasoVisual = dt > 0 ? dt : 1 / 60;
+    ui.xray += (ui.xrayMeta - ui.xray) * Math.min(1, pasoVisual * 6);
+    if (Math.abs(ui.xrayMeta - ui.xray) < 0.002) ui.xray = ui.xrayMeta;
+    if (aro.visible) aro.scale.setScalar(ui.encendido ? 1 + 0.12 * Math.sin(ui.t * 4) : 1);
     pose.position.set(est.x, 0, est.z);
     pose.rotation.y = est.th;
     robot.update({
@@ -555,7 +638,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     // la luz con sombra acompaña al robot
     sol.position.set(est.x + 1.0, 2.4, est.z + 0.8);
     sol.target.position.set(est.x, 0, est.z);
-    seguirCamara(dt);
+    seguirCamara(pasoVisual);
     controls.update();
     if (movPend) {
       canvas.style.cursor = pick(movPend) ? 'pointer' : '';
@@ -564,19 +647,43 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     renderer.render(scene, camera);
     refrescaConsola();
     if (ui.etiquetas) colocaEtiquetas();
-    acRefresco += dt;
-    if (acRefresco > 0.12) {
-      acRefresco = 0;
+    if (ui.encendido) {
+      acRefresco += dt;
+      if (acRefresco > 0.12) {
+        acRefresco = 0;
+        refrescaTira();
+        refrescaFicha();
+      }
+    } else {
       refrescaTira();
       refrescaFicha();
     }
-    requestAnimationFrame(bucle);
-  };
+  }
+  function bucle(ahora) {
+    rafId = null;
+    const dt = Math.min(0.25, Math.max(0, (ahora - ultimo) / 1000));
+    ultimo = ahora;
+    renderizarCuadro(dt);
+    const transicionActiva = Boolean(tween) || Math.abs(ui.xrayMeta - ui.xray) > 0.002;
+    if (ui.encendido || transicionActiva) {
+      rafId = requestAnimationFrame(bucle);
+    }
+  }
+  function solicitarCuadro() {
+    if (!rafId) {
+      ultimo = performance.now();
+      rafId = requestAnimationFrame(bucle);
+    }
+  }
+  controls.addEventListener('change', () => {
+    if (!ui.encendido) solicitarCuadro();
+  });
 
   // ---------------------------------------------------------------- arranque
   new ResizeObserver(() => {
     resize();
     desplazaVista();
+    solicitarCuadro();
   }).observe(canvas);
   // la consola y el D-Pad se apoyan sobre la tira de componentes
   const app = $('#app');
@@ -592,16 +699,10 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   ponConsola(false); // la consola de sensores es opcional: empieza oculta
   // en pantallas anchas se abre de entrada la ficha de la regleta de sensores
   if (canvas.clientWidth >= 900) abrirFicha('tcrt');
-  // pasos iniciales para que no arranque en cero
-  for (let i = 0; i < 240; i++) {
-    demo.paso(1 / 120);
-    animar(1 / 120);
-  }
   thPrev = est.th;
   irA('inspeccion', true);
-  refrescaTira();
+  ponEncendido(false);
   aviso.listo();
-  requestAnimationFrame(bucle);
 
   // ayuda para las capturas y las pruebas
   window.VITRINA = {
@@ -609,6 +710,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ui,
     abrirFicha,
     irA,
+    ponEncendido,
     ponPausa,
     ponEtiquetas,
     ponModo,
@@ -618,6 +720,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     xray: (on) => {
       ui.xrayMeta = on ? 1 : 0;
       bX.setAttribute('aria-pressed', String(!!on));
+      solicitarCuadro();
     },
     camera,
     controls,
