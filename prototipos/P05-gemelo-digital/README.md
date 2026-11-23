@@ -34,4 +34,4 @@ Ficha roja arrastrable sobre la pista (o Enter sobre la ficha: 90 cm delante; Su
 | `pistas_sim1.js` | Adaptador de las pistas de SIM1 (κ(s), pose, rectitud) |
 | `radar_us.js` | Lógica del radar de P03 (cono, rampa, velocímetro) |
 | `gemelo_estado.js` | Estado del gemelo y puente con la app |
-| `simulador_movimiento.test.js`, `pistas_radar.test.js` | 38 pruebas en Node (CI): `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` |
+| `simulador_movimiento.test.js`, `pistas_radar.test.js` | 50 pruebas en Node (CI: 22 en `simulador_movimiento.test.js` + 28 en `pistas_radar.test.js`): `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` |

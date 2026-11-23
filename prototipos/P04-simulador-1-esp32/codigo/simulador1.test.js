@@ -445,4 +445,17 @@ prueba('puntos de control PC1–PC3 en tercios para Pista A (2,68 / 5,37 / 8,05 
   }
 });
 
+prueba('modo App bloquea atajos de teclado R y M, y PC3 se rotula como PC3 / META en pista y mini-mapa', () => {
+  const main = leer('main.js');
+  const granito = leer('granito.js');
+  const kdIdx = main.indexOf("addEventListener('keydown'");
+  const kdBloque = main.slice(kdIdx, kdIdx + 420);
+  const idxApp = kdBloque.indexOf("ui.conexion === 'app'");
+  const idxR = kdBloque.indexOf("e.code === 'KeyR'");
+  const idxM = kdBloque.indexOf("e.code === 'KeyM'");
+  assert.ok(idxApp > 0 && idxApp < idxR && idxApp < idxM, 'ui.conexion === app debe bloquear R y M antes de evaluarlos');
+  assert.ok(main.includes("'PC3 / META'"), 'mini-mapa rotula PC3 / META');
+  assert.ok(granito.includes("'PC3 / META'"), 'pista 3D rotula PC3 / META');
+});
+
 console.log(`\nP04 Simulador 1: ${ok}/${ok} pruebas pasaron`);

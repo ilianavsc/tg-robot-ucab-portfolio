@@ -166,7 +166,7 @@ details.v1{margin-top:16px}
       <g id="sobres"></g>
     </svg>
     <div class="botones">
-      <button class="maestro" id="b-pausa" type="button" aria-pressed="false"><span class="maestro-dot" aria-hidden="true"></span><span id="b-pausa-txt">⚡ Encender</span></button>
+      <button class="maestro" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender"><span class="maestro-dot" aria-hidden="true"></span><span id="b-pausa-txt">⚡ Encender</span></button>
       <button class="llega" id="b-orden" type="button">Enviar un pedido</button>
       <button class="qos" id="b-alarma" type="button">Mover el robot sin permiso</button>
     </div>
@@ -380,6 +380,7 @@ details.v1{margin-top:16px}
   function aplicarEstadoEncendido(on){
     encendido=Boolean(on);
     bPausa.setAttribute("aria-pressed",String(encendido));
+    bPausa.setAttribute("aria-label",encendido?"Detener":"Encender");
     bPausaTxt.textContent=encendido?"⏹ Detener":"⚡ Encender";
     document.getElementById("est-robot").style.opacity=encendido?1:.35;
     var tr=document.getElementById("txt-robot");

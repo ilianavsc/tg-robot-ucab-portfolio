@@ -272,4 +272,32 @@ prueba('las 7 tarjetas están integradas en el inspector y vinculadas visualment
   assert.ok(main.includes('sincronizaVinculoConsola') && main.includes('b-ver-consola'));
 });
 
+prueba('integración fichas ↔ consola: 7 fichas con datos en vivo en reposo, cierre, toggle de consola e inspección apagado', () => {
+  const d = crearDemo({encendido: false});
+  const m = d.motores();
+  const vistaReposo = {
+    sens: d.est.sens,
+    dF: d.est.frente,
+    dR: d.est.atras,
+    zonaF: d.zonaFrente(),
+    zonaR: d.zonaAtras(),
+    mot: m,
+    v: d.est.v,
+    w: d.est.w,
+    th: d.est.th,
+  };
+  const bloquesValidos = new Set(['linea', 'distancia', 'modo', 'velo']);
+  for (const id of ORDEN) {
+    const f = FICHAS[id];
+    assert.ok(bloquesValidos.has(f.consola.bloque), `bloque inválido en ${id}`);
+    const pares = f.vivo(vistaReposo);
+    assert.ok(Array.isArray(pares) && pares.length >= 2, `datos en vivo válidos en reposo para ${id}`);
+  }
+  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
+  assert.ok(main.includes("$('#f-cerrar').addEventListener('click', () => abrirFicha(null))"), 'botón cerrar ficha');
+  assert.ok(/if \(!id\)[\s\S]*?ficha\.hidden = true;[\s\S]*?sincronizaVinculoConsola\(\)/.test(main), 'cerrar ficha limpia vínculo');
+  assert.ok(main.includes("bVinc.addEventListener('click', () => ponConsola(consola.hidden))"), 'toggle consola desde la ficha');
+  assert.ok(/controls\.addEventListener\('change', \(\) => \{[\s\S]*?if \(!ui\.encendido\) solicitarCuadro\(\)/.test(main), 'órbita e inspección funcionan con robot apagado');
+});
+
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

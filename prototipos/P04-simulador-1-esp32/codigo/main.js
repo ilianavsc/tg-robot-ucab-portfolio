@@ -130,11 +130,11 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   };
   const menuInicio = $('#menu-inicio');
   addEventListener('keydown', (e) => {
-    if (menuInicio.open) return;
+    if (menuInicio.open || ui.conexion === 'app') return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'KeyR' && !e.repeat) return reiniciar();
     if (e.code === 'KeyM' && !e.repeat) return ponModo(sim.modo === 'auto' ? 'manual' : 'auto');
-    if (ui.conexion === 'app' || !sim.encendido) return;
+    if (!sim.encendido) return;
     const k = MAPA[e.code];
     if (!k) return;
     e.preventDefault();
@@ -466,13 +466,14 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   const mmPistaEl = $('#minimapa-pista');
   const mmLeyendaEl = $('#minimapa-leyenda');
   const COLORES_PC = {PC1: '#E8B90C', PC2: '#A78BFA', PC3: '#2DD4BF'};
+  const etiquetaPc = (id) => (id === 'PC3' ? 'PC3 / META' : id);
   const actualizaLeyendaMinimapa = () => {
     const P = sim.P;
     if (mmPistaEl) mmPistaEl.textContent = `Pista ${P.id} · ${f(P.largoNominal || P.largo, 2)} m`;
     if (mmLeyendaEl) {
       const items = [`<span><i style="background:#F2603D"></i>INICIO</span>`];
       for (const pc of P.puntosControl || []) {
-        items.push(`<span><i style="background:${COLORES_PC[pc.id] || '#2DD4BF'}"></i>${pc.id} ${f(pc.distanciaM, 2)} m</span>`);
+        items.push(`<span><i style="background:${COLORES_PC[pc.id] || '#2DD4BF'}"></i>${etiquetaPc(pc.id)} ${f(pc.distanciaM, 2)} m</span>`);
       }
       mmLeyendaEl.innerHTML = items.join('');
     }
@@ -560,7 +561,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     dibujarNodo(P.X[0], P.Z[0], '#F2603D', 'INICIO', -11, true);
     for (const pc of P.puntosControl || []) {
       const dy = pc.id === 'PC3' ? 12 : (pc.z < (zMin + zMax) / 2 ? -10 : 11);
-      dibujarNodo(pc.x, pc.z, COLORES_PC[pc.id] || '#2DD4BF', pc.id, dy, progM >= pc.distanciaM);
+      dibujarNodo(pc.x, pc.z, COLORES_PC[pc.id] || '#2DD4BF', etiquetaPc(pc.id), dy, progM >= pc.distanciaM);
     }
 
     // posición y orientación en vivo del robot

@@ -19,7 +19,7 @@ El simulador es ahora la **base modular** de los próximos simuladores, donde la
 - **Dos pistas:** **A** (circuito histórico de 8,05 m, se conserva) y **B** (recorrido canónico de 9,0 m, Pasillo UCAB, de `specs/pista_canonica.json`, con tramos T1 a T4, rectas largas y curvas técnicas).
 - **Panel en vivo:** 4× TCRT5000 `[0/1,…]`, error lateral medido y real, velocidad, distancia, rumbo, tiempo de vuelta y de tramo, salidas de línea y una tabla de comparación por pista y modo.
 - **Preparación modular:** `pista.js` (definición de pistas, tramos y máscara de cinta, `ocultarTramo()`), `linea.js` (lectura de la línea y control PD), `model.js` (física) y `sim.js` (sesión). Este simulador no oculta cinta; no incluye teach-and-repeat (eso es del Gemelo Digital (P05)).
-- **Pruebas:** `node codigo/simulador1.test.js` (16) y `G=1 PISTA=B node codigo/pruebas.mjs 0.03 0.0015 0.8 18 60 11.1 70`. Con los valores del firmware: pista A 19,7 s (0,41 m/s), pista B 22,4 s (0,40 m/s), sin salidas. **[PENDIENTE DE MEDICIÓN FÍSICA]**
+- **Pruebas:** `node codigo/simulador1.test.js` (25) y `G=1 PISTA=B node codigo/pruebas.mjs 0.03 0.0015 0.8 18 60 11.1 70`. Con los valores del firmware: pista A 19,7 s (0,41 m/s), pista B 22,4 s (0,40 m/s), sin salidas. **[PENDIENTE DE MEDICIÓN FÍSICA]**
 - **Recompilar:** `cd codigo && npm install --no-save three@0.187.0 esbuild && node construir.mjs`.
 
 El resto de este documento es el registro del Avance 1 y se conserva tal cual.

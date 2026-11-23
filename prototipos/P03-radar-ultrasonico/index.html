@@ -317,7 +317,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   <section aria-label="Simulador de sensores ultrasónicos" style="margin-top:24px">
     <div class="consola-us">
       <div class="us-barra">
-        <div class="us-estado" aria-live="polite"><span class="led-us" id="led" aria-hidden="true"></span><span id="estado" role="status">APAGADO · pulsa ⚡ Encender para iniciar</span></div>
+        <div class="us-estado"><span class="led-us" id="led" aria-hidden="true"></span><span id="estado">APAGADO · pulsa ⚡ Encender para iniciar</span></div>
         <div class="us-lectura" id="lectura">APAGADO · 0.00 m/s</div>
         <div class="us-botones-barra">
           <button type="button" id="btn-toggle" class="btn apagado" aria-pressed="false">⚡ Encender</button>
@@ -357,9 +357,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       <details class="us-detalle" id="panel-telemetria">
         <summary>Telemetría <span class="us-detalle-hint">Broker · JSON · Registro</span></summary>
         <div class="us-detalle-cuerpo">
-          <div class="us-broker" aria-live="polite">Broker: <b id="broker">sin conexión</b></div>
+          <div class="us-broker">Broker: <b id="broker">sin conexión</b></div>
           <div class="us-json" id="json" aria-label="Mensaje que se publica">{ }</div>
-          <div class="us-log" id="log" role="log" aria-live="polite"><div class="inf">[listo] Pulsa Encender para conectar al broker.</div></div>
+          <div class="us-log" id="log" role="log"><div class="inf">[listo] Pulsa Encender para conectar al broker.</div></div>
         </div>
       </details>
     </div>

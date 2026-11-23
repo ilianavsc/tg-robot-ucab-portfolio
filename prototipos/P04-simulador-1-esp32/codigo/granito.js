@@ -176,10 +176,11 @@ function pintar(canvas, img, P) {
     // PC3 coincide con salida en circuito cerrado: se dibuja en el lado opuesto a INICIO
     const ladoEtiq = pc.id === 'PC3' ? -1 : 1;
     const distEtiq = 0.14;
+    const nombrePc = pc.id === 'PC3' ? 'PC3 / META' : pc.id;
     pintarEtiqueta(
       pc.x + pc.tz * ladoEtiq * distEtiq,
       pc.z - pc.tx * ladoEtiq * distEtiq,
-      `${pc.id} · ${fmtM(pc.distanciaM)}`,
+      `${nombrePc} · ${fmtM(pc.distanciaM)}`,
       color,
       textoPc[pc.id] || '#ffffff'
     );

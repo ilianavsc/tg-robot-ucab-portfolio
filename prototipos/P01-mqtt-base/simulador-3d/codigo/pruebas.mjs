@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {dirname, join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {ESPERA_LWT_S, PERDIDA, TELEMETRIA, TOPICOS, decidePerdida, entregaConPerdida, estadoRobot, proximaTelemetriaMs, publicar, qosEfectivo, tramo} from './protocolo.js';
 const nombres = (t) => t.paquetes.map((p) => p.paquete).join(',');
 let p = publicar('ordenes', 'app', 'robot', 0);
@@ -39,4 +42,11 @@ const q0 = prueba(0), q1 = prueba(1), q2 = prueba(2);
 assert.ok(q0.tasa > 0.55 && q0.tasa < 0.65, 'QoS 0 entrega ' + q0.tasa);
 assert.equal(q1.tasa, 1); assert.equal(q2.tasa, 1);
 assert.ok(q1.ints > 1.3 && q1.ints < 1.9, 'reintentos QoS 1: ' + q1.ints);
-console.log('protocolo: todo bien');
+
+// P01 index.html: botón maestro Encender/Detener con aria-label dinámico y cancelación de temporizadores/rAF al detener
+const p01Html = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../index.html'), 'utf8');
+assert.ok(/id="b-pausa"[^>]*aria-pressed="false"[^>]*aria-label="Encender"/.test(p01Html), 'botón maestro inicia con aria-label="Encender"');
+assert.ok(p01Html.includes('bPausa.setAttribute("aria-label",encendido?"Detener":"Encender")'), 'aria-label refleja solo la acción actual');
+assert.ok(p01Html.includes('clearInterval(timerEstado)') && p01Html.includes('cancelAnimationFrame(rafId)'), 'detener cancela interval y rAF');
+assert.ok(!/id="t-codigo"/.test(p01Html), 'bloques de código ESP32 retirados de P01');
+console.log('protocolo + P01 UI: todo bien');

@@ -113,4 +113,14 @@ prueba("P03 index.html usa radar_motor.js, inicia en 0.00 m/s y expone ⚡ Encen
   assert.ok(html.includes('id="velo-val">0.00<small>m/s</small>'), "velocímetro inicia en 0.00 m/s");
 });
 
+prueba("P03 index.html pausa rAF, limpia MQTT al apagar y mantiene un único canal aria-live", function () {
+  var html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  assert.ok(html.includes("cancelAnimationFrame(rafId)"), "apagar() cancela el bucle rAF");
+  assert.ok(/function bucleSimulacion[\s\S]*?if \(!motor\.encendido\)/.test(html), "bucleSimulacion no reprograma rAF estando apagado");
+  assert.ok(/function apagar\(\)[\s\S]*?limpiarCliente\(\)/.test(html), "apagar() cierra el cliente MQTT");
+  assert.ok(/function publicar\(m\)[\s\S]*?if \(!motor\.encendido\) return/.test(html), "publicar() bloquea envíos estando apagado");
+  var lives = html.match(/aria-live="polite"/g) || [];
+  assert.strictEqual(lives.length, 1, "debe existir un único canal aria-live='polite' para evitar anuncios duplicados");
+});
+
 console.log("\nP03 Radar ultrasónico: " + ok + "/" + ok + " pruebas pasaron");
