@@ -2,34 +2,35 @@
    TG ROBOT UCAB · ESTILOS GLOBALES Y MODULARES DE INGENIERÍA
    Diseño UX/UI: Portafolio de Ingeniería & Prototipos
    ========================================================================== */
+@import url("./tokens.css");
 
 :root {
-  /* Paleta Base: Clean Tech */
-  --bg-page: #f8fafc;
-  --bg-grid: #e2e8f0;
-  --surface: #ffffff;
-  --surface-alt: #f1f5f9;
-  --border: #cbd5e1;
-  --border-dark: #0f172a;
-  --text-main: #0f172a;
-  --text-muted: #475569;
-  --text-light: #64748b;
+  /* Paleta Base: Clean Tech (consumida desde tokens.css) */
+  --bg-page: var(--tg-bg);
+  --bg-grid: var(--tg-border);
+  --surface: var(--tg-surface);
+  --surface-alt: var(--tg-surface-alt);
+  --border: var(--tg-border);
+  --border-dark: var(--tg-border-strong);
+  --text-main: var(--tg-text);
+  --text-muted: var(--tg-text-muted);
+  --text-light: var(--tg-text-subtle);
 
   /* Colores de Estado & Ingeniería */
-  --accent-primary: #0F9D84;     /* Verde éxito / firmware / validado */
-  --accent-primary-hover: #0b7e6a;
-  --accent-secondary: #3b82f6;   /* Azul telemetría / red */
-  --accent-coral: #c26070;       /* Alerta / atención / vivo (desaturado) */
-  --accent-purple: #7b6ba8;      /* Fase en curso / QoS (desaturado) */
-  --accent-amber: #c9993f;       /* Pendiente / hardware en tránsito (desaturado) */
-  --accent-amber-bg: #faf5e8;
+  --accent-primary: var(--tg-accent);
+  --accent-primary-hover: var(--tg-accent-hover);
+  --accent-secondary: var(--tg-info);
+  --accent-coral: var(--tg-coral);
+  --accent-purple: var(--tg-purple);
+  --accent-amber: var(--tg-warning);
+  --accent-amber-bg: var(--tg-warning-bg);
 
   /* Tipografías */
-  --font-display: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--tg-font-display);
+  --font-body: var(--tg-font-sans);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  --font-mono: var(--tg-font-mono);
 
   /* Sombras y Elevación Técnica */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -37,11 +38,11 @@
   --shadow-hard: 5px 5px 0px var(--border-dark);
   --shadow-hard-hover: 7px 7px 0px var(--border-dark);
 
-  /* Radio de bordes */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-full: 9999px;
+  /* Radio de bordes (escala compartida 4 / 8 / 12 / 16 px) */
+  --radius-sm: var(--tg-radius-md);
+  --radius-md: var(--tg-radius-lg);
+  --radius-lg: var(--tg-radius-xl);
+  --radius-full: var(--tg-radius-full);
 }
 
 /* Reset y caja */

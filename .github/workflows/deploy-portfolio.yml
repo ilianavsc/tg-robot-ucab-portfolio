@@ -35,6 +35,9 @@ jobs:
           set -euo pipefail
           find prototipos -type f \( -name "*.js" -o -name "*.mjs" \) ! -path "*/node_modules/*" -print0 | xargs -0 -n 1 node --check
 
+      - name: Validar contratos versionados y tokens de diseño
+        run: node scripts/validar_contratos.mjs
+
       - name: Pruebas del núcleo teach-and-repeat (specs/navegacion)
         run: node specs/navegacion/teach_and_repeat.test.js
 

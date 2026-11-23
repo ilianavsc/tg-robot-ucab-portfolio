@@ -34,6 +34,17 @@
     { "id": "PC3", "posicionM": 7.5, "tipo": "deteccion_beacon", "nota": "RSSI B2 >= -80 dBm → WAIT_BEACON" }
   ],
 
+  "convencionPuntosDeControl": {
+    "funcionalesCanonicosM": [3.0, 4.5, 7.5],
+    "terciosEquitativos": {
+      "criterio": "L/3, 2L/3, L",
+      "pistaA_8_05m": [2.68, 5.37, 8.05],
+      "pistaB_9_00m": [3.0, 6.0, 9.0],
+      "usadoEn": ["P04", "P05", "app"]
+    },
+    "nota": "Los PC funcionales (3,0 / 4,5 / 7,5 m) rigen la máquina de estados de navegación en el tramo sin cinta T2; los tercios equitativos (L/3) dividen cualquier pista A/B en 3 segmentos visuales homogéneos para calibración, mini-mapa y UI."
+  },
+
   "umbrales": {
     "paradaCriticaCm": 20,
     "precaucionCm": 50,

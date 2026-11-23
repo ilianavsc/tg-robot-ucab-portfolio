@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "nombre": "Contrato MQTT Robot UCAB (HIL + Simuladores)",
+  "estado": "canonico",
+  "prefijo": "ucab-tg-sf/robot",
+  "brokers": [
+    {
+      "nombre": "HiveMQ",
+      "host": "broker.hivemq.com",
+      "puertoTcp": 1883,
+      "puertoWss": 8884,
+      "urlWss": "wss://broker.hivemq.com:8884/mqtt"
+    },
+    {
+      "nombre": "EMQX",
+      "host": "broker.emqx.io",
+      "puertoTcp": 1883,
+      "puertoWss": 8084,
+      "urlWss": "wss://broker.emqx.io:8084/mqtt"
+    },
+    {
+      "nombre": "Mosquitto",
+      "host": "test.mosquitto.org",
+      "puertoTcp": 1883,
+      "puertoWss": 8081,
+      "urlWss": "wss://test.mosquitto.org:8081/mqtt"
+    }
+  ],
+  "topicos": {
+    "estado": {
+      "ruta": "ucab-tg-sf/robot/estado",
+      "qos": 0,
+      "retained": false,
+      "direccion": "robot->app"
+    },
+    "ultrasonido": {
+      "ruta": "ucab-tg-sf/robot/ultrasonido",
+      "qos": 0,
+      "retained": false,
+      "direccion": "robot->app"
+    },
+    "ordenes": {
+      "ruta": "ucab-tg-sf/robot/ordenes",
+      "qos": 1,
+      "retained": false,
+      "direccion": "app->robot"
+    },
+    "ack": {
+      "ruta": "ucab-tg-sf/robot/ordenes/ack",
+      "qos": 1,
+      "retained": false,
+      "direccion": "robot->app"
+    },
+    "alertas": {
+      "ruta": "ucab-tg-sf/robot/alertas",
+      "qos": 2,
+      "retained": false,
+      "direccion": "robot->app"
+    },
+    "conexion": {
+      "ruta": "ucab-tg-sf/robot/conexion",
+      "qos": 1,
+      "retained": true,
+      "direccion": "robot->app",
+      "lwt": "desconectado",
+      "enLinea": "en linea"
+    }
+  },
+  "comandosValidos": [
+    "adelante",
+    "atras",
+    "izquierda",
+    "derecha",
+    "frenar",
+    "auto"
+  ],
+  "tiempos": {
+    "ackTimeoutMs": 5000,
+    "manualFailSafeMs": 5000,
+    "telemetriaIntervaloMs": 1500,
+    "keepAliveS": 15
+  },
+  "payloads": {
+    "estado": {
+      "fisicoHIL": [
+        "n",
+        "estado",
+        "bateria",
+        "bateria_v",
+        "ordenes",
+        "linea_mm",
+        "v_izq",
+        "v_der",
+        "parada",
+        "t"
+      ],
+      "exclusivosSimuladorP04": [
+        "progreso_m",
+        "largo_m",
+        "sensores"
+      ]
+    },
+    "ultrasonido": {
+      "fisicoHIL": [
+        "frente_cm",
+        "atras_cm",
+        "frente_ok",
+        "atras_ok",
+        "t"
+      ]
+    },
+    "orden": {
+      "campos": ["id", "cmd"]
+    },
+    "ack": {
+      "campos": ["id", "recibidas", "t"]
+    }
+  }
+}
