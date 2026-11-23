@@ -48,20 +48,41 @@ assert.equal(mqtt.topicos.alertas.qos, 2);
 assert.equal(mqtt.topicos.conexion.qos, 1);
 assert.equal(mqtt.topicos.conexion.retained, true);
 assert.equal(mqtt.topicos.rutas_estado.ruta, 'ucab-tg-sf/robot/rutas/estado');
+assert.equal(mqtt.topicos.rutas_estado.qos, 1);
+assert.equal(mqtt.topicos.rutas_estado.retained, true);
 assert.equal(mqtt.topicos.rutas_escaneo.ruta, 'ucab-tg-sf/robot/rutas/escaneo');
+assert.equal(mqtt.topicos.rutas_escaneo.qos, 1);
+assert.equal(mqtt.topicos.rutas_escaneo.retained, false);
 assert.equal(mqtt.topicos.rutas_reposicionamiento.ruta, 'ucab-tg-sf/robot/rutas/reposicionamiento');
+assert.equal(mqtt.topicos.rutas_reposicionamiento.qos, 1);
+assert.equal(mqtt.topicos.rutas_reposicionamiento.retained, false);
 assert.equal(mqtt.topicos.pedidos_solicitud.ruta, 'ucab-tg-sf/robot/pedidos/solicitud');
+assert.equal(mqtt.topicos.pedidos_solicitud.qos, 1);
+assert.equal(mqtt.topicos.pedidos_solicitud.retained, false);
 assert.equal(mqtt.topicos.pedidos_estado.ruta, 'ucab-tg-sf/robot/pedidos/estado');
+assert.equal(mqtt.topicos.pedidos_estado.qos, 1);
+assert.equal(mqtt.topicos.pedidos_estado.retained, true);
 assert.equal(mqtt.topicos.pedidos_cancelacion.ruta, 'ucab-tg-sf/robot/pedidos/cancelacion');
+assert.equal(mqtt.topicos.pedidos_cancelacion.qos, 1);
+assert.equal(mqtt.topicos.pedidos_cancelacion.retained, false);
 assert.equal(mqtt.topicos.sensores_inercial.ruta, 'ucab-tg-sf/robot/sensores/inercial');
+assert.equal(mqtt.topicos.sensores_inercial.qos, 0);
+assert.equal(mqtt.topicos.sensores_inercial.retained, false);
 assert.deepEqual(mqtt.comandosValidos, ['adelante', 'atras', 'izquierda', 'derecha', 'frenar', 'auto']);
 assert.equal(mqtt.tiempos.ackTimeoutMs, 5000);
+assert.deepEqual(mqtt.trazabilidad.camposObligatorios, [
+  'message_id',
+  'request_id',
+  'sequence',
+  'timestamp',
+  'schema_version',
+]);
 assert.deepEqual(mqtt.payloads.estado.exclusivosSimuladorP04, ['progreso_m', 'largo_m', 'sensores']);
 for (const campo of mqtt.payloads.estado.exclusivosSimuladorP04) {
   assert.ok(!mqtt.payloads.estado.fisicoHIL.includes(campo), `${campo} es exclusivo de simulador P04`);
   assert.ok(p04Mqtt.includes(campo), `P04 debe publicar ${campo}`);
 }
-assert.deepEqual(mqtt.capa3Operacional.estadosRuta, [
+const ESTADOS_RUTA_ESPERADOS = [
   'SIN_RUTA',
   'ESCANEO_IDA',
   'ESPERA_REPOSICION',
@@ -72,22 +93,96 @@ assert.deepEqual(mqtt.capa3Operacional.estadosRuta, [
   'PAUSA_OBSTACULO',
   'ERROR_SEGURIDAD',
   'RECUPERACION_MANUAL',
-]);
-assert.deepEqual(mqtt.capa3Operacional.estadosPedido, [
+];
+const ESTADOS_PEDIDO_ESPERADOS = [
   'SIN_PEDIDO',
   'SOLICITADO',
   'EN_TRANSITO',
   'CANCELACION_SEGURA',
   'ENTREGADO',
-]);
-assert.deepEqual(mqtt.capa3Operacional.alertasMpu6050, ['impacto', 'inclinacion', 'atascamiento']);
+];
+const ALERTAS_MPU_ESPERADAS = ['impacto', 'inclinacion', 'atascamiento'];
+assert.deepEqual(mqtt.capa3Operacional.estadosRuta, ESTADOS_RUTA_ESPERADOS);
+assert.deepEqual(mqtt.capa3Operacional.estadosPedido, ESTADOS_PEDIDO_ESPERADOS);
+assert.deepEqual(mqtt.capa3Operacional.alertasMpu6050, ALERTAS_MPU_ESPERADAS);
 assert.deepEqual(mqtt.capa3Operacional.invariantesSeguridad.movimientoBloqueadoEnEstados, [
   'ESPERA_REPOSICION',
   'ERROR_SEGURIDAD',
   'RECUPERACION_MANUAL',
 ]);
-assert.deepEqual(mqtt.payloads.sensores_inercial.campos, ['pitch', 'roll', 'acel_g', 'alerta', 't']);
-assert.deepEqual(mqtt.payloads.sensores_inercial.alertaValores, [null, 'impacto', 'inclinacion', 'atascamiento']);
+
+// Payloads semánticos obligatorios de los 7 tópicos nuevos v2.0.0
+assert.deepEqual(mqtt.payloads.rutas_estado.campos, [
+  'tipo_ruta',
+  'estado_ruta',
+  'parada_configurada',
+  'usos_completados',
+  'movimiento_bloqueado',
+  'timestamp',
+  'schema_version',
+]);
+assert.deepEqual(mqtt.payloads.rutas_estado.enums.tipo_ruta, ['cerrada', 'lineal']);
+assert.deepEqual(mqtt.payloads.rutas_estado.enums.estado_ruta, ESTADOS_RUTA_ESPERADOS);
+assert.deepEqual(mqtt.payloads.rutas_escaneo.campos, [
+  'accion',
+  'fase',
+  'escala_reloj',
+  'progreso_m',
+  't_sim_s',
+  't_restante_s',
+  'message_id',
+  'sequence',
+  'timestamp',
+  'schema_version',
+]);
+assert.deepEqual(mqtt.payloads.rutas_escaneo.enums.accion, ['iniciar', 'pausar', 'reanudar', 'finalizar']);
+assert.deepEqual(mqtt.payloads.rutas_escaneo.enums.fase, ['ida', 'retorno', 'bucle']);
+assert.deepEqual(mqtt.payloads.rutas_escaneo.enums.escala_reloj, [1, 2, 4]);
+assert.deepEqual(mqtt.payloads.rutas_reposicionamiento.campos, [
+  'confirmado',
+  'origen',
+  'message_id',
+  'sequence',
+  'timestamp',
+  'schema_version',
+]);
+assert.deepEqual(mqtt.payloads.rutas_reposicionamiento.enums.origen, ['manual_usuario']);
+assert.deepEqual(mqtt.payloads.pedidos_solicitud.campos, [
+  'request_id',
+  'parada_id',
+  'con_carga',
+  'message_id',
+  'sequence',
+  'timestamp',
+  'schema_version',
+]);
+assert.deepEqual(mqtt.payloads.pedidos_estado.campos, [
+  'request_id',
+  'estado_pedido',
+  'ruta_preservada',
+  'timestamp',
+  'schema_version',
+]);
+assert.deepEqual(mqtt.payloads.pedidos_estado.enums.estado_pedido, ESTADOS_PEDIDO_ESPERADOS);
+assert.deepEqual(mqtt.payloads.pedidos_cancelacion.campos, [
+  'request_id',
+  'motivo',
+  'modo',
+  'message_id',
+  'sequence',
+  'timestamp',
+  'schema_version',
+]);
+assert.deepEqual(mqtt.payloads.pedidos_cancelacion.enums.modo, ['CANCELACION_SEGURA']);
+assert.deepEqual(mqtt.payloads.sensores_inercial.campos, [
+  'pitch',
+  'roll',
+  'acel_g',
+  'alerta',
+  'timestamp',
+  'schema_version',
+]);
+assert.deepEqual(mqtt.payloads.sensores_inercial.alertaValores, [null, ...ALERTAS_MPU_ESPERADAS]);
 
 // 2. Contrato de pista canónica + metadato de convivencia PC funcionales vs tercios L/3
 assert.equal(pista.longitudTotalM, 9.0);

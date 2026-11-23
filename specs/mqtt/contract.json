@@ -70,43 +70,50 @@
       "ruta": "ucab-tg-sf/robot/rutas/estado",
       "qos": 1,
       "retained": true,
-      "direccion": "robot->app"
+      "direccion": "robot->app",
+      "nota": "Estado vigente al reconectar"
     },
     "rutas_escaneo": {
       "ruta": "ucab-tg-sf/robot/rutas/escaneo",
       "qos": 1,
       "retained": false,
-      "direccion": "app->robot"
+      "direccion": "app->robot",
+      "nota": "Comandos y eventos de escaneo"
     },
     "rutas_reposicionamiento": {
       "ruta": "ucab-tg-sf/robot/rutas/reposicionamiento",
       "qos": 1,
       "retained": false,
-      "direccion": "app->robot"
+      "direccion": "app->robot",
+      "nota": "Confirmación manual obligatoria en ESPERA_REPOSICION"
     },
     "pedidos_solicitud": {
       "ruta": "ucab-tg-sf/robot/pedidos/solicitud",
       "qos": 1,
       "retained": false,
-      "direccion": "app->robot"
+      "direccion": "app->robot",
+      "nota": "Solicitud de pedido sobre ruta con parada configurada"
     },
     "pedidos_estado": {
       "ruta": "ucab-tg-sf/robot/pedidos/estado",
       "qos": 1,
       "retained": true,
-      "direccion": "robot->app"
+      "direccion": "robot->app",
+      "nota": "Estado vigente de pedido al reconectar"
     },
     "pedidos_cancelacion": {
       "ruta": "ucab-tg-sf/robot/pedidos/cancelacion",
       "qos": 1,
       "retained": false,
-      "direccion": "app->robot"
+      "direccion": "app->robot",
+      "nota": "Cancelación segura preservando la ruta aprendida"
     },
     "sensores_inercial": {
       "ruta": "ucab-tg-sf/robot/sensores/inercial",
       "qos": 0,
       "retained": false,
-      "direccion": "robot->app"
+      "direccion": "robot->app",
+      "nota": "Telemetría continua MPU-6050"
     }
   },
   "comandosValidos": [
@@ -122,6 +129,16 @@
     "manualFailSafeMs": 5000,
     "telemetriaIntervaloMs": 1500,
     "keepAliveS": 15
+  },
+  "trazabilidad": {
+    "camposObligatorios": [
+      "message_id",
+      "request_id",
+      "sequence",
+      "timestamp",
+      "schema_version"
+    ],
+    "deduplicacion": "message_id + sequence monotónica por emisor; request_id correlaciona el ciclo de vida de cada pedido."
   },
   "capa3Operacional": {
     "fuenteDeVerdad": "prototipos/P05-gemelo-digital/capa3_operacional.js",
@@ -198,30 +215,111 @@
         "tipo_ruta",
         "estado_ruta",
         "parada_configurada",
-        "parada_nombre",
         "usos_completados",
-        "progreso_pasada_m",
-        "largo_m",
-        "t"
-      ]
+        "movimiento_bloqueado",
+        "timestamp",
+        "schema_version"
+      ],
+      "enums": {
+        "tipo_ruta": ["cerrada", "lineal"],
+        "estado_ruta": [
+          "SIN_RUTA",
+          "ESCANEO_IDA",
+          "ESPERA_REPOSICION",
+          "ESCANEO_RETORNO",
+          "OPERACION_BUCLE",
+          "REESCANEO_PARADA",
+          "OPERACION_CON_PARADA",
+          "PAUSA_OBSTACULO",
+          "ERROR_SEGURIDAD",
+          "RECUPERACION_MANUAL"
+        ]
+      }
     },
     "rutas_escaneo": {
-      "campos": ["accion", "tipo_ruta", "parada_nombre"]
+      "campos": [
+        "accion",
+        "fase",
+        "escala_reloj",
+        "progreso_m",
+        "t_sim_s",
+        "t_restante_s",
+        "message_id",
+        "sequence",
+        "timestamp",
+        "schema_version"
+      ],
+      "enums": {
+        "accion": ["iniciar", "pausar", "reanudar", "finalizar"],
+        "fase": ["ida", "retorno", "bucle"],
+        "escala_reloj": [1, 2, 4]
+      }
     },
     "rutas_reposicionamiento": {
-      "campos": ["confirmado", "operador", "t"]
+      "campos": [
+        "confirmado",
+        "origen",
+        "message_id",
+        "sequence",
+        "timestamp",
+        "schema_version"
+      ],
+      "enums": {
+        "origen": ["manual_usuario"]
+      }
     },
     "pedidos_solicitud": {
-      "campos": ["id", "componente", "destino", "t"]
+      "campos": [
+        "request_id",
+        "parada_id",
+        "con_carga",
+        "message_id",
+        "sequence",
+        "timestamp",
+        "schema_version"
+      ]
     },
     "pedidos_estado": {
-      "campos": ["id", "estado_pedido", "ruta_conservada", "t"]
+      "campos": [
+        "request_id",
+        "estado_pedido",
+        "ruta_preservada",
+        "timestamp",
+        "schema_version"
+      ],
+      "enums": {
+        "estado_pedido": [
+          "SIN_PEDIDO",
+          "SOLICITADO",
+          "EN_TRANSITO",
+          "CANCELACION_SEGURA",
+          "ENTREGADO"
+        ]
+      }
     },
     "pedidos_cancelacion": {
-      "campos": ["id", "motivo", "conservar_ruta", "t"]
+      "campos": [
+        "request_id",
+        "motivo",
+        "modo",
+        "message_id",
+        "sequence",
+        "timestamp",
+        "schema_version"
+      ],
+      "enums": {
+        "modo": ["CANCELACION_SEGURA"]
+      }
     },
     "sensores_inercial": {
-      "campos": ["pitch", "roll", "acel_g", "alerta", "t"],
+      "campos": [
+        "pitch",
+        "roll",
+        "acel_g",
+        "alerta",
+        "timestamp",
+        "schema_version"
+      ],
       "alertaValores": [null, "impacto", "inclinacion", "atascamiento"]
     }
   }
