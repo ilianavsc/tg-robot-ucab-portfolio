@@ -10,7 +10,16 @@ import {leerSensores, binarios} from './linea.js';
 import {R} from './model.js';
 import {IDS_PISTA, PISTAS, ZONA, ZONA_B, calcularPuntosControl, crearPista, ocultarTramo, tramoEn} from './pista.js';
 import {GEOM, PINES_TCRT, crearSim, ledsEsp32} from './sim.js';
-import {BROKERS, TOPICOS, TIMEOUT_MANUAL_S, crearPuenteMqtt} from './mqtt_puente.js';
+import {
+  ALERTAS_MPU6050,
+  BROKERS,
+  ESTADOS_PEDIDO,
+  ESTADOS_RUTA,
+  SCHEMA_VERSION,
+  TOPICOS,
+  TIMEOUT_MANUAL_S,
+  crearPuenteMqtt,
+} from './mqtt_puente.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const leer = (f) => readFileSync(join(aqui, f), 'utf8');
@@ -456,6 +465,192 @@ prueba('modo App bloquea atajos de teclado R y M, y PC3 se rotula como PC3 / MET
   assert.ok(idxApp > 0 && idxApp < idxR && idxApp < idxM, 'ui.conexion === app debe bloquear R y M antes de evaluarlos');
   assert.ok(main.includes("'PC3 / META'"), 'mini-mapa rotula PC3 / META');
   assert.ok(granito.includes("'PC3 / META'"), 'pista 3D rotula PC3 / META');
+});
+
+// ---- Contrato MQTT v2.0.0: Capa 3 Operacional (rutas, pedidos, trazabilidad) y disparo dual MPU-6050
+prueba('MQTT v2.0.0: suscripciones Capa 3, flujo rutas/escaneo -> rutas/estado (retained), reposicionamiento y deduplicación', () => {
+  assert.strictEqual(SCHEMA_VERSION, '2.0.0');
+  assert.strictEqual(ESTADOS_RUTA.length, 10);
+  assert.strictEqual(ESTADOS_PEDIDO.length, 5);
+  assert.deepStrictEqual(ALERTAS_MPU6050, ['impacto', 'inclinacion', 'atascamiento']);
+
+  const s = crearSim({pistaId: 'B', modo: 'auto', encendido: true});
+  const publicados = [];
+  const suscritos = [];
+  const listeners = {};
+  const clienteMock = {
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    subscribe(topic, opts) { suscritos.push({topic, opts}); },
+    publish(topic, payload, opts) { publicados.push({topic, payload: JSON.parse(payload), opts}); },
+    removeAllListeners() {},
+    end() {},
+  };
+
+  const puente = crearPuenteMqtt({sim: s, crearCliente: () => clienteMock});
+  puente.conectar();
+  listeners.connect.forEach((fn) => fn());
+
+  // Verifica las 4 suscripciones nuevas de Capa 3 en QoS 1
+  for (const t of [TOPICOS.rutas_escaneo, TOPICOS.rutas_reposicionamiento, TOPICOS.pedidos_solicitud, TOPICOS.pedidos_cancelacion]) {
+    const sub = suscritos.find((x) => x.topic === t);
+    assert.ok(sub && sub.opts.qos === 1, `debe suscribirse a ${t} con QoS 1`);
+  }
+
+  const enviar = (topic, obj) => listeners.message.forEach((fn) => fn(topic, JSON.stringify(obj)));
+
+  // 1) Iniciar escaneo lineal con parada
+  enviar(TOPICOS.rutas_escaneo, {
+    accion: 'iniciar',
+    tipo_ruta: 'lineal',
+    parada_configurada: true,
+    message_id: 'msg-001',
+    sequence: 1,
+    timestamp: 1000,
+    schema_version: '2.0.0',
+  });
+  let pubRuta = publicados.filter((p) => p.topic === TOPICOS.rutas_estado).pop();
+  assert.strictEqual(pubRuta.payload.estado_ruta, 'ESCANEO_IDA');
+  assert.strictEqual(pubRuta.opts.qos, 1);
+  assert.strictEqual(pubRuta.opts.retain, true);
+
+  // Deduplicación: repetir message_id msg-001 no genera nueva publicación ni registro
+  const pubsAntes = publicados.length;
+  enviar(TOPICOS.rutas_escaneo, {
+    accion: 'finalizar',
+    message_id: 'msg-001',
+    sequence: 1,
+    timestamp: 1001,
+    schema_version: '2.0.0',
+  });
+  assert.strictEqual(publicados.length, pubsAntes, 'message_id duplicado debe descartarse');
+
+  // 2) Finalizar ida lineal -> ESPERA_REPOSICION (bloquea órdenes de movimiento)
+  enviar(TOPICOS.rutas_escaneo, {
+    accion: 'finalizar',
+    message_id: 'msg-002',
+    sequence: 2,
+    timestamp: 1100,
+    schema_version: '2.0.0',
+  });
+  pubRuta = publicados.filter((p) => p.topic === TOPICOS.rutas_estado).pop();
+  assert.strictEqual(pubRuta.payload.estado_ruta, 'ESPERA_REPOSICION');
+  assert.strictEqual(pubRuta.payload.movimiento_bloqueado, true);
+  assert.strictEqual(puente.recibirOrden(JSON.stringify({id: 'o-bloq', cmd: 'adelante'})).bloqueado, true);
+
+  // 3) Confirmación manual en rutas/reposicionamiento -> ESCANEO_RETORNO -> finalizar -> OPERACION_CON_PARADA
+  enviar(TOPICOS.rutas_reposicionamiento, {
+    confirmado: true,
+    origen: 'manual_usuario',
+    message_id: 'msg-003',
+    sequence: 3,
+    timestamp: 1200,
+    schema_version: '2.0.0',
+  });
+  assert.strictEqual(puente.capa3.estado_ruta, 'ESCANEO_RETORNO');
+  enviar(TOPICOS.rutas_escaneo, {
+    accion: 'finalizar',
+    message_id: 'msg-004',
+    sequence: 4,
+    timestamp: 1300,
+    schema_version: '2.0.0',
+  });
+  assert.strictEqual(puente.capa3.estado_ruta, 'OPERACION_CON_PARADA');
+  assert.strictEqual(puente.registroTrazabilidad.length, 4);
+  puente.desconectar();
+});
+
+prueba('MQTT v2.0.0: pedidos/solicitud -> pedidos/cancelacion preserva ruta (ruta_preservada: true, retained)', () => {
+  const s = crearSim({pistaId: 'B', modo: 'auto', encendido: true});
+  const publicados = [];
+  const listeners = {};
+  const clienteMock = {
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    subscribe() {},
+    publish(topic, payload, opts) { publicados.push({topic, payload: JSON.parse(payload), opts}); },
+    removeAllListeners() {},
+    end() {},
+  };
+
+  const puente = crearPuenteMqtt({sim: s, crearCliente: () => clienteMock});
+  puente.conectar();
+  listeners.connect.forEach((fn) => fn());
+  const enviar = (topic, obj) => listeners.message.forEach((fn) => fn(topic, JSON.stringify(obj)));
+
+  // Preparar ruta cerrada con parada
+  enviar(TOPICOS.rutas_escaneo, {accion: 'iniciar', tipo_ruta: 'cerrada', parada_configurada: true, message_id: 'm1', sequence: 1, schema_version: '2.0.0'});
+  enviar(TOPICOS.rutas_escaneo, {accion: 'finalizar', message_id: 'm2', sequence: 2, schema_version: '2.0.0'});
+  assert.strictEqual(puente.capa3.estado_ruta, 'OPERACION_CON_PARADA');
+
+  // Solicitar pedido
+  enviar(TOPICOS.pedidos_solicitud, {
+    request_id: 'req-42',
+    parada_id: 'Estación 1',
+    con_carga: true,
+    message_id: 'm3',
+    sequence: 3,
+    schema_version: '2.0.0',
+  });
+  let pubPed = publicados.filter((p) => p.topic === TOPICOS.pedidos_estado).pop();
+  assert.strictEqual(pubPed.payload.request_id, 'req-42');
+  assert.strictEqual(pubPed.payload.estado_pedido, 'EN_TRANSITO');
+  assert.strictEqual(pubPed.opts.qos, 1);
+  assert.strictEqual(pubPed.opts.retain, true);
+
+  // Cancelación segura preserva ruta
+  enviar(TOPICOS.pedidos_cancelacion, {
+    request_id: 'req-42',
+    motivo: 'cancelado_usuario',
+    modo: 'CANCELACION_SEGURA',
+    message_id: 'm4',
+    sequence: 4,
+    schema_version: '2.0.0',
+  });
+  pubPed = publicados.filter((p) => p.topic === TOPICOS.pedidos_estado).pop();
+  assert.strictEqual(pubPed.payload.estado_pedido, 'CANCELACION_SEGURA');
+  assert.strictEqual(pubPed.payload.ruta_preservada, true);
+  assert.strictEqual(puente.capa3.estado_ruta, 'OPERACION_CON_PARADA');
+  puente.desconectar();
+});
+
+prueba('MQTT v2.0.0: disparo dual MPU-6050 (alertas QoS 2 + sensores/inercial QoS 0) y bloqueo hasta RECUPERACION_MANUAL', () => {
+  const s = crearSim({pistaId: 'B', modo: 'auto', encendido: true});
+  const publicados = [];
+  const listeners = {};
+  const clienteMock = {
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    subscribe() {},
+    publish(topic, payload, opts) { publicados.push({topic, payload: JSON.parse(payload), opts}); },
+    removeAllListeners() {},
+    end() {},
+  };
+
+  const puente = crearPuenteMqtt({sim: s, crearCliente: () => clienteMock});
+  puente.conectar();
+  listeners.connect.forEach((fn) => fn());
+  const enviar = (topic, obj) => listeners.message.forEach((fn) => fn(topic, JSON.stringify(obj)));
+
+  const res = puente.dispararAlertaInercial('impacto', 2.9);
+  assert.strictEqual(res.ok, true);
+  assert.strictEqual(puente.capa3.estado_ruta, 'ERROR_SEGURIDAD');
+  assert.strictEqual(puente.movimientoBloqueado, true);
+
+  // Disparo dual: alertas (QoS 2) y sensores/inercial (QoS 0)
+  const pubAlerta = publicados.filter((p) => p.topic === TOPICOS.alertas).pop();
+  const pubImu = publicados.filter((p) => p.topic === TOPICOS.sensores_inercial).pop();
+  assert.ok(pubAlerta && pubAlerta.opts.qos === 2 && pubAlerta.payload.tipo === 'impacto');
+  assert.ok(pubImu && pubImu.opts.qos === 0 && pubImu.payload.alerta === 'impacto');
+
+  // Movimiento bloqueado en ERROR_SEGURIDAD y RECUPERACION_MANUAL
+  assert.strictEqual(puente.recibirOrden(JSON.stringify({id: 'b1', cmd: 'adelante'})).bloqueado, true);
+  enviar(TOPICOS.rutas_escaneo, {accion: 'recuperacion_manual', message_id: 'r1', sequence: 10, schema_version: '2.0.0'});
+  assert.strictEqual(puente.capa3.estado_ruta, 'RECUPERACION_MANUAL');
+  assert.strictEqual(puente.recibirOrden(JSON.stringify({id: 'b2', cmd: 'auto'})).bloqueado, true);
+
+  // Reanudar tras recuperación manual libera el bloqueo
+  enviar(TOPICOS.rutas_escaneo, {accion: 'reanudar_operacion', message_id: 'r2', sequence: 11, schema_version: '2.0.0'});
+  assert.strictEqual(puente.movimientoBloqueado, false);
+  assert.strictEqual(puente.recibirOrden(JSON.stringify({id: 'ok1', cmd: 'auto'})).ok, true);
+  puente.desconectar();
 });
 
 console.log(`\nP04 Simulador 1: ${ok}/${ok} pruebas pasaron`);
