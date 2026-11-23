@@ -623,11 +623,24 @@ module.exports = async function (ctx) {
       assert.strictEqual(C3.iniciarRecuperacionManual(op), true);
       assert.strictEqual(op.estadoRuta, "RECUPERACION_MANUAL");
       assert.strictEqual(C3.puedeMover(op), false);
+      assert.strictEqual(C3.ordenarMovimiento(op, "adelante").bloqueado, true);
       assert.strictEqual(C3.completarRecuperacionManual(op, false), true);
       assert.strictEqual(op.estadoRuta, "OPERACION_CON_PARADA");
       assert.strictEqual(op.estadoPedido, "SIN_PEDIDO");
       assert.strictEqual(C3.puedeMover(op), true);
     }
+
+    // Inventario exacto 10 + 5 y reset limpio en setTipoRuta()
+    assert.strictEqual(C3.ESTADOS_RUTA.length, 10);
+    assert.strictEqual(C3.ESTADOS_PEDIDO.length, 5);
+    const opReset = C3.crear({ tipoRuta: "cerrada", largoM: 9.0 });
+    C3.iniciarEscaneo(opReset); C3.completarPasadaIda(opReset);
+    C3.registrarUsoCompletado(opReset, true);
+    C3.setTipoRuta(opReset, "lineal");
+    assert.strictEqual(opReset.estadoRuta, "SIN_RUTA");
+    assert.strictEqual(opReset.estadoPedido, "SIN_PEDIDO");
+    assert.strictEqual(opReset.usosCompletados, 0);
+    assert.strictEqual(opReset.rutaAprendida, null);
   });
 
   await prueba("Capa 3 Tiempos reales (0,41 m/s -> 21,95 s / 43,90 s) y selector 1x / 2x / 4x solo sobre reloj SIL", () => {

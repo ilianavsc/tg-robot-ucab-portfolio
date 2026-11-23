@@ -14,7 +14,7 @@ El comportamiento del AGV se separa en **tres capas desacopladas** para evitar d
 |---|---|---:|---|
 | **Capa 1 — Navegación** | `specs/navegacion/teach_and_repeat.js` | **5** | Control determinista de seguimiento de línea, `HEADING_HOLD`, reenganche y validación de balizas BLE. |
 | **Capa 2 — Aprendizaje / Gemelo** | `prototipos/P05-gemelo-digital/aprendizaje_gemelo.js` (`L14–L29`) | **14** | Calibración de pista, congelamiento de geometría de referencia, viajes de ajuste RMS y prueba sin cinta. |
-| **Capa 3 — Operacional (Nueva)** | Esta especificación (`specs/state-machine.md`) | **2 máquinas ortogonales** | Ciclo de vida operativo de **Rutas** (Cerrada vs. Lineal, seguridad MPU-6050) y **Pedidos** (despacho y cancelación segura). |
+| **Capa 3 — Operacional (Nueva)** | `prototipos/P05-gemelo-digital/capa3_operacional.js` + `specs/state-machine.md` | **10 + 5** (2 máquinas ortogonales) | Ciclo de vida operativo de **Rutas** (10 estados: Cerrada vs. Lineal, seguridad MPU-6050) y **Pedidos** (5 estados: despacho y cancelación segura). |
 
 ---
 
@@ -125,11 +125,13 @@ stateDiagram-v2
     RECUPERACION_MANUAL --> SIN_RUTA : reset_ruta
 ```
 
-**Definición de estados críticos (Capa 3A):**
+**Definición de estados críticos y reglas (`capa3_operacional.js` · 10 estados de `ESTADOS_RUTA`):**
+1. `SIN_RUTA`, 2. `ESCANEO_IDA`, 3. `ESPERA_REPOSICION`, 4. `ESCANEO_RETORNO`, 5. `OPERACION_BUCLE`, 6. `REESCANEO_PARADA`, 7. `OPERACION_CON_PARADA`, 8. `PAUSA_OBSTACULO`, 9. `ERROR_SEGURIDAD`, 10. `RECUPERACION_MANUAL`.
 - `ESPERA_REPOSICION`: robot detenido al final del tramo de ida en ruta lineal; espera reposicionamiento físico y confirmación manual del operador. **Prohibido el auto-retorno por temporizador.**
 - `PAUSA_OBSTACULO`: frenado controlado por obstáculo frontal `< 20 cm`; mantiene el estado de ruta y pedido, y reanuda al despejar.
 - `ERROR_SEGURIDAD`: disparado con prioridad absoluta por el **MPU-6050** (impacto brusco, inclinación excesiva o atascamiento/bloqueo prolongado de ruedas) o por **Freno Remoto**. Corta motores de inmediato y bloquea órdenes de movimiento.
-- `RECUPERACION_MANUAL`: estado controlado donde el operador/administrador verifica físicamente el robot antes de rehabilitar operación.
+- `RECUPERACION_MANUAL`: estado controlado donde el operador/administrador verifica físicamente el robot; **mantiene bloqueadas todas las órdenes de movimiento** (`puedeMover() === false`) hasta confirmar `completarRecuperacionManual()`.
+- **Cambio de tipo de ruta (`setTipoRuta()`):** cambiar entre `cerrada` y `lineal` reinicia limpiamente a `SIN_RUTA`, `SIN_PEDIDO`, `usosCompletados = 0`, `rutaAprendida = null`, alertas y relojes en `0`.
 
 ### 4.3 Máquina de Pedidos (Capa 3B)
 
@@ -159,7 +161,7 @@ stateDiagram-v2
 ## 5. Invariantes de Seguridad y Cinemática Canónica
 
 ### 5.1 Invariantes de seguridad (no negociables)
-1. **Bloqueo de movimiento en la App:** la aplicación **no puede** enviar ni habilitar órdenes de movimiento (`adelante`, `atras`, `izquierda`, `derecha`, `auto`) mientras la Máquina de Rutas esté en `ESPERA_REPOSICION` o `ERROR_SEGURIDAD`.
+1. **Bloqueo de movimiento en la App:** la aplicación **no puede** enviar ni habilitar órdenes de movimiento (`adelante`, `atras`, `izquierda`, `derecha`, `auto`) mientras la Máquina de Rutas esté en `ESPERA_REPOSICION`, `ERROR_SEGURIDAD` o `RECUPERACION_MANUAL` (`puedeMover(op) === false`).
 2. **Prioridad del MPU-6050:** los eventos de seguridad del MPU-6050 (impacto, inclinación anormal, atascamiento) tienen prioridad absoluta sobre cualquier lazo de movimiento o despacho de pedido y fuerzan transición inmediata a `ERROR_SEGURIDAD`.
 3. **Sin magnetómetro (rumbo relativo):** el MPU-6050 se usa exclusivamente como giroscopio de rumbo **relativo** y detector de anomalías dinámicas; **nunca** como yaw absoluto o brújula.
 4. **Sin auto-retorno por timeout en ruta lineal:** `ESPERA_REPOSICION` solo avanza con confirmación manual explícita.
