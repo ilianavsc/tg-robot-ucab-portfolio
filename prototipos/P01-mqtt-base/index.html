@@ -40,6 +40,10 @@ button{font-family:var(--texto);font-weight:700;font-size:16px;padding:10px 16px
 button:hover{transform:translateY(-2px)}
 button.llega{background:var(--llega);border-color:var(--llega);color:var(--blanco)}
 button.qos{background:var(--qos);border-color:var(--qos);color:var(--blanco)}
+button.maestro{background:var(--sale);border-color:var(--tinta);color:var(--blanco);display:inline-flex;align-items:center;gap:8px}
+button.maestro[aria-pressed="true"]{background:#dc2626;border-color:var(--tinta);color:var(--blanco);box-shadow:0 0 0 3px rgba(220,38,38,.22)}
+.maestro-dot{width:9px;height:9px;border-radius:50%;background:#fde047;border:1.5px solid rgba(20,33,61,.5);flex:none}
+button.maestro[aria-pressed="true"] .maestro-dot{background:#4ade80;box-shadow:0 0 8px #4ade80}
 .registro{font-family:var(--mono);font-size:14px;background:var(--papel);border-radius:10px;padding:10px 14px;min-height:46px;margin:0}
 .leyenda{display:flex;flex-wrap:wrap;gap:18px;font-size:15px;color:var(--suave);margin-top:10px}
 .leyenda span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
@@ -135,13 +139,13 @@ details.v1{margin-top:16px}
   <div class="mesa">
     <svg id="escena" viewBox="0 0 800 230" role="img" aria-label="El robot, el broker y la app intercambiando mensajes">
       <line x1="150" y1="120" x2="650" y2="120" stroke="#CBD8D3" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
-      <g id="est-robot">
+      <g id="est-robot" style="opacity:.35">
         <rect x="40" y="62" width="150" height="116" rx="18" fill="#E2F4F0" stroke="#14213D" stroke-width="2"/>
         <rect x="78" y="84" width="74" height="44" rx="8" fill="#FFFFFF" stroke="#14213D" stroke-width="2"/>
         <circle cx="100" cy="106" r="6" fill="#14213D"/><circle cx="130" cy="106" r="6" fill="#14213D"/>
         <circle cx="72" cy="168" r="10" fill="#14213D"/><circle cx="158" cy="168" r="10" fill="#14213D"/>
         <text x="115" y="152" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="700" font-size="18" fill="#14213D">Robot</text>
-        <text id="txt-robot" x="115" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#0F9D84">en línea</text>
+        <text id="txt-robot" x="115" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#4A5A73">apagado</text>
       </g>
       <g>
         <rect x="325" y="62" width="150" height="116" rx="18" fill="#FFFFFF" stroke="#14213D" stroke-width="2"/>
@@ -162,11 +166,11 @@ details.v1{margin-top:16px}
       <g id="sobres"></g>
     </svg>
     <div class="botones">
+      <button class="maestro" id="b-pausa" type="button" aria-pressed="false"><span class="maestro-dot" aria-hidden="true"></span><span id="b-pausa-txt">⚡ Encender</span></button>
       <button class="llega" id="b-orden" type="button">Enviar un pedido</button>
       <button class="qos" id="b-alarma" type="button">Mover el robot sin permiso</button>
-      <button id="b-pausa" type="button">Apagar el robot</button>
     </div>
-    <p class="registro" id="registro" aria-live="polite">El robot avisa cada 2 segundos cómo está. Ese es el sobre verde.</p>
+    <p class="registro" id="registro" aria-live="polite">Robot apagado. Pulsa ⚡ Encender para iniciar la simulación y los envíos MQTT.</p>
     <div class="leyenda">
       <span style="--c:#0F9D84">Sale del robot</span>
       <span style="--c:#F2603D">Llega al robot</span>
@@ -204,20 +208,6 @@ details.v1{margin-top:16px}
     <h2 id="t-banco" style="margin:2px 0 4px">Pruébalo tú: banco de pruebas →</h2>
     <p style="margin:0">Una página que se conecta al mismo cartero, envía pedidos, cuenta las respuestas del robot y mide cuánto tardan. Ábrela al lado de Wokwi.</p>
   </a>
-</section>
-
-<section aria-labelledby="t-codigo">
-  <h2 id="t-codigo">El código explicado</h2>
-  <p class="bajada">El programa del ESP32 tiene 6 partes. Cada tarjeta dice qué hace esa parte, en simple.</p>
-  <div class="codigo">
-    <div class="pieza"><span class="nivel">1 · Red y broker</span><p>Le dice al robot a qué Wi-Fi conectarse y dónde está el cartero.</p><pre><code>const char* BROKER = "broker.hivemq.com";</code></pre></div>
-    <div class="pieza"><span class="nivel">2 · Buzones</span><p>Los nombres de los 5 tópicos. Todos empiezan igual para que sean solo nuestros.</p><pre><code>const char* T_ORDENES = "ucab-tg-sf/robot/ordenes";</code></pre></div>
-    <div class="pieza"><span class="nivel">3 · Memoria</span><p>Contadores de pedidos, estados y alarmas, y una fila de pedidos que faltan por confirmar.</p><pre><code>String idsPendientes[60];</code></pre></div>
-    <div class="pieza"><span class="nivel">4 · Al llegar un pedido</span><p>Lee el número del pedido y lo anota en la fila. No responde ahí mismo: responde en el ciclo principal, que es más seguro.</p><pre><code>String id = leerId(mensaje);</code></pre></div>
-    <div class="pieza"><span class="nivel">5 · Conectarse</span><p>Se conecta, avisa "en línea" y deja su última voluntad: si desaparece, el cartero avisa "desconectado".</p><pre><code>mqtt.setWill(T_CONEXION, "desconectado", true, 1);</code></pre></div>
-    <div class="pieza"><span class="nivel">6 · Ciclo principal</span><p>Se repite sin parar: reconecta si hace falta, confirma pedidos, envía el estado cada 2 s y la alarma cuando escribes <b>a</b>.</p><pre><code>mqtt.publish(T_ALERTAS, alarma, false, 2);</code></pre></div>
-  </div>
-  <p class="nota" style="background:#E2F4F0">Cambios de las versiones 2 y 2.1: la confirmación ahora devuelve el número del pedido (por ejemplo <code>P-0007</code>) y cada mensaje lleva un contador. Así se puede medir el tiempo de cada respuesta y detectar si algo se pierde o se repite. En la 2.1 el robot espera hasta 10 s al cartero y usa sesión persistente.</p>
 </section>
 
 <section aria-labelledby="t-pruebas">
@@ -307,7 +297,11 @@ details.v1{margin-top:16px}
   var registro=document.getElementById("registro");
   var lento=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var X={robot:115,broker:400,app:685};
-  var encendido=true;
+  var encendido=false;
+  var viajesActivos=[];
+  var rafId=null;
+  var ultimoTs=0;
+  var timerEstado=null;
 
   function sobre(color){
     var g=document.createElementNS(NS,"g");
@@ -318,24 +312,58 @@ details.v1{margin-top:16px}
     p.setAttribute("d","M-18 -12 L0 2 L18 -12");p.setAttribute("fill","none");p.setAttribute("stroke","#14213D");p.setAttribute("stroke-width","1.5");
     g.appendChild(r);g.appendChild(p);capa.appendChild(g);return g;
   }
-  function viajar(desde,hasta,color,listo){
-    if(lento){if(listo)listo();return;}
-    var g=sobre(color),a=X[desde],b=X[hasta],t0=null,dur=900;
-    function paso(t){
-      if(!t0)t0=t;var k=Math.min((t-t0)/dur,1);var e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
-      var x=a+(b-a)*e,y=120-Math.sin(k*Math.PI)*26;
-      g.setAttribute("transform","translate("+x+","+y+")");
-      if(k<1)requestAnimationFrame(paso);else{capa.removeChild(g);if(listo)listo();}
+  function pintarViaje(v){
+    var k=Math.min(v.t/v.dur,1);
+    var e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    var x=v.a+(v.b-v.a)*e,y=120-Math.sin(k*Math.PI)*26;
+    v.g.setAttribute("transform","translate("+x+","+y+")");
+  }
+  function tickAnim(ts){
+    rafId=null;
+    if(!encendido){ultimoTs=0;return;}
+    if(!ultimoTs)ultimoTs=ts;
+    var dt=Math.min(Math.max(ts-ultimoTs,0),100);
+    ultimoTs=ts;
+    var pendientes=[];
+    for(var i=0;i<viajesActivos.length;i++){
+      var v=viajesActivos[i];
+      v.t+=dt;
+      pintarViaje(v);
+      if(v.t<v.dur){pendientes.push(v);}
+      else{if(v.g.parentNode)v.g.parentNode.removeChild(v.g);if(v.listo)v.listo();}
     }
-    requestAnimationFrame(paso);
+    viajesActivos=pendientes;
+    if(viajesActivos.length>0&&encendido)rafId=requestAnimationFrame(tickAnim);
+    else ultimoTs=0;
+  }
+  function arrancarBucle(){
+    if(encendido&&!rafId&&viajesActivos.length>0){ultimoTs=0;rafId=requestAnimationFrame(tickAnim);}
+  }
+  function pausarBucle(){
+    if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+    ultimoTs=0;
+  }
+  function viajar(desde,hasta,color,listo){
+    if(!encendido)return;
+    if(lento){if(listo)listo();return;}
+    var v={g:sobre(color),a:X[desde],b:X[hasta],t:0,dur:900,listo:listo};
+    pintarViaje(v);
+    viajesActivos.push(v);
+    arrancarBucle();
   }
   function ruta(desde,hasta,color,listo){viajar(desde,"broker",color,function(){viajar("broker",hasta,color,listo);});}
   function decir(t){registro.textContent=t;}
 
-  setInterval(function(){if(encendido)ruta("robot","app","#0F9D84");},2500);
+  function iniciarPulsoEstado(){
+    if(timerEstado)return;
+    timerEstado=setInterval(function(){if(encendido)ruta("robot","app","#0F9D84");},2500);
+  }
+  function detenerPulsoEstado(){
+    if(timerEstado){clearInterval(timerEstado);timerEstado=null;}
+  }
 
   document.getElementById("b-orden").addEventListener("click",function(){
-    if(!encendido){decir("El robot está apagado: el pedido no le llega. Primero enciéndelo.");return;}
+    if(!encendido){decir("El robot está detenido: el pedido no le llega. Pulsa ⚡ Encender primero.");return;}
     decir("La app manda un pedido (sobre coral, carta certificada)...");
     ruta("app","robot","#F2603D",function(){
       decir("El robot recibió el pedido y responde \"recibido\" (sobre verde).");
@@ -343,28 +371,38 @@ details.v1{margin-top:16px}
     });
   });
   document.getElementById("b-alarma").addEventListener("click",function(){
-    if(!encendido){decir("El robot está apagado: no puede mandar alarmas.");return;}
+    if(!encendido){decir("El robot está detenido: no puede mandar alarmas. Pulsa ⚡ Encender primero.");return;}
     decir("Alguien movió el robot: sale una alarma con entrega única (sobre violeta).");
     ruta("robot","app","#6B4EE6",function(){decir("La alarma llegó a la app una sola vez.");});
   });
   var bPausa=document.getElementById("b-pausa");
-  bPausa.addEventListener("click",function(){
-    encendido=!encendido;
+  var bPausaTxt=document.getElementById("b-pausa-txt");
+  function aplicarEstadoEncendido(on){
+    encendido=Boolean(on);
+    bPausa.setAttribute("aria-pressed",String(encendido));
+    bPausaTxt.textContent=encendido?"⏹ Detener":"⚡ Encender";
     document.getElementById("est-robot").style.opacity=encendido?1:.35;
     var tr=document.getElementById("txt-robot");
     if(!encendido){
-      bPausa.textContent="Encender el robot";tr.textContent="apagado";tr.setAttribute("fill","#4A5A73");
-      decir("El robot se apagó sin despedirse...");
-      setTimeout(function(){
-        decir("El cartero se da cuenta y avisa a la app: \"desconectado\" (sobre amarillo). Es la última voluntad del robot.");
-        viajar("broker","app","#F2B33D");
-      },1400);
+      detenerPulsoEstado();
+      pausarBucle();
+      tr.textContent="apagado";tr.setAttribute("fill","#4A5A73");
     }else{
-      bPausa.textContent="Apagar el robot";tr.textContent="en línea";tr.setAttribute("fill","#0F9D84");
-      decir("El robot volvió y avisa \"en línea\".");
+      tr.textContent="en línea";tr.setAttribute("fill","#0F9D84");
+      iniciarPulsoEstado();
+      arrancarBucle();
+    }
+  }
+  bPausa.addEventListener("click",function(){
+    aplicarEstadoEncendido(!encendido);
+    if(!encendido){
+      decir("Robot detenido: simulación, envíos y animación en pausa (el cartero avisará \"desconectado\" por LWT).");
+    }else{
+      decir("Robot encendido: avisa \"en línea\" y reanuda los envíos cada 2,5 s.");
       ruta("robot","app","#F2B33D");
     }
   });
+  aplicarEstadoEncendido(false);
 
   var visor=document.getElementById("visor");
   document.querySelectorAll(".mini").forEach(function(img){

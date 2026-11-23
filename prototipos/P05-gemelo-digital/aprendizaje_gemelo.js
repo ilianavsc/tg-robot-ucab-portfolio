@@ -65,6 +65,7 @@
     var pistaId = opciones.pistaId || "B";
     return {
       estado: "INITIAL",
+      encendido: false,
       estadoPrevioFallo: "INITIAL",
       pistaId: pistaId,
       permiteSinCinta: opciones.permiteSinCinta !== undefined ? Boolean(opciones.permiteSinCinta) : (pistaId !== "A"),
@@ -408,10 +409,23 @@
     return { texto: "▶ Repetir ruta", clase: "btn-ctx ok", accion: "ajuste", disabled: false };
   }
 
+  function encender(ap) {
+    ap.encendido = true;
+    return true;
+  }
+
+  /* Detener (pausa maestra): congela ejecución preservando progreso de calibración y viaje activo (no dispara FAULT ni Freno Remoto). */
+  function detener(ap) {
+    ap.encendido = false;
+    return false;
+  }
+
   return {
     ESTADOS: ESTADOS,
     C: C,
     crear: crear,
+    encender: encender,
+    detener: detener,
     setMetaViajes: setMetaViajes,
     iniciarViaje: iniciarViaje,
     muestrearTick: muestrearTick,

@@ -95,6 +95,25 @@
 .btn-ing:hover { background: rgba(56, 189, 248, 0.24); }
 .btn-ing[aria-expanded="true"] { background: var(--s2-prim); color: #0b1220; }
 .btn-ing:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: -2px; }
+.btn-encender {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 0 11px; border-radius: 8px;
+  border: 1.5px solid #10b981; background: #0f766e; color: #fff;
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 700;
+  cursor: pointer; touch-action: manipulation; white-space: nowrap;
+  transition: background-color 0.14s ease-out, border-color 0.14s ease-out, box-shadow 0.14s ease-out;
+}
+.btn-encender:hover { background: #0d9488; }
+.btn-encender[aria-pressed="true"] { background: #dc2626; border-color: #f87171; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.28); }
+.btn-encender[aria-pressed="true"]:hover { background: #b91c1c; }
+.btn-encender:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: 2px; }
+.enc-dot { width: 8px; height: 8px; border-radius: 50%; background: #fde047; flex: none; }
+.btn-encender[aria-pressed="true"] .enc-dot { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+@media (max-width: 640px) {
+  .cockpit-hdr-der { gap: 4px; }
+  .btn-encender { padding: 0 8px; font-size: 11.5px; min-height: 34px; }
+  .vel-seg button { min-width: 30px; padding: 0 5px; font-size: 10.5px; }
+}
 
 /* ---- 2. Fila compacta 42 px: Selector de pista + Stepper 4 etapas en 1 sola línea ---- */
 .pista-stepper-row {
@@ -473,6 +492,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
         <span class="badge-sil">SIL</span>
       </div>
       <div class="cockpit-hdr-der">
+        <button type="button" class="btn-encender" id="btn-encender" aria-pressed="false" aria-label="Encender o detener la simulación preservando el progreso"><span class="enc-dot" aria-hidden="true"></span><span id="btn-encender-txt">⚡ Encender</span></button>
         <div class="vel-seg" role="group" aria-label="Velocidad de reproducción SIL">
           <button type="button" class="sel" data-vel="1" aria-pressed="true">×1</button>
           <button type="button" data-vel="2" aria-pressed="false">×2</button>
@@ -835,6 +855,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     corriendo = false; acum = 0;
     modoColocarObs = false;
     $("btn-play").textContent = "▶ Iniciar"; $("btn-play").setAttribute("aria-pressed", "false");
+    actualizarBotonEncender();
     Array.prototype.forEach.call(document.querySelectorAll("[data-pista]"), function (b) {
       var on = b.getAttribute("data-pista") === id;
       b.classList.toggle("sel", on);
@@ -909,8 +930,44 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     if (ahora - ultimoDom > 100) { refrescarDom(false); ultimoDom = ahora; }
     requestAnimationFrame(bucle);
   }
-  function detener() { corriendo = false; $("btn-play").textContent = "▶ Reanudar"; $("btn-play").setAttribute("aria-pressed", "false"); }
-  function reproducir() { corriendo = true; $("btn-play").textContent = "⏸ Pausar"; $("btn-play").setAttribute("aria-pressed", "true"); }
+  function actualizarBotonEncender() {
+    var b = $("btn-encender");
+    var t = $("btn-encender-txt");
+    if (!b || !t) return;
+    b.setAttribute("aria-pressed", String(corriendo));
+    t.textContent = corriendo ? "⏹ Detener" : "⚡ Encender";
+  }
+  function detener() {
+    corriendo = false;
+    if (ap) A.detener(ap);
+    $("btn-play").textContent = "▶ Reanudar";
+    $("btn-play").setAttribute("aria-pressed", "false");
+    actualizarBotonEncender();
+  }
+  function reproducir() {
+    corriendo = true;
+    if (ap) A.encender(ap);
+    $("btn-play").textContent = "⏸ Pausar";
+    $("btn-play").setAttribute("aria-pressed", "true");
+    actualizarBotonEncender();
+  }
+  function accionEncenderDetener() {
+    if (corriendo) {
+      detener();
+      refrescarDom(true);
+      return;
+    }
+    if (sim && sim.frenoRemoto) {
+      accionReanudar();
+      return;
+    }
+    if (ap && ap.viajeActivo) {
+      reproducir();
+      refrescarDom(true);
+      return;
+    }
+    accionPrincipalContextual();
+  }
 
   /* ---- 3) Controles y Botón Principal Contextual (14 estados de aprendizaje) ---- */
   function todaLaCinta() {
@@ -1145,6 +1202,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     Array.prototype.forEach.call(document.querySelectorAll("[data-pista]"), function (b) {
       b.addEventListener("click", function () { cargarPista(b.getAttribute("data-pista")); refrescarDom(true); });
     });
+    $("btn-encender").addEventListener("click", accionEncenderDetener);
     $("btn-principal-ctx").addEventListener("click", accionPrincipalContextual);
   $("btn-secundario").addEventListener("click", activarFase1);
     $("btn-sig-viaje").addEventListener("click", ejecutarSiguienteViajeRapido);

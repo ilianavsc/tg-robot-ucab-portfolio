@@ -485,4 +485,47 @@ module.exports = async function (ctx) {
       assert.ok(Math.abs(pc.tramoM - tercioA) <= 0.01, "tramo equitativo en Pista A: " + pc.tramoM);
     }
   });
+
+  await prueba("Fase 2: inicio apagado y ⏹ Detener preserva progreso de calibración/viaje sin interferir con Freno Remoto", () => {
+    const m = mundo("B");
+    const ap = A.crear({ pistaId: "B", permiteSinCinta: true });
+    assert.strictEqual(ap.encendido, false, "P05 inicia apagado (encendido=false)");
+
+    // Iniciar lectura lenta y avanzar parte del recorrido
+    S.iniciarEnsenanza(m.sim, 1);
+    A.iniciarViaje(ap, "SLOW_READING", "B", m.sim.L, m.sim.cinta.length);
+    A.encender(ap);
+    assert.strictEqual(ap.encendido, true);
+    for (let i = 0; i < 40; i++) { S.paso(m.sim, 20); A.muestrearTick(ap, m.sim, 20); }
+    const sAntes = m.sim.s;
+    const muestrasAntes = ap.viajeActivo.nMuestras;
+    assert.ok(sAntes > 0.15 && muestrasAntes === 40);
+
+    // Detener preserva progreso, estado y viajeActivo (NO dispara FAULT ni Freno Remoto)
+    A.detener(ap);
+    assert.strictEqual(ap.encendido, false);
+    assert.strictEqual(ap.estado, "SLOW_READING", "Detener no cambia a FAULT");
+    assert.ok(ap.viajeActivo !== null, "Detener preserva el viaje activo");
+    assert.strictEqual(m.sim.frenoRemoto, false, "Detener no activa Freno Remoto");
+    assert.strictEqual(m.sim.s, sAntes);
+
+    // Reanudar con Encender continúa desde el mismo punto
+    A.encender(ap);
+    assert.strictEqual(ap.encendido, true);
+    for (let i = 0; i < 20; i++) { S.paso(m.sim, 20); A.muestrearTick(ap, m.sim, 20); }
+    assert.ok(m.sim.s > sAntes, "al reanudar avanza desde el progreso preservado");
+    assert.strictEqual(ap.viajeActivo.nMuestras, muestrasAntes + 20);
+
+    // Freno Remoto sigue separado y sí aborta a FAULT
+    S.frenoRemoto(m.sim);
+    const reg = A.finalizarViaje(ap, m.sim, false, "freno_remoto");
+    assert.strictEqual(reg.valid, false);
+    assert.strictEqual(ap.estado, "FAULT");
+
+    // Verificar control maestro en index.html
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    assert.ok(/id="btn-encender"[^>]*aria-pressed="false"/.test(html), "P05 trae #btn-encender con aria-pressed=false");
+    assert.ok(html.includes("⚡ Encender") && html.includes("⏹ Detener"));
+    assert.ok(/id="btn-freno"/.test(html) && html.includes("Freno Remoto"), "Freno Remoto permanece separado");
+  });
 };
