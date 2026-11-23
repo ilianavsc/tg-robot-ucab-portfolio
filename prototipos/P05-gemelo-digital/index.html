@@ -75,7 +75,7 @@
   display: inline-flex; background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; overflow: hidden;
 }
 .vel-seg button {
-  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; min-width: 38px; min-height: 36px;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; min-width: 38px; min-height: 44px;
   padding: 0 8px; border: none; border-right: 1px solid var(--s2-borde); background: transparent; color: var(--s2-muted);
   cursor: pointer; touch-action: manipulation; transition: background-color 0.14s ease-out, color 0.14s ease-out;
 }
@@ -95,9 +95,10 @@
 .btn-ing:hover { background: rgba(56, 189, 248, 0.24); }
 .btn-ing[aria-expanded="true"] { background: var(--s2-prim); color: #0b1220; }
 .btn-ing:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: -2px; }
+button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:focus-visible { outline: 3px solid var(--s2-prim); outline-offset: 2px; }
 .btn-encender {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 36px; padding: 0 11px; border-radius: 8px;
+  min-height: 44px; min-width: 44px; padding: 0 11px; border-radius: 8px;
   border: 1.5px solid #10b981; background: #0f766e; color: #fff;
   font-family: var(--font-display); font-size: 12.5px; font-weight: 700;
   cursor: pointer; touch-action: manipulation; white-space: nowrap;
@@ -106,13 +107,13 @@
 .btn-encender:hover { background: #0d9488; }
 .btn-encender[aria-pressed="true"] { background: #dc2626; border-color: #f87171; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.28); }
 .btn-encender[aria-pressed="true"]:hover { background: #b91c1c; }
-.btn-encender:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: 2px; }
+.btn-encender:focus-visible { outline: 3px solid var(--s2-prim); outline-offset: 2px; }
 .enc-dot { width: 8px; height: 8px; border-radius: 50%; background: #fde047; flex: none; }
 .btn-encender[aria-pressed="true"] .enc-dot { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
 @media (max-width: 640px) {
   .cockpit-hdr-der { gap: 4px; }
-  .btn-encender { padding: 0 8px; font-size: 11.5px; min-height: 34px; }
-  .vel-seg button { min-width: 30px; padding: 0 5px; font-size: 10.5px; }
+  .btn-encender { padding: 0 8px; font-size: 11.5px; min-height: 44px; }
+  .vel-seg button { min-width: 32px; min-height: 44px; padding: 0 5px; font-size: 10.5px; }
 }
 
 /* ---- 2. Fila compacta 42 px: Selector de pista + Stepper 4 etapas en 1 sola línea ---- */
@@ -131,7 +132,7 @@
   display: inline-flex; background: var(--s2-surf); border: 1px solid var(--s2-borde); border-radius: 8px; overflow: hidden; flex: none;
 }
 .pista-seg .pista-op {
-  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; min-height: 34px; padding: 4px 11px;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; min-height: 44px; padding: 4px 11px;
   border: none; border-right: 1px solid var(--s2-borde); background: transparent; color: var(--s2-muted);
   cursor: pointer; touch-action: manipulation; white-space: nowrap;
   transition: background-color 0.14s ease-out, color 0.14s ease-out;
@@ -879,10 +880,17 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     enlazar();
     refrescarDom(true);
     ultimoFrame = performance.now();
-    requestAnimationFrame(bucle);
+    dibujar(ultimoFrame);
   }
 
-  /* ---- 2) Bucle de simulación (nunca se pausa por un obstáculo: el robot frena y el tiempo sigue) ---- */
+  /* ---- 2) Bucle de simulación (pausa rAF al estar detenido; nunca se pausa por obstáculo estando encendido) ---- */
+  var rafId = null;
+  function solicitarCuadro() {
+    if (!rafId) {
+      ultimoFrame = performance.now();
+      rafId = requestAnimationFrame(bucle);
+    }
+  }
   function procesarFinDeViaje() {
     if (!ap.viajeActivo) return;
     if (sim.nav.paradaSeguridad) {
@@ -910,6 +918,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   }
 
   function bucle(ahora) {
+    rafId = null;
     var dtReal = Math.min(100, ahora - ultimoFrame);
     ultimoFrame = ahora;
     if (corriendo) {
@@ -927,8 +936,10 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
       }
     }
     dibujar(ahora);
-    if (ahora - ultimoDom > 100) { refrescarDom(false); ultimoDom = ahora; }
-    requestAnimationFrame(bucle);
+    if (corriendo) {
+      if (ahora - ultimoDom > 100) { refrescarDom(false); ultimoDom = ahora; }
+      rafId = requestAnimationFrame(bucle);
+    }
   }
   function actualizarBotonEncender() {
     var b = $("btn-encender");
@@ -939,10 +950,12 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   }
   function detener() {
     corriendo = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (ap) A.detener(ap);
     $("btn-play").textContent = "▶ Reanudar";
     $("btn-play").setAttribute("aria-pressed", "false");
     actualizarBotonEncender();
+    if (sim) dibujar(performance.now());
   }
   function reproducir() {
     corriendo = true;
@@ -950,6 +963,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     $("btn-play").textContent = "⏸ Pausar";
     $("btn-play").setAttribute("aria-pressed", "true");
     actualizarBotonEncender();
+    solicitarCuadro();
   }
   function accionEncenderDetener() {
     if (corriendo) {
@@ -1580,7 +1594,8 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     });
   }
 
-  function refrescarDom() {
+  function refrescarDom(forzar) {
+    if (!corriendo && forzar && sim) dibujar(performance.now());
     var C = nucleo.CFG;
     var nombre = nucleo.NOMBRE_ESTADO[sim.nav.estado];
     var manual = sim.modo === "manual";
@@ -1719,7 +1734,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   function ajustar(cv) { var r = cv.getBoundingClientRect(); cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr)); return { w: r.width, h: r.height }; }
   var dimP = { w: 300, h: 600 }, dimZ = { w: 300, h: 140 };
   var vista = { sc: 100, ox: 0, oy: 0 };
-  function redimensionar() { dimP = ajustar(cvP); if (cajonAbierto && tabActiva === "diagnostico" && $("det-zoom").open) dimZ = ajustar(cvZ); }
+  function redimensionar() { dimP = ajustar(cvP); if (cajonAbierto && tabActiva === "diagnostico" && $("det-zoom").open) dimZ = ajustar(cvZ); if (!corriendo && sim) dibujar(performance.now()); }
   $("det-zoom").addEventListener("toggle", function () { if ($("det-zoom").open) dimZ = ajustar(cvZ); });
   $("det-contrato").addEventListener("toggle", function () { if ($("det-contrato").open) refrescarDom(true); });
   $("det-registro").addEventListener("toggle", function () { if ($("det-registro").open) refrescarDom(true); });

@@ -389,6 +389,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       <p class="nota">${esc(f.nota)}</p>`;
     const bVinc = $('#b-ver-consola');
     if (bVinc) bVinc.addEventListener('click', () => ponConsola(consola.hidden));
+    prevFichaHtml = '';
     refrescaFicha();
     ficha.hidden = false;
     sincronizaVinculoConsola();
@@ -459,11 +460,19 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     const m = demo.motores();
     return {sens: est.sens, dF: est.frente, dR: est.atras, zonaF: demo.zonaFrente(), zonaR: demo.zonaAtras(), mot: m, v: est.v, w: est.w, th: est.th};
   };
+  let prevFichaHtml = '';
   function refrescaFicha() {
-    if (!ui.sel) return;
+    if (!ui.sel) {
+      prevFichaHtml = '';
+      return;
+    }
     const f = FICHAS[ui.sel];
-    $('#f-vivo').innerHTML = f.vivo(vista()).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+    const html = f.vivo(vista()).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+    if (html === prevFichaHtml) return;
+    prevFichaHtml = html;
+    $('#f-vivo').innerHTML = html;
   }
+  const prevTira = {};
   const refrescaTira = () => {
     const v = vista();
     const txt = {
@@ -476,9 +485,21 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     };
     for (const id of ORDEN) {
       const el = $(`[data-v="${id}"]`, tira);
-      if (id === 'tcrt') $$('.sq', el).forEach((q, i) => q.classList.toggle('on', !!v.sens[i]));
-      else el.textContent = txt[id];
-      if (id === 'us_front' || id === 'us_rear') el.dataset.zona = id === 'us_front' ? v.zonaF : v.zonaR;
+      if (id === 'tcrt') {
+        const clave = v.sens.join('');
+        if (prevTira[id] !== clave) {
+          prevTira[id] = clave;
+          $$('.sq', el).forEach((q, i) => q.classList.toggle('on', !!v.sens[i]));
+        }
+      } else {
+        const zona = id === 'us_front' ? v.zonaF : id === 'us_rear' ? v.zonaR : '';
+        const clave = `${txt[id]}|${zona}`;
+        if (prevTira[id] !== clave) {
+          prevTira[id] = clave;
+          el.textContent = txt[id];
+          if (zona) el.dataset.zona = zona;
+        }
+      }
     }
   };
 

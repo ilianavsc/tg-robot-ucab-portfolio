@@ -275,8 +275,17 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     document.body.dataset.encendido = on ? '1' : '0';
     bEncender.setAttribute('aria-pressed', String(on));
     encenderTxt.textContent = on ? '⏹ Detener' : '⚡ Encender';
-    if (!on) soltarTodo();
-    else if (mqtt.conectado) mqtt.publicarTelemetria();
+    if (!on) {
+      soltarTodo();
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      renderizarCuadro(0);
+    } else {
+      if (mqtt.conectado) mqtt.publicarTelemetria();
+      solicitarCuadro();
+    }
     actualizaModoTxt();
     pintaPlaca(0);
     refresca();
@@ -312,6 +321,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     pintaPlaca(0);
     refresca();
     pintaMinimapa();
+    solicitarCuadro();
   };
   const reiniciar = () => {
     mqtt.cancelarRemoto();
@@ -321,6 +331,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     pintaPlaca(0);
     refresca();
     pintaMinimapa();
+    solicitarCuadro();
   };
   bEncender.addEventListener('click', () => ponEncendido(!sim.encendido));
   $$('[data-modo]').forEach((b) =>
@@ -334,6 +345,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   $('#b-vista').addEventListener('click', () => {
     const orden = ['seguir', 'cenital', 'general'];
     irA(orden[(orden.indexOf(ui.vista) + 1) % orden.length]);
+    solicitarCuadro();
   });
   const panel = $('#datos');
   const bMas = $('#b-mas');
@@ -571,13 +583,21 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     ctx.stroke();
     ctx.restore();
   };
+  let prevTabla = '';
+  let prevMarca = '';
+  let prevTramoNom = '';
+  let prevEstadoTxt = '';
   const refresca = () => {
     const L = sim.lectura();
     set('v-raw', L.raw.join(' · '));
     set('v-emed', `${sg(L.eMedido)} mm`);
     set('v-ereal', `${sg(L.eReal)} mm`);
-    $('#v-estado').textContent = L.perdida ? 'Línea perdida' : 'En la línea';
-    $('#v-estado').dataset.ok = L.perdida ? '0' : '1';
+    const estTxt = L.perdida ? 'Línea perdida' : 'En la línea';
+    if (estTxt !== prevEstadoTxt) {
+      prevEstadoTxt = estTxt;
+      $('#v-estado').textContent = estTxt;
+      $('#v-estado').dataset.ok = L.perdida ? '0' : '1';
+    }
     set('v-vel', `${f(Math.abs(L.v), 2)} m/s`);
     set('v-dist', `${f(L.distancia, 1)} m`);
     set('v-rumbo', `${Math.round(L.rumbo)}°`);
@@ -588,15 +608,27 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     set('v-salidas', String(L.salidas));
     set('v-pwm', `${Math.round(L.pwm.izq * 100)} / ${Math.round(L.pwm.der * 100)} %`);
     set('v-prog', `${f(L.progresoM, 2)} de ${f(L.largo, 2)} m`);
-    $('#marca').style.left = `${(L.progresoM / L.largo) * 100}%`;
-    $('#tramo-nombre').textContent = `${L.tramo.nombre}${L.tramo.linea ? '' : ' · sin cinta'}`;
-    // tabla de comparación
+    const marcaLeft = `${((L.progresoM / L.largo) * 100).toFixed(2)}%`;
+    if (marcaLeft !== prevMarca) {
+      prevMarca = marcaLeft;
+      $('#marca').style.left = marcaLeft;
+    }
+    const tramoNom = `${L.tramo.nombre}${L.tramo.linea ? '' : ' · sin cinta'}`;
+    if (tramoNom !== prevTramoNom) {
+      prevTramoNom = tramoNom;
+      $('#tramo-nombre').textContent = tramoNom;
+    }
+    // tabla de comparación (solo repinta si cambió)
     const filas = sim.resumen().sort((a, b) => (a.pista + a.modo).localeCompare(b.pista + b.modo));
-    $('#comparacion tbody').innerHTML = filas.length
+    const tablaHtml = filas.length
       ? filas
           .map((r) => `<tr><th scope="row">${r.pista} · ${r.modo === 'auto' ? 'auto' : 'manual'}</th><td>${r.vueltas}</td><td>${r.mejor === null ? '—' : f(r.mejor)}</td><td>${f(r.vmedia, 2)}</td><td>${f(r.emax)}</td><td>${f(r.erms)}</td><td>${r.salidas}</td></tr>`)
           .join('')
       : '<tr><td colspan="7">Sin datos todavía</td></tr>';
+    if (tablaHtml !== prevTabla) {
+      prevTabla = tablaHtml;
+      $('#comparacion tbody').innerHTML = tablaHtml;
+    }
   };
 
   // ---------------------------------------------------------------- animación del robot
@@ -632,12 +664,11 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     for (const id of FLUJO) anim.flow[id] = ((anim.flow[id] ?? 0) + dt * (0.35 + 1.1 * (a[id] ?? 0))) % 1;
   };
 
-  // ---------------------------------------------------------------- bucle
+  // ---------------------------------------------------------------- bucle (pausa rAF al estar detenido)
+  let rafId = null;
   let ultimo = performance.now();
   let acRef = 0;
-  const bucle = (ahora) => {
-    const dt = Math.min(0.25, (ahora - ultimo) / 1000);
-    ultimo = ahora;
+  function renderizarCuadro(dt) {
     if (sim.encendido) {
       ui.t += dt;
       mqtt.avanzar(dt);
@@ -653,7 +684,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     });
     sol.position.set(sim.eje.x + 1.0, 2.4, sim.eje.z + 0.8);
     sol.target.position.set(sim.eje.x, 0, sim.eje.z);
-    seguirCamara(dt);
+    seguirCamara(dt > 0 ? dt : 1 / 60);
     controls.update();
     renderer.render(scene, camera);
     if (sim.encendido) {
@@ -665,8 +696,25 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
         refresca();
       }
     }
-    requestAnimationFrame(bucle);
-  };
+  }
+  function bucle(ahora) {
+    rafId = null;
+    const dt = Math.min(0.25, Math.max(0, (ahora - ultimo) / 1000));
+    ultimo = ahora;
+    renderizarCuadro(dt);
+    if (sim.encendido || Boolean(tween)) {
+      rafId = requestAnimationFrame(bucle);
+    }
+  }
+  function solicitarCuadro() {
+    if (!rafId) {
+      ultimo = performance.now();
+      rafId = requestAnimationFrame(bucle);
+    }
+  }
+  controls.addEventListener('change', () => {
+    if (!sim.encendido) solicitarCuadro();
+  });
 
   // ---------------------------------------------------------------- arranque
   new ResizeObserver(() => {
@@ -674,6 +722,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     desplazaVista();
     sincronizaDpad();
     pintaMinimapa();
+    solicitarCuadro();
   }).observe(canvas);
   resize();
   desplazaVista();
@@ -683,7 +732,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   irA('seguir', true);
   aviso.listo();
   abrirMenuInicio(true);
-  requestAnimationFrame(bucle);
   avisoTeclado();
 
   // ayuda para capturas y pruebas del navegador

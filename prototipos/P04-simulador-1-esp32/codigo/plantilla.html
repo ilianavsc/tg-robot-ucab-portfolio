@@ -27,7 +27,7 @@
     <button class="btn suave solo-ancho" type="button" id="b-dpad" aria-pressed="false">D-Pad</button>
     <button class="btn suave" type="button" id="b-config" aria-label="Cambiar modo de operación o pista"><span aria-hidden="true">⚙</span><span class="largo"> Modo/Pista</span></button>
   </header>
-  <p class="modo-txt" id="modo-txt" role="status"></p>
+  <p class="modo-txt" id="modo-txt" role="status" aria-live="polite"></p>
   <p class="aviso-teclado" id="aviso-teclado" hidden>Haz clic en la pista para activar el teclado</p>
 
   <div class="dock">
@@ -53,7 +53,7 @@
             <span>ENA</span><span class="pwm-pista"><i id="pwm-izq"></i></span>
             <span>ENB</span><span class="pwm-pista"><i id="pwm-der"></i></span>
           </div>
-          <div class="placa-mqtt" id="placa-mqtt" role="group" aria-label="Enlace MQTT con la App">
+          <div class="placa-mqtt" id="placa-mqtt" role="group" aria-label="Enlace MQTT con la App" aria-live="polite">
             <span class="mqtt-est"><i class="mqtt-dot" id="mqtt-dot" aria-hidden="true"></i><span id="mqtt-estado">Desconectado</span></span>
             <button class="mqtt-btn" type="button" id="b-mqtt" aria-pressed="false">Conectar App</button>
           </div>

@@ -20,7 +20,7 @@
 body{margin:0;background:var(--papel);background-image:radial-gradient(var(--punto) 1.2px,transparent 1.2px);background-size:22px 22px;color:var(--tinta);font-family:var(--texto);font-size:18px;line-height:1.6}
 main{max-width:980px;margin:0 auto;padding:40px 20px 80px}
 a{color:var(--qos)}
-a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--qos);outline-offset:3px;border-radius:6px}
+a:focus-visible,button:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--qos);outline-offset:3px;border-radius:6px}
 .volver{font-size:15px;text-decoration:none;color:var(--suave)}
 .ceja{font-family:var(--mono);font-size:13px;letter-spacing:.04em;color:var(--suave);margin:28px 0 8px}
 h1{font-family:var(--display);font-weight:700;font-size:clamp(38px,6vw,64px);line-height:1.02;margin:0 0 18px;letter-spacing:-.02em}
@@ -36,7 +36,7 @@ section{margin:0 0 52px}
 .mesa{background:var(--blanco);border:2px solid var(--tinta);border-radius:18px;padding:18px 18px 14px;box-shadow:6px 6px 0 var(--tinta)}
 .mesa svg{width:100%;height:auto;display:block}
 .botones{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 12px}
-button{font-family:var(--texto);font-weight:700;font-size:16px;padding:10px 16px;border-radius:12px;border:2px solid var(--tinta);background:var(--blanco);color:var(--tinta);cursor:pointer;transition:transform .12s}
+button{font-family:var(--texto);font-weight:700;font-size:16px;min-height:44px;min-width:44px;padding:10px 16px;border-radius:12px;border:2px solid var(--tinta);background:var(--blanco);color:var(--tinta);cursor:pointer;transition:transform .12s}
 button:hover{transform:translateY(-2px)}
 button.llega{background:var(--llega);border-color:var(--llega);color:var(--blanco)}
 button.qos{background:var(--qos);border-color:var(--qos);color:var(--blanco)}
@@ -44,7 +44,7 @@ button.maestro{background:var(--sale);border-color:var(--tinta);color:var(--blan
 button.maestro[aria-pressed="true"]{background:#dc2626;border-color:var(--tinta);color:var(--blanco);box-shadow:0 0 0 3px rgba(220,38,38,.22)}
 .maestro-dot{width:9px;height:9px;border-radius:50%;background:#fde047;border:1.5px solid rgba(20,33,61,.5);flex:none}
 button.maestro[aria-pressed="true"] .maestro-dot{background:#4ade80;box-shadow:0 0 8px #4ade80}
-.registro{font-family:var(--mono);font-size:14px;background:var(--papel);border-radius:10px;padding:10px 14px;min-height:46px;margin:0}
+.registro{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;background:var(--papel);border-radius:10px;padding:10px 14px;min-height:46px;margin:0}
 .leyenda{display:flex;flex-wrap:wrap;gap:18px;font-size:15px;color:var(--suave);margin-top:10px}
 .leyenda span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
 .envios{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
@@ -70,7 +70,7 @@ button.maestro[aria-pressed="true"] .maestro-dot{background:#4ade80;box-shadow:0
 .falta h3{font-family:var(--display);font-size:20px;margin:0 0 8px}
 .falta ul{margin:0;padding-left:20px;font-size:16px}
 details{background:var(--blanco);border:2px solid var(--tinta);border-radius:14px;padding:14px 18px}
-summary{font-family:var(--display);font-weight:700;font-size:20px;cursor:pointer}
+summary{font-family:var(--display);font-weight:700;font-size:20px;min-height:44px;display:flex;align-items:center;cursor:pointer}
 details p,details li{font-size:16px}
 details code{font-family:var(--mono);font-size:14px;background:var(--papel);padding:1px 6px;border-radius:4px}
 dialog{border:none;border-radius:16px;padding:12px;max-width:min(1100px,94vw);background:var(--blanco)}
@@ -88,7 +88,7 @@ footer{border-top:2px solid var(--tinta);padding-top:18px;font-size:15px;color:v
   .falta{grid-template-columns:1fr}
   .botones button{min-height:46px}
 }
-@media (prefers-reduced-motion:reduce){button{transition:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}
 .banco-link{display:block;text-decoration:none;color:var(--tinta);background:var(--tinta);color:var(--blanco);border-radius:18px;padding:22px 26px;box-shadow:6px 6px 0 var(--sale)}
 .banco-link .ceja{color:#B9C4D6}
 .banco-link h2{color:var(--blanco)}
