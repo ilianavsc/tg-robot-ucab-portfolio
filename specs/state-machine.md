@@ -1,7 +1,8 @@
 # Especificación Canónica de Máquinas de Estado (`TG Robot UCAB`)
 
-**Versión:** `1.0.0` (alineada con `specs/mqtt/contract.json` v1.0.0 y `specs/pista_canonica.json` v1.0.0)  
-**Estado:** Canónica · Solo documentación (no altera el contrato MQTT congelado v1.0.0 ni los simuladores `P01`–`P05`)  
+**Versión:** `2.0.0` (alineada con `specs/mqtt/contract.json` v2.0.0 y `specs/pista_canonica.json` v1.0.0)  
+**Fuente de verdad ejecutable (Capa 3):** `prototipos/P05-gemelo-digital/capa3_operacional.js`  
+**Estado:** Canónica · Alineada 1:1 con `contract.json` v2.0.0 y las tres capas del AGV  
 **Terminología oficial:** *teach-and-repeat* y aprendizaje progresivo (nunca "IA").
 
 ---
@@ -34,7 +35,7 @@ Máquina de estados determinista y pura (`paso(nav, entradas)`), portable 1:1 a 
 
 ### 2.2 Umbrales y reglas de seguridad (Capa 1)
 - **Ultrasonido frontal (`HC-SR04P`):** `< 20 cm` (`teach_and_repeat.js:L35`, `pista_canonica.json:L49`) → frenado crítico inmediato (`v = 0`, estado lógico intacto; reanuda al despejar); `20–50 cm` (`teach_and_repeat.js:L36`, `pista_canonica.json:L50`) → precaución (velocidad a la mitad).
-- **Balizas BLE (solo extremos, sin emparejamiento GATT):** detección `RSSI >= -80 dBm` (`specs/navegacion/teach_and_repeat.js:L46`, `specs/pista_canonica.json:L51`) y llegada `RSSI >= -52 dBm` (`specs/navegacion/teach_and_repeat.js:L47`, `specs/pista_canonica.json:L52`). Solo valida llegada después de haber salido del inicio (`haSalidoDeInicio = true`).
+- **Balizas BLE (solo extremos, sin emparejamiento GATT):** detección `RSSI >= -80 dBm` (`specs/navegacion/teach_and_repeat.js:L46`, `specs/pista_canonica.json:L51`) y llegada `RSSI >= -52 dBm` (`specs/navegacion/teach_and_repeat.js:L47`, `specs/pista_canonica.json:L52`, clave `"rssiLlegadaDbm"`). Solo valida llegada después de haber salido del inicio (`haSalidoDeInicio = true`).
 - **Transición directa `HEADING_HOLD → WAIT_BEACON`:** si el hueco sin cinta termina en el extremo y se detecta `RSSI >= -80 dBm` (tras salir del inicio), salta directamente a `WAIT_BEACON` sin pasar por `REACQUIRE_LINE`.
 - **Latches terminales de seguridad (`paradaSeguridad = true`, sin reanudación automática):**
   - Timeout sin línea: `TIEMPO_MAX_SIN_LINEA_MS = 4000 ms` (inmutable; huecos `> ~4,5 m` a velocidad base terminan en `timeout_sin_linea`).

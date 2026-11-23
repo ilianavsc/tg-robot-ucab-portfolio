@@ -220,7 +220,7 @@ caso('Consistencia con specs/pista_canonica.json', function () {
   assert.strictEqual(spec.umbrales.paradaCriticaCm, CFG.UMBRAL_PARADA_CM);
   assert.strictEqual(spec.umbrales.precaucionCm, CFG.UMBRAL_AVISO_CM);
   assert.strictEqual(spec.umbrales.rssiDetecciondBm, CFG.RSSI_DETECTA_DBM);
-  assert.strictEqual(spec.umbrales.rssiLlegadadBm, CFG.RSSI_LLEGADA_DBM);
+  assert.strictEqual(spec.umbrales.rssiLlegadaDbm, CFG.RSSI_LLEGADA_DBM);
   assert.strictEqual(spec.umbrales.driftMaximoGrados, CFG.DRIFT_MAX_GRADOS);
   assert.deepStrictEqual(spec.umbrales.posicionesSensoresMm, [27, 9, -9, -27]);
   assert.strictEqual(spec.balizasBLE.length, 2, 'exactamente 2 balizas');

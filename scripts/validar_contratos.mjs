@@ -15,14 +15,29 @@ const tokensCss = leer('assets/css/tokens.css');
 const styleCss = leer('assets/css/style.css');
 const p04Mqtt = leer('prototipos/P04-simulador-1-esp32/codigo/mqtt_puente.js');
 
-// 1. Contrato MQTT
-assert.equal(mqtt.version, '1.0.0');
+// 1. Contrato MQTT v2.0.0 (HIL + P04 + Capa 3 Operacional + MPU-6050)
+assert.equal(mqtt.version, '2.0.0');
+assert.equal(mqtt.schema_version, '2.0.0');
 assert.deepEqual(
   mqtt.brokers.map((b) => b.nombre),
   ['HiveMQ', 'EMQX', 'Mosquitto'],
   'orden de brokers debe coincidir con app y P04'
 );
-for (const clave of ['estado', 'ultrasonido', 'ordenes', 'ack', 'alertas', 'conexion']) {
+for (const clave of [
+  'estado',
+  'ultrasonido',
+  'ordenes',
+  'ack',
+  'alertas',
+  'conexion',
+  'rutas_estado',
+  'rutas_escaneo',
+  'rutas_reposicionamiento',
+  'pedidos_solicitud',
+  'pedidos_estado',
+  'pedidos_cancelacion',
+  'sensores_inercial',
+]) {
   assert.ok(mqtt.topicos[clave] && mqtt.topicos[clave].ruta.startsWith('ucab-tg-sf/robot/'), `tópico ${clave}`);
 }
 assert.equal(mqtt.topicos.estado.qos, 0);
@@ -32,6 +47,13 @@ assert.equal(mqtt.topicos.ack.qos, 1);
 assert.equal(mqtt.topicos.alertas.qos, 2);
 assert.equal(mqtt.topicos.conexion.qos, 1);
 assert.equal(mqtt.topicos.conexion.retained, true);
+assert.equal(mqtt.topicos.rutas_estado.ruta, 'ucab-tg-sf/robot/rutas/estado');
+assert.equal(mqtt.topicos.rutas_escaneo.ruta, 'ucab-tg-sf/robot/rutas/escaneo');
+assert.equal(mqtt.topicos.rutas_reposicionamiento.ruta, 'ucab-tg-sf/robot/rutas/reposicionamiento');
+assert.equal(mqtt.topicos.pedidos_solicitud.ruta, 'ucab-tg-sf/robot/pedidos/solicitud');
+assert.equal(mqtt.topicos.pedidos_estado.ruta, 'ucab-tg-sf/robot/pedidos/estado');
+assert.equal(mqtt.topicos.pedidos_cancelacion.ruta, 'ucab-tg-sf/robot/pedidos/cancelacion');
+assert.equal(mqtt.topicos.sensores_inercial.ruta, 'ucab-tg-sf/robot/sensores/inercial');
 assert.deepEqual(mqtt.comandosValidos, ['adelante', 'atras', 'izquierda', 'derecha', 'frenar', 'auto']);
 assert.equal(mqtt.tiempos.ackTimeoutMs, 5000);
 assert.deepEqual(mqtt.payloads.estado.exclusivosSimuladorP04, ['progreso_m', 'largo_m', 'sensores']);
@@ -39,14 +61,55 @@ for (const campo of mqtt.payloads.estado.exclusivosSimuladorP04) {
   assert.ok(!mqtt.payloads.estado.fisicoHIL.includes(campo), `${campo} es exclusivo de simulador P04`);
   assert.ok(p04Mqtt.includes(campo), `P04 debe publicar ${campo}`);
 }
+assert.deepEqual(mqtt.capa3Operacional.estadosRuta, [
+  'SIN_RUTA',
+  'ESCANEO_IDA',
+  'ESPERA_REPOSICION',
+  'ESCANEO_RETORNO',
+  'OPERACION_BUCLE',
+  'REESCANEO_PARADA',
+  'OPERACION_CON_PARADA',
+  'PAUSA_OBSTACULO',
+  'ERROR_SEGURIDAD',
+  'RECUPERACION_MANUAL',
+]);
+assert.deepEqual(mqtt.capa3Operacional.estadosPedido, [
+  'SIN_PEDIDO',
+  'SOLICITADO',
+  'EN_TRANSITO',
+  'CANCELACION_SEGURA',
+  'ENTREGADO',
+]);
+assert.deepEqual(mqtt.capa3Operacional.alertasMpu6050, ['impacto', 'inclinacion', 'atascamiento']);
+assert.deepEqual(mqtt.capa3Operacional.invariantesSeguridad.movimientoBloqueadoEnEstados, [
+  'ESPERA_REPOSICION',
+  'ERROR_SEGURIDAD',
+  'RECUPERACION_MANUAL',
+]);
+assert.deepEqual(mqtt.payloads.sensores_inercial.campos, ['pitch', 'roll', 'acel_g', 'alerta', 't']);
+assert.deepEqual(mqtt.payloads.sensores_inercial.alertaValores, [null, 'impacto', 'inclinacion', 'atascamiento']);
 
 // 2. Contrato de pista canónica + metadato de convivencia PC funcionales vs tercios L/3
 assert.equal(pista.longitudTotalM, 9.0);
+assert.equal(pista.umbrales.rssiLlegadaDbm, -52, 'rssiLlegadaDbm corregido sin typo');
+assert.equal('rssiLlegadadBm' in pista.umbrales, false, 'no debe quedar typo rssiLlegadadBm');
 assert.deepEqual(pista.puntosDeControl.map((p) => p.posicionM), [3.0, 4.5, 7.5]);
 assert.ok(pista.convencionPuntosDeControl, 'debe incluir convencionPuntosDeControl');
 assert.deepEqual(pista.convencionPuntosDeControl.funcionalesCanonicosM, [3.0, 4.5, 7.5]);
 assert.deepEqual(pista.convencionPuntosDeControl.terciosEquitativos.pistaA_8_05m, [2.68, 5.37, 8.05]);
 assert.deepEqual(pista.convencionPuntosDeControl.terciosEquitativos.pistaB_9_00m, [3.0, 6.0, 9.0]);
+
+// 2b. Especificación specs/state-machine.md v2.0.0 y bloques Mermaid balanceados
+const stateMachineMd = leer('specs/state-machine.md');
+assert.ok(stateMachineMd.includes('**Versión:** `2.0.0`'), 'state-machine.md debe declarar versión 2.0.0');
+assert.ok(
+  stateMachineMd.includes('prototipos/P05-gemelo-digital/capa3_operacional.js'),
+  'state-machine.md debe referenciar capa3_operacional.js'
+);
+const aperturasMermaid = (stateMachineMd.match(/```mermaid/g) || []).length;
+const bloquesStateDiagram = (stateMachineMd.match(/```mermaid\r?\nstateDiagram-v2[\s\S]*?```/g) || []).length;
+assert.ok(aperturasMermaid >= 2, 'state-machine.md debe incluir al menos 2 bloques Mermaid');
+assert.equal(aperturasMermaid, bloquesStateDiagram, 'todos los bloques Mermaid deben ser stateDiagram-v2 balanceados');
 
 // 3. Tokens de diseño Claro en el portafolio
 assert.ok(tokensCss.includes('--tg-bg: #F8FAFC') && tokensCss.includes('--tg-accent: #0F9D84'));

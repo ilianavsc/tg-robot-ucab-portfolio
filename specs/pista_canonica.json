@@ -49,7 +49,7 @@
     "paradaCriticaCm": 20,
     "precaucionCm": 50,
     "rssiDetecciondBm": -80,
-    "rssiLlegadadBm": -52,
+    "rssiLlegadaDbm": -52,
     "driftMaximoGrados": 30,
     "separacionSensoresMm": 18,
     "posicionesSensoresMm": [27, 9, -9, -27],
