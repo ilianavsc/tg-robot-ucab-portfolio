@@ -6,16 +6,16 @@ Trabajo de Grado, Ingeniería en Telecomunicaciones, UCAB.
 **Tutor:** Ing. Biagio Domenico Cante Mata
 
 ## Sitio del proyecto (portafolio) — la cara principal
-👉 **https://ilianavsc.github.io/tg-robot-ucab/**
+👉 **https://ilianavsc.github.io/tg-robot-ucab-portfolio/**
 
 Cada prototipo tiene una página visual que se entiende en 30 segundos, con sus pruebas y capturas.
 
 ## App web (Flutter) — lista para el jurado
-👉 **https://ilianavsc.github.io/tg-robot-ucab/app/**
+👉 **https://ilianavsc.github.io/tg-robot-ucab-app/**
 
 Trae **Modo Demo**: simula la telemetría del robot cada 2 s sin internet ni broker,
 así la demostración no depende de la red del laboratorio.
-Código en [`app/`](app/), desplegado automáticamente por GitHub Actions en cada push a `main`.
+Código en [`ilianavsc/tg-robot-ucab-app`](https://github.com/ilianavsc/tg-robot-ucab-app), desplegado automáticamente por GitHub Actions en cada push a `main`.
 
 ## Resumen
 Robot móvil de bajo costo que busca y transporta componentes electrónicos dentro del laboratorio, con una app para hacer pedidos y recibir alertas.
@@ -57,13 +57,13 @@ H0 (Wi-Fi del laboratorio) es una prueba de hardware, no un prototipo numerado.
 
 ## Probar todo sin el robot
 
-1. **Prototipos P01 → P05** en <https://ilianavsc.github.io/tg-robot-ucab/prototipos/>: mensajes MQTT (P01),
+1. **Prototipos P01 → P05** en <https://ilianavsc.github.io/tg-robot-ucab-portfolio/prototipos/>: mensajes MQTT (P01),
    inspector de componentes (P02), radar (P03), Simulador 1 con la placa ESP32 (P04) y Gemelo Digital (P05).
-2. **App (P09)**: <https://ilianavsc.github.io/tg-robot-ucab/app/> → botón **Modo Demo**: estado, ultrasonidos,
+2. **App (P09)**: <https://ilianavsc.github.io/tg-robot-ucab-app/> → botón **Modo Demo**: estado, ultrasonidos,
    **Centro de Alertas (P11)** y **Analítica de Sesión (P12)** con la misma regla de seguridad que el firmware.
 3. Con el **ESP32 real** (desde diciembre) la app y el banco P01 se conectan a él por MQTT (mismo broker).
 
-Para correr la app en local: `cd app && flutter pub get && flutter run -d chrome`.
+Para correr la app en local, clona [`tg-robot-ucab-app`](https://github.com/ilianavsc/tg-robot-ucab-app) y ejecuta `flutter pub get && flutter run -d chrome`.
 
 **SIL vs. HIL (rigor de las pruebas):** todo lo anterior es **SIL** (*Software In the
 Loop*): el firmware se emula (Modo Demo, simuladores P01–P05) o se compila en el PC con imitaciones del
@@ -71,13 +71,7 @@ hardware (`firmware/pruebas_pc/`). Las pruebas **HIL** (*Hardware In the Loop*) 
 cuando llegue el hardware: ESP32 real, sensores reales y la app; sus mediciones se anotan
 en [`prototipos/P02-sensores/README.md`](prototipos/P02-sensores/README.md).
 
-**Verificación automática (CI):** cada push a `main` corre, antes de publicar: `flutter analyze` (0 issues),
-`flutter test`, `node specs/navegacion/teach_and_repeat.test.js` (13/13),
-`node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` (48),
-`node prototipos/P02-sensores/codigo/vitrina.test.js` (16), `node prototipos/P04-simulador-1-esp32/codigo/simulador1.test.js` (19)
-y `node prototipos/P01-mqtt-base/simulador-3d/codigo/pruebas.mjs`. El firmware
-además se compila en el PC (`sh firmware/pruebas_pc/correr.sh`, escenarios T1–T10 en SIL) en GitHub
-Actions; si algo falla, no se despliega.
+**Verificación automática (CI):** cada push a `main` corre, antes de publicar: `sh firmware/pruebas_pc/correr.sh` (SIL T1–T10), `node --check`, `node specs/navegacion/teach_and_repeat.test.js` (13/13), `node prototipos/P01-mqtt-base/simulador-3d/codigo/pruebas.mjs`, `node prototipos/P02-sensores/codigo/vitrina.test.js` (19/19), `node prototipos/P03-radar-ultrasonico/radar_motor.test.js` (6/6), `node prototipos/P04-simulador-1-esp32/codigo/simulador1.test.js` (25/25) y `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` (50/50); si algo falla, no se despliega.
 Contratos JSON de todos los tópicos: [`docs/arquitectura/topicos-mqtt.md`](docs/arquitectura/topicos-mqtt.md).
 
 ## Carpetas
@@ -85,7 +79,7 @@ Contratos JSON de todos los tópicos: [`docs/arquitectura/topicos-mqtt.md`](docs
 - `datos/proyecto.js` **el único archivo que hay que editar para actualizar el sitio** (fases, prototipos, pendientes, decisiones, bitácora)
 - `assets/` estilo y menú compartidos por todas las páginas
 - `prototipos/` una carpeta por prototipo con su página visual (`index.html`), `codigo/` y `evidencias/`
-- `app/` la App Flutter Web (P09, con P11 y P12 dentro); se publica sola en `/app/` con cada push a `main`
+- App Flutter Web (P09, P11, P12): repositorio independiente [`ilianavsc/tg-robot-ucab-app`](https://github.com/ilianavsc/tg-robot-ucab-app) publicado en <https://ilianavsc.github.io/tg-robot-ucab-app/>
 - `firmware/` firmware integrado del robot (`robot_integrado.ino`, P01 + P02 + P04 + ultrasonidos), su README y `pruebas_pc/` (10 escenarios SIL T1-T10 de seguridad que corren en el PC y en GitHub Actions)
 - `docs/` requerimientos, arquitectura (tópicos MQTT), guías de pruebas y del jurado
 - `tesis/` capítulos del Trabajo de Grado en Markdown (`capitulo_1.md`, `capitulo_2.md` y `marco_teorico.md` vienen de los Word y usan citas IEEE; `capitulo_3.md` es el borrador del Marco Metodológico; imágenes en `tesis/media/`); `tesis.html` los lista y los abre en el visor modal (la lista sale de `TG.tesis` en `datos/proyecto.js`)

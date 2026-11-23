@@ -150,7 +150,7 @@ a.ir:hover {
     </div>
 
     <div class="hero-acciones">
-      <a href="app/" class="btn btn-principal">
+      <a href="https://ilianavsc.github.io/tg-robot-ucab-app/" target="_blank" rel="noopener" class="btn btn-principal">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
         Probar App en vivo
       </a>
@@ -240,7 +240,7 @@ a.ir:hover {
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware Integrado:</strong> Un solo archivo <code>.ino</code> sin <code>delay()</code> (71 % Flash, 15 % RAM) con fail-safe y corte por batería baja (9,9 V).</div></li>
             </ul>
             <div style="display:flex;flex-wrap:wrap;gap:10px">
-              <a href="https://github.com/ilianavsc/tg-robot-ucab/blob/main/firmware/robot_integrado.ino" target="_blank" rel="noopener" class="btn btn-secundario" style="padding:8px 14px;font-size:14px">Código (.ino) en GitHub</a>
+              <a href="https://github.com/ilianavsc/tg-robot-ucab-portfolio/blob/main/firmware/robot_integrado.ino" target="_blank" rel="noopener" class="btn btn-secundario" style="padding:8px 14px;font-size:14px">Código (.ino) en GitHub</a>
               <a href="firmware/README.md" data-md="firmware/README.md" data-titulo="Firmware Integrado ESP32" class="btn btn-secundario" style="padding:8px 14px;font-size:14px">Guía del Firmware</a>
             </div>
           </div>
@@ -388,7 +388,7 @@ a.ir:hover {
       corto: "App Flutter (v1 · Modo Demo)",
       linea: "Pide y monitorea el robot desde el celular, con acceso por rol y Modo Demo integrado.",
       boton: "Probar App en vivo",
-      url: "app/",
+      url: "https://ilianavsc.github.io/tg-robot-ucab-app/",
       tecnico: "Flutter Web / Móvil · roles Operador y Admin · MQTT en vivo + Modo Demo sin hardware.",
       links: [
         { label: "Tópicos MQTT (.md)", href: "docs/arquitectura/topicos-mqtt.md", md: true, titulo: "Tópicos MQTT" }
@@ -405,7 +405,7 @@ a.ir:hover {
   function textoBoton(p) {
     var cfg = TARJETAS_LISTO[p.codigo];
     if (cfg && cfg.boton) return cfg.boton;
-    if (p.url === "app/") return "Probar App en vivo";
+    if (p.url === "https://ilianavsc.github.io/tg-robot-ucab-app/") return "Probar App en vivo";
     if (p.url) return "Abrir Prototipo";
     return "Ver en Cronograma";
   }

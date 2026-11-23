@@ -7,7 +7,7 @@ window.TG = {
   titulo: "Robot móvil de búsqueda y transporte",
   autoras: "Iliana Semprun y Andrea Ferrer",
   tutor: "Ing. Biagio Cante",
-  repo: "https://github.com/ilianavsc/tg-robot-ucab",
+  repo: "https://github.com/ilianavsc/tg-robot-ucab-portfolio",
   inicio: "2026-10-26",
   fin: "2027-06-11",
   totalSemanas: 32,
@@ -53,9 +53,9 @@ window.TG = {
     { codigo: "P05", nombre: "Gemelo Digital", tema: "Teach & Repeat", semana: 16, estado: "listo", categoria: "software", etapa: 2, url: "prototipos/P05-gemelo-digital/index.html", principal: true, simulador: "prototipos/P05-gemelo-digital/index.html", simuladorTexto: "Gemelo digital de movimiento: enseñanza y repetición sobre las 2 pistas del Simulador 1, con radar y sin cinta", historico: "prototipos/P05-gemelo-digital/README.md", historicoTexto: "Ficha técnica del Gemelo Digital" },
     { codigo: "P06", nombre: "Robot virtual y puente", tema: "Firebase", semana: 9, estado: "en_pruebas", categoria: "app", etapa: 2 },
     { codigo: "P07", nombre: "El cerebro completo", tema: "Firmware", semana: 12, estado: "en_pruebas", categoria: "hardware", etapa: 2 },
-    { codigo: "P09", nombre: "App Flutter (v1 · Modo Demo)", tema: "Flutter", semana: 15, estado: "listo", categoria: "app", etapa: 3, url: "app/", principal: true, simulador: "app/", simuladorTexto: "Abrir App Web (Modo Demo)" },
-    { codigo: "P11", nombre: "La alarma llega al teléfono", tema: "Alertas", semana: 23, estado: "en_pruebas", categoria: "app", etapa: 3, url: "app/", simulador: "app/", simuladorTexto: "Abrir Centro de Alertas (App, Modo Demo)", nota: "Validado en simulación (ESP32 virtual, hoy retirado, y Modo Demo): obstáculo < 20 cm, sensor sin eco, proximidad 20–50 cm y batería ≤ 10,3 V. Pendiente de hardware físico (diciembre)." },
-    { codigo: "P12", nombre: "Pruebas y estadística", tema: "Análisis", semana: 27, estado: "en_pruebas", categoria: "app", etapa: 3, url: "app/", simulador: "app/", simuladorTexto: "Abrir Analítica de Sesión y CSV (App)", nota: "Validado en simulación: velocidad media/máxima, distancia frontal mínima, error medio de línea, paquetes y paradas de emergencia con exportación CSV. Pendiente de los 20+ ensayos con el robot físico." },
+    { codigo: "P09", nombre: "App Flutter (v1 · Modo Demo)", tema: "Flutter", semana: 15, estado: "listo", categoria: "app", etapa: 3, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", principal: true, simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir App Web (Modo Demo)" },
+    { codigo: "P11", nombre: "La alarma llega al teléfono", tema: "Alertas", semana: 23, estado: "en_pruebas", categoria: "app", etapa: 3, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir Centro de Alertas (App, Modo Demo)", nota: "Validado en simulación (ESP32 virtual, hoy retirado, y Modo Demo): obstáculo < 20 cm, sensor sin eco, proximidad 20–50 cm y batería ≤ 10,3 V. Pendiente de hardware físico (diciembre)." },
+    { codigo: "P12", nombre: "Pruebas y estadística", tema: "Análisis", semana: 27, estado: "en_pruebas", categoria: "app", etapa: 3, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir Analítica de Sesión y CSV (App)", nota: "Validado en simulación: velocidad media/máxima, distancia frontal mínima, error medio de línea, paquetes y paradas de emergencia con exportación CSV. Pendiente de los 20+ ensayos con el robot físico." },
     { codigo: "P14", nombre: "Balizas BLE (Extremos)", tema: "BLE", semana: 7, estado: "pendiente", categoria: "hardware", etapa: 2 }
   ],
 
@@ -65,7 +65,7 @@ window.TG = {
 
   /* Enlaces principales de la portada */
   enlaces: {
-    app: "https://ilianavsc.github.io/tg-robot-ucab/app/",
+    app: "https://ilianavsc.github.io/tg-robot-ucab-app/",
     cronograma: "cronograma.html"
   },
 

@@ -1,0 +1,85 @@
+name: Despliegue del Portafolio y Simuladores en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Validar firmware, simuladores y armar sitio estático
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Pruebas del firmware en el PC (SIL)
+        run: sh firmware/pruebas_pc/correr.sh
+
+      - name: Verificar sintaxis JS en prototipos (node --check)
+        run: |
+          set -euo pipefail
+          find prototipos -type f \( -name "*.js" -o -name "*.mjs" \) ! -path "*/node_modules/*" -print0 | xargs -0 -n 1 node --check
+
+      - name: Pruebas del núcleo teach-and-repeat (specs/navegacion)
+        run: node specs/navegacion/teach_and_repeat.test.js
+
+      - name: Pruebas P01 (protocolo MQTT + UI)
+        run: node prototipos/P01-mqtt-base/simulador-3d/codigo/pruebas.mjs
+
+      - name: Pruebas P02 (Inspector de hardware)
+        run: node prototipos/P02-sensores/codigo/vitrina.test.js
+
+      - name: Pruebas P03 (Radar ultrasónico)
+        run: node prototipos/P03-radar-ultrasonico/radar_motor.test.js
+
+      - name: Pruebas P04 (Simulador 1 + ESP32)
+        run: node prototipos/P04-simulador-1-esp32/codigo/simulador1.test.js
+
+      - name: Pruebas P05 (Gemelo Digital)
+        run: node prototipos/P05-gemelo-digital/simulador_movimiento.test.js
+
+      - name: Armar carpeta estática del portafolio
+        run: |
+          set -euo pipefail
+          PUB="$GITHUB_WORKSPACE/public"
+          mkdir -p "$PUB"
+          cp "$GITHUB_WORKSPACE"/*.html "$PUB"/
+          cp "$GITHUB_WORKSPACE"/README.md "$PUB"/
+          cp -r assets datos prototipos docs hardware tesis specs firmware "$PUB"/
+          touch "$PUB/.nojekyll"
+          ls -la "$PUB"
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir artefacto de Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    name: Publicar en GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
