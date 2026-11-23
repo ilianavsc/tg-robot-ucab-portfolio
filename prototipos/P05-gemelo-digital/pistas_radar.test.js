@@ -528,4 +528,126 @@ module.exports = async function (ctx) {
     assert.ok(html.includes("⚡ Encender") && html.includes("⏹ Detener"));
     assert.ok(/id="btn-freno"/.test(html) && html.includes("Freno Remoto"), "Freno Remoto permanece separado");
   });
+
+  /* ---- Capa 3 Operacional: Máquina de Rutas + Pedidos + MPU-6050 + Tiempos 1x/2x/4x ---- */
+  const C3 = require("./capa3_operacional.js");
+
+  await prueba("Capa 3A (Ruta Cerrada): sin parada opera en bucle sin pedidos, fallo no suma uso y al 3.er uso habilita reescaneo", () => {
+    const op = C3.crear({ tipoRuta: "cerrada", largoM: 9.0 });
+    assert.strictEqual(C3.iniciarEscaneo(op).ok, true);
+    assert.strictEqual(op.estadoRuta, "ESCANEO_IDA");
+    assert.strictEqual(C3.completarPasadaIda(op).estadoRuta, "OPERACION_BUCLE");
+    assert.strictEqual(C3.puedeSolicitarPedido(op), false, "sin parada no acepta pedidos");
+    assert.strictEqual(C3.solicitarPedido(op, { destino: "Lab 1" }).ok, false);
+
+    // 2 usos exitosos + 1 uso fallido (no debe incrementar)
+    assert.strictEqual(C3.registrarUsoCompletado(op, true).usosCompletados, 1);
+    assert.strictEqual(C3.registrarUsoCompletado(op, true).usosCompletados, 2);
+    assert.strictEqual(C3.registrarUsoCompletado(op, false).usosCompletados, 2, "fallo en uso 3 no incrementa");
+    assert.strictEqual(C3.puedeReescanearParada(op), false);
+
+    // 3.er uso completado desbloquea reescaneo con parada
+    assert.strictEqual(C3.registrarUsoCompletado(op, true).usosCompletados, 3);
+    assert.strictEqual(C3.puedeReescanearParada(op), true);
+    assert.strictEqual(C3.iniciarReescaneoParada(op, "Parada Lab 1").ok, true);
+    assert.strictEqual(op.estadoRuta, "REESCANEO_PARADA");
+    assert.strictEqual(C3.completarReescaneoParada(op).estadoRuta, "OPERACION_CON_PARADA");
+    assert.strictEqual(C3.puedeSolicitarPedido(op), true);
+  });
+
+  await prueba("Capa 3A (Ruta Lineal): bloquea escaneo sin parada, doble escaneo y ESPERA_REPOSICION sin timeout automático", () => {
+    const op = C3.crear({ tipoRuta: "lineal", largoM: 9.0 });
+    const bloq = C3.iniciarEscaneo(op);
+    assert.strictEqual(bloq.ok, false);
+    assert.strictEqual(bloq.motivo, "parada_obligatoria_en_ruta_lineal");
+
+    assert.strictEqual(C3.configurarParada(op, "Lab 1"), true);
+    assert.strictEqual(C3.iniciarEscaneo(op).ok, true);
+    assert.strictEqual(C3.completarPasadaIda(op).estadoRuta, "ESPERA_REPOSICION");
+    assert.strictEqual(C3.puedeMover(op), false, "movimiento bloqueado en ESPERA_REPOSICION");
+    assert.strictEqual(C3.ordenarMovimiento(op, "adelante").bloqueado, true);
+
+    // Avanzar reloj 3600 s: prohibido auto-retorno por timeout
+    C3.avanzarReloj(op, 3600);
+    assert.strictEqual(op.estadoRuta, "ESPERA_REPOSICION", "nunca auto-retorna por timeout");
+
+    // Solo confirmación manual inicia el retorno
+    assert.strictEqual(C3.confirmarReposicionamiento(op).estadoRuta, "ESCANEO_RETORNO");
+    assert.strictEqual(C3.completarPasadaRetorno(op).estadoRuta, "OPERACION_CON_PARADA");
+    assert.strictEqual(op.rutaAprendida.dobleEscaneo, true);
+    assert.strictEqual(C3.puedeSolicitarPedido(op), true);
+  });
+
+  await prueba("Capa 3B (Pedidos): CANCELACION_SEGURA detiene pedido preservando rutaAprendida sin reiniciar escaneo", () => {
+    const op = C3.crear({ tipoRuta: "lineal", largoM: 9.0, paradaConfigurada: true, paradaNombre: "Lab 1" });
+    C3.iniciarEscaneo(op); C3.completarPasadaIda(op);
+    C3.confirmarReposicionamiento(op); C3.completarPasadaRetorno(op);
+    const rutaRef = op.rutaAprendida;
+
+    assert.strictEqual(C3.solicitarPedido(op, { componente: "ESP32", destino: "Lab 1" }).estadoPedido, "SOLICITADO");
+    assert.strictEqual(C3.despacharPedido(op).estadoPedido, "EN_TRANSITO");
+    const cancel = C3.cancelarPedidoSeguro(op);
+    assert.strictEqual(cancel.ok, true);
+    assert.strictEqual(cancel.estadoPedido, "CANCELACION_SEGURA");
+    assert.strictEqual(cancel.rutaConservada, true);
+    assert.strictEqual(op.rutaAprendida, rutaRef, "CANCELACION_SEGURA no borra la ruta aprendida");
+    assert.strictEqual(op.estadoRuta, "OPERACION_CON_PARADA", "no reinicia el escaneo");
+    assert.strictEqual(C3.confirmarDetencionCancelacion(op), true);
+    assert.strictEqual(op.estadoPedido, "SIN_PEDIDO");
+    assert.strictEqual(op.rutaAprendida, rutaRef);
+
+    // Flujo normal hasta ENTREGADO
+    C3.solicitarPedido(op, { componente: "Sensor", destino: "Lab 1" });
+    C3.despacharPedido(op);
+    assert.strictEqual(C3.completarEntregaPedido(op), true);
+    assert.strictEqual(op.estadoPedido, "ENTREGADO");
+    assert.strictEqual(C3.cerrarEntregaPedido(op), true);
+    assert.strictEqual(op.estadoPedido, "SIN_PEDIDO");
+  });
+
+  await prueba("Capa 3 Seguridad: MPU-6050 (impacto/inclinación/atascamiento) tiene prioridad y bloquea movimiento en ERROR_SEGURIDAD", () => {
+    for (const tipoMpu of ["impacto", "inclinacion", "atascamiento"]) {
+      const op = C3.crear({ tipoRuta: "cerrada", largoM: 9.0, paradaConfigurada: true, paradaNombre: "PC3" });
+      C3.iniciarEscaneo(op); C3.completarPasadaIda(op);
+      C3.solicitarPedido(op, { destino: "PC3" });
+      C3.despacharPedido(op);
+
+      const res = C3.dispararAlertaMpu6050(op, tipoMpu);
+      assert.strictEqual(res.estadoRuta, "ERROR_SEGURIDAD");
+      assert.strictEqual(res.estadoPedido, "CANCELACION_SEGURA");
+      assert.strictEqual(op.motivoSeguridad, "mpu6050_" + tipoMpu);
+      assert.strictEqual(C3.puedeMover(op), false);
+      assert.strictEqual(C3.ordenarMovimiento(op, "auto").bloqueado, true);
+      assert.ok(op.rutaAprendida !== null, "ruta aprendida se conserva tras alerta MPU-6050");
+
+      assert.strictEqual(C3.iniciarRecuperacionManual(op), true);
+      assert.strictEqual(op.estadoRuta, "RECUPERACION_MANUAL");
+      assert.strictEqual(C3.puedeMover(op), false);
+      assert.strictEqual(C3.completarRecuperacionManual(op, false), true);
+      assert.strictEqual(op.estadoRuta, "OPERACION_CON_PARADA");
+      assert.strictEqual(op.estadoPedido, "SIN_PEDIDO");
+      assert.strictEqual(C3.puedeMover(op), true);
+    }
+  });
+
+  await prueba("Capa 3 Tiempos reales (0,41 m/s -> 21,95 s / 43,90 s) y selector 1x / 2x / 4x solo sobre reloj SIL", () => {
+    const cerr = C3.crear({ tipoRuta: "cerrada", largoM: 9.0 });
+    assert.strictEqual(C3.duracionEstimadaEscaneoS(cerr), 21.95);
+    const lin = C3.crear({ tipoRuta: "lineal", largoM: 9.0, paradaConfigurada: true, paradaNombre: "Lab 1" });
+    assert.strictEqual(C3.duracionEstimadaEscaneoS(lin), 43.9);
+
+    C3.iniciarEscaneo(cerr);
+    assert.strictEqual(cerr.escalaReloj, 1);
+    C3.setEscalaReloj(cerr, 4);
+    assert.strictEqual(cerr.escalaReloj, 4);
+    assert.strictEqual(cerr.velEscaneoMs, 0.41, "la escala de reloj no altera la velocidad física");
+    C3.avanzarReloj(cerr, 2.0);
+    assert.strictEqual(cerr.tiempoRealS, 2.0);
+    assert.strictEqual(cerr.tiempoSimS, 8.0);
+    assert.ok(Math.abs(cerr.progresoPasadaM - 3.28) <= 0.02);
+
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    assert.ok(html.includes('data-vel="1"') && html.includes('data-vel="2"') && html.includes('data-vel="4"'));
+    assert.ok(html.includes('id="panel-capa3"') && html.includes("capa3_operacional.js"));
+  });
 };

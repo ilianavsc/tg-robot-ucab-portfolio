@@ -495,9 +495,9 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
       <div class="cockpit-hdr-der">
         <button type="button" class="btn-encender" id="btn-encender" aria-pressed="false" aria-label="Encender o detener la simulación preservando el progreso"><span class="enc-dot" aria-hidden="true"></span><span id="btn-encender-txt">⚡ Encender</span></button>
         <div class="vel-seg" role="group" aria-label="Velocidad de reproducción SIL">
-          <button type="button" class="sel" data-vel="1" aria-pressed="true">×1</button>
-          <button type="button" data-vel="2" aria-pressed="false">×2</button>
-          <button type="button" data-vel="5" aria-pressed="false">×5</button>
+          <button type="button" class="sel" data-vel="1" aria-pressed="true">1x</button>
+          <button type="button" data-vel="2" aria-pressed="false">2x</button>
+          <button type="button" data-vel="4" aria-pressed="false">4x</button>
         </div>
         <button type="button" class="btn-ing" id="btn-ing" aria-expanded="false" aria-controls="cajon-ing">⚙<span class="ing-txt"> Ingeniería</span></button>
       </div>
@@ -541,6 +541,12 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
       </div>
     </div>
 
+    <!-- 4b. Franja compacta Capa 3 Operacional + tiempos reales (1x/2x/4x) -->
+    <div id="capa3-hud" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:6px 12px;background:var(--s2-bg);border-top:1px solid var(--s2-borde);font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--s2-muted)">
+      <span>Capa 3 · Ruta: <strong id="c3-hud-ruta" style="color:#7dd3fc">SIN_RUTA</strong> · Pedido: <strong id="c3-hud-pedido" style="color:#e2e8f0">SIN_PEDIDO</strong> · Usos: <strong id="c3-hud-usos" style="color:#86efac">0/3</strong></span>
+      <span>Sim: <strong id="c3-hud-tsim" style="color:#e2e8f0">0,0 s</strong> · Real: <strong id="c3-hud-treal" style="color:#e2e8f0">0,0 s</strong> · Restante: <strong id="c3-hud-trest" style="color:#fde68a">21,95 s</strong> (<strong id="c3-hud-escala" style="color:#7dd3fc">1x</strong>)</span>
+    </div>
+
     <!-- 5. Barra/Dock inferior único: 1 botón principal contextual + Freno Remoto -->
     <div class="acciones-barra" role="region" aria-label="Acciones principales">
       <button type="button" class="btn-ctx" id="btn-principal-ctx">🎓 Iniciar lectura lenta</button>
@@ -565,6 +571,49 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   <div class="cajon-cuerpo">
     <!-- Pestaña 1: Ejecución -->
     <section class="tab-panel activo" id="tab-ejecucion" role="tabpanel" aria-labelledby="tbtn-ejecucion">
+      <div class="panel" id="panel-capa3">
+        <h3>Capa 3 · Operación (Rutas, Pedidos y MPU-6050)</h3>
+        <div class="fila" style="align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="meta-seg" role="group" aria-label="Tipo de ruta operacional">
+            <button type="button" class="sel" id="c3-tipo-cerrada" data-c3-tipo="cerrada" aria-pressed="true">Ruta Cerrada</button>
+            <button type="button" id="c3-tipo-lineal" data-c3-tipo="lineal" aria-pressed="false">Ruta Lineal</button>
+          </div>
+          <span class="estado-badge" id="c3-estado-ruta">SIN_RUTA</span>
+        </div>
+        <div class="fila" style="align-items:center;margin-bottom:6px">
+          <input type="text" id="c3-parada-input" placeholder="Parada (opcional cerrada / obligatoria lineal)" aria-label="Nombre de parada de entrega" style="flex:1 1 160px;min-height:44px;padding:6px 10px;border-radius:8px;border:1px solid var(--s2-borde);background:var(--s2-bg);color:var(--s2-txt);font-family:var(--font-mono);font-size:11.5px">
+          <button class="b info" id="c3-btn-escaneo" type="button">▶ Escanear</button>
+        </div>
+        <div class="fila" style="margin-bottom:6px">
+          <button class="b ok" id="c3-btn-reposicion" type="button" disabled>✔ Confirmar reposicionamiento</button>
+          <button class="b" id="c3-btn-uso" type="button" disabled>+1 Uso completado</button>
+          <button class="b aviso" id="c3-btn-reescanear" type="button" disabled>🔁 Reescanear para configurar parada</button>
+        </div>
+        <div class="esp-grid" style="margin-top:0;margin-bottom:8px">
+          <div class="esp-card"><small>Tiempo sim / real</small><strong class="cyan" id="c3-tiempos">0,0 s / 0,0 s</strong></div>
+          <div class="esp-card"><small>Estimado restante</small><strong id="c3-restante">21,95 s (1x)</strong></div>
+        </div>
+        <h3 style="margin-top:8px">Alertas MPU-6050 (prioridad sobre movimiento)</h3>
+        <div class="fila" style="margin-bottom:6px">
+          <button class="b peligro" id="c3-mpu-impacto" type="button">💥 Impacto</button>
+          <button class="b peligro" id="c3-mpu-inclinacion" type="button">📐 Inclinación/Vuelco</button>
+          <button class="b peligro" id="c3-mpu-atascamiento" type="button">⚙ Atascamiento</button>
+          <button class="b ok" id="c3-btn-recuperar" type="button" disabled>🛠 Recuperación manual</button>
+        </div>
+        <h3 style="margin-top:8px">Máquina de Pedidos (ortogonal)</h3>
+        <div class="fila" style="align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span class="estado-badge" id="c3-estado-pedido">SIN_PEDIDO</span>
+          <span class="nota" id="c3-ruta-guardada" style="margin:0">Ruta aprendida: no</span>
+        </div>
+        <div class="fila">
+          <button class="b info" id="c3-ped-solicitar" type="button" disabled>📦 Solicitar pedido</button>
+          <button class="b ok" id="c3-ped-despachar" type="button" disabled>▶ Despachar</button>
+          <button class="b aviso" id="c3-ped-cancelar" type="button" disabled>🛑 Cancelación segura</button>
+          <button class="b ok" id="c3-ped-entregar" type="button" disabled>✔ Entregado</button>
+        </div>
+        <p class="nota" id="c3-aviso">Ruta Cerrada: parada opcional; tras 3 usos habilita reescaneo. Ruta Lineal: parada obligatoria y doble escaneo manual.</p>
+      </div>
+
       <div class="panel">
         <h3>Avance y reinicio</h3>
         <div class="fila">
@@ -803,6 +852,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
 <script src="simulador_movimiento.js"></script>
 <script src="gemelo_estado.js"></script>
 <script src="aprendizaje_gemelo.js"></script>
+<script src="capa3_operacional.js"></script>
 <script>
 (function () {
   "use strict";
@@ -816,8 +866,9 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   var corriendo = false, velSim = 1, ultimoFrame = 0, acum = 0, ultimoDom = 0;
   var TICK_MS = 20;
   var modoColocarObs = false;
-  var S = SimMovimiento, R = RadarUS, A = AprendizajeGemelo;
+  var S = SimMovimiento, R = RadarUS, A = AprendizajeGemelo, C3 = Capa3Operacional;
   var ap = A.crear({ pistaId: "B", metaViajes: 3, permiteSinCinta: true });
+  var op = C3.crear({ tipoRuta: "cerrada", largoM: 9.0 });
   var timerGemelo = null, timerBalizas = null;
 
   /* ---- 1) Carga el núcleo, la pista canónica y las pistas de SIM1 ---- */
@@ -853,6 +904,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     sim.sesgoDps = Number($("ctl-deriva").value);
     var permiteSinCinta = tr.rectaMasLarga(10).largoM >= 1.5;
     ap = A.crear({ pistaId: id, metaViajes: ap ? ap.metaViajes : 3, permiteSinCinta: permiteSinCinta });
+    if (op) { C3.setLargoM(op, tr.L); C3.setTipoRuta(op, op.tipoRuta); }
     corriendo = false; acum = 0;
     modoColocarObs = false;
     $("btn-play").textContent = "▶ Iniciar"; $("btn-play").setAttribute("aria-pressed", "false");
@@ -922,6 +974,17 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     var dtReal = Math.min(100, ahora - ultimoFrame);
     ultimoFrame = ahora;
     if (corriendo) {
+      C3.avanzarReloj(op, dtReal / 1000);
+      if (op.estadoRuta === "ESCANEO_IDA" && op.progresoPasadaM >= op.largoM) {
+        C3.completarPasadaIda(op);
+        if (op.estadoRuta === "ESPERA_REPOSICION") { detener(); refrescarDom(true); }
+      } else if (op.estadoRuta === "ESCANEO_RETORNO" && op.progresoPasadaM >= op.largoM) {
+        C3.completarPasadaRetorno(op);
+        detener(); refrescarDom(true);
+      } else if (op.estadoRuta === "REESCANEO_PARADA" && op.progresoPasadaM >= op.largoM) {
+        C3.completarReescaneoParada(op);
+        detener(); refrescarDom(true);
+      }
       acum += dtReal * velSim;
       var n = 0;
       while (acum >= TICK_MS && n < 60) {
@@ -958,6 +1021,11 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     if (sim) dibujar(performance.now());
   }
   function reproducir() {
+    if (op && !C3.puedeMover(op)) {
+      if (sim) S.registrar(sim, "Movimiento bloqueado en " + op.estadoRuta);
+      refrescarCapa3();
+      return;
+    }
     corriendo = true;
     if (ap) A.encender(ap);
     $("btn-play").textContent = "⏸ Pausar";
@@ -1249,11 +1317,13 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     Array.prototype.forEach.call(document.querySelectorAll("[data-vel]"), function (b) {
       b.addEventListener("click", function () {
         velSim = Number(b.getAttribute("data-vel"));
+        C3.setEscalaReloj(op, velSim);
         Array.prototype.forEach.call(document.querySelectorAll("[data-vel]"), function (o) {
           var on = Number(o.getAttribute("data-vel")) === velSim;
           o.classList.toggle("sel", on);
           o.setAttribute("aria-pressed", String(on));
         });
+        refrescarCapa3();
       });
     });
     $("btn-viaje-vuelta").addEventListener("click", function () { S.nuevoViaje(sim, -1); ponerModo("auto"); reproducir(); refrescarDom(true); });
@@ -1298,6 +1368,166 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     });
     window.addEventListener("resize", function () { redimensionar(); ajustarVista(); });
     enlazarObstaculo();
+    enlazarCapa3();
+  }
+
+  function fmtS(s) { return Number(s || 0).toFixed(2).replace(".", ",") + " s"; }
+
+  function refrescarCapa3() {
+    if (!op) return;
+    var rest = C3.tiempoRestanteEstimadoS(op);
+    var estTotal = C3.duracionEstimadaEscaneoS(op);
+    var tRestMostrar = op.estadoRuta === "SIN_RUTA" ? estTotal : rest;
+    var hudRuta = $("c3-hud-ruta"); if (hudRuta) hudRuta.textContent = op.estadoRuta;
+    var hudPed = $("c3-hud-pedido"); if (hudPed) hudPed.textContent = op.estadoPedido;
+    var hudUsos = $("c3-hud-usos"); if (hudUsos) hudUsos.textContent = op.usosCompletados + "/" + C3.C.USOS_PARA_PARADA;
+    var hudSim = $("c3-hud-tsim"); if (hudSim) hudSim.textContent = fmtS(op.tiempoSimS);
+    var hudReal = $("c3-hud-treal"); if (hudReal) hudReal.textContent = fmtS(op.tiempoRealS);
+    var hudRest = $("c3-hud-trest"); if (hudRest) hudRest.textContent = fmtS(tRestMostrar);
+    var hudEsc = $("c3-hud-escala"); if (hudEsc) hudEsc.textContent = op.escalaReloj + "x";
+
+    var bRuta = $("c3-estado-ruta");
+    if (bRuta) {
+      bRuta.textContent = op.estadoRuta;
+      bRuta.className = "estado-badge" + (op.estadoRuta === "ERROR_SEGURIDAD" ? " alerta" : (op.estadoRuta === "ESPERA_REPOSICION" || op.estadoRuta === "PAUSA_OBSTACULO" ? " aviso" : (op.estadoRuta === "OPERACION_CON_PARADA" ? " ok" : "")));
+    }
+    var bPed = $("c3-estado-pedido");
+    if (bPed) {
+      bPed.textContent = op.estadoPedido;
+      bPed.className = "estado-badge" + (op.estadoPedido === "CANCELACION_SEGURA" ? " aviso" : (op.estadoPedido === "ENTREGADO" ? " ok" : ""));
+    }
+    var tEl = $("c3-tiempos"); if (tEl) tEl.textContent = fmtS(op.tiempoSimS) + " / " + fmtS(op.tiempoRealS);
+    var rEl = $("c3-restante"); if (rEl) rEl.textContent = fmtS(tRestMostrar) + " (" + op.escalaReloj + "x)";
+    var gEl = $("c3-ruta-guardada"); if (gEl) gEl.textContent = "Ruta aprendida: " + (op.rutaAprendida ? (op.rutaAprendida.tipoRuta + (op.rutaAprendida.paradaConfigurada ? " · " + op.rutaAprendida.paradaNombre : " · sin parada")) : "no");
+
+    var btnRep = $("c3-btn-reposicion"); if (btnRep) btnRep.disabled = op.estadoRuta !== "ESPERA_REPOSICION";
+    var btnUso = $("c3-btn-uso"); if (btnUso) btnUso.disabled = op.estadoRuta !== "OPERACION_BUCLE" && op.estadoRuta !== "OPERACION_CON_PARADA";
+    var btnReesc = $("c3-btn-reescanear"); if (btnReesc) btnReesc.disabled = !C3.puedeReescanearParada(op);
+    var btnRec = $("c3-btn-recuperar"); if (btnRec) btnRec.disabled = op.estadoRuta !== "ERROR_SEGURIDAD" && op.estadoRuta !== "RECUPERACION_MANUAL";
+    if (btnRec) btnRec.textContent = op.estadoRuta === "RECUPERACION_MANUAL" ? "✔ Reanudar operación segura" : "🛠 Recuperación manual";
+
+    var bSol = $("c3-ped-solicitar"); if (bSol) bSol.disabled = !C3.puedeSolicitarPedido(op);
+    var bDes = $("c3-ped-despachar"); if (bDes) bDes.disabled = op.estadoPedido !== "SOLICITADO" || !C3.puedeMover(op);
+    var bCan = $("c3-ped-cancelar"); if (bCan) bCan.disabled = op.estadoPedido !== "SOLICITADO" && op.estadoPedido !== "EN_TRANSITO" && op.estadoPedido !== "CANCELACION_SEGURA";
+    if (bCan) bCan.textContent = op.estadoPedido === "CANCELACION_SEGURA" ? "✔ Confirmar detención" : "🛑 Cancelación segura";
+    var bEnt = $("c3-ped-entregar"); if (bEnt) bEnt.disabled = op.estadoPedido !== "EN_TRANSITO" && op.estadoPedido !== "ENTREGADO";
+  }
+
+  function enlazarCapa3() {
+    var avisoC3 = $("c3-aviso");
+    var inpParada = $("c3-parada-input");
+    Array.prototype.forEach.call(document.querySelectorAll("[data-c3-tipo]"), function (b) {
+      b.addEventListener("click", function () {
+        var tipo = b.getAttribute("data-c3-tipo");
+        C3.setTipoRuta(op, tipo);
+        Array.prototype.forEach.call(document.querySelectorAll("[data-c3-tipo]"), function (o) {
+          var on = o.getAttribute("data-c3-tipo") === tipo;
+          o.classList.toggle("sel", on);
+          o.setAttribute("aria-pressed", String(on));
+        });
+        if (avisoC3) avisoC3.textContent = tipo === "lineal"
+          ? "Ruta Lineal: parada obligatoria y doble escaneo ida + retorno con confirmación manual."
+          : "Ruta Cerrada: parada opcional; tras 3 usos completados habilita reescaneo con parada.";
+        refrescarCapa3();
+      });
+    });
+    if (inpParada) {
+      inpParada.addEventListener("input", function () {
+        C3.configurarParada(op, inpParada.value);
+        refrescarCapa3();
+      });
+    }
+    var btnEsc = $("c3-btn-escaneo");
+    if (btnEsc) {
+      btnEsc.addEventListener("click", function () {
+        if (inpParada) C3.configurarParada(op, inpParada.value);
+        var r = C3.iniciarEscaneo(op);
+        if (!r.ok) {
+          if (avisoC3) avisoC3.textContent = "Bloqueado: " + r.motivo;
+        } else {
+          if (avisoC3) avisoC3.textContent = "Escaneo iniciado (" + op.tipoRuta + ", duración estimada " + fmtS(C3.duracionEstimadaEscaneoS(op)) + " a 1x).";
+          if (!corriendo) reproducir();
+        }
+        refrescarCapa3();
+      });
+    }
+    var btnRep = $("c3-btn-reposicion");
+    if (btnRep) {
+      btnRep.addEventListener("click", function () {
+        var r = C3.confirmarReposicionamiento(op);
+        if (r.ok && avisoC3) avisoC3.textContent = "Reposicionamiento confirmado: iniciando escaneo de retorno.";
+        if (r.ok && !corriendo) reproducir();
+        refrescarCapa3();
+      });
+    }
+    var btnUso = $("c3-btn-uso");
+    if (btnUso) {
+      btnUso.addEventListener("click", function () {
+        var r = C3.registrarUsoCompletado(op, true);
+        if (avisoC3) avisoC3.textContent = "Usos completados: " + r.usosCompletados + "/" + C3.C.USOS_PARA_PARADA + (r.reescaneoParadaHabilitado ? " · Reescaneo con parada desbloqueado." : ".");
+        refrescarCapa3();
+      });
+    }
+    var btnReesc = $("c3-btn-reescanear");
+    if (btnReesc) {
+      btnReesc.addEventListener("click", function () {
+        var nom = (inpParada && inpParada.value.trim()) ? inpParada.value.trim() : "Parada Lab 1";
+        var r = C3.iniciarReescaneoParada(op, nom);
+        if (r.ok && avisoC3) avisoC3.textContent = "Reescaneando ruta cerrada para fijar parada: " + nom;
+        if (r.ok && !corriendo) reproducir();
+        refrescarCapa3();
+      });
+    }
+    [["c3-mpu-impacto", "impacto"], ["c3-mpu-inclinacion", "inclinacion"], ["c3-mpu-atascamiento", "atascamiento"]].forEach(function (par) {
+      var el = $(par[0]);
+      if (!el) return;
+      el.addEventListener("click", function () {
+        C3.dispararAlertaMpu6050(op, par[1]);
+        detener();
+        if (sim) S.frenoRemoto(sim);
+        if (avisoC3) avisoC3.textContent = "ERROR_SEGURIDAD · MPU-6050 (" + par[1] + "): movimiento bloqueado hasta recuperación manual.";
+        refrescarDom(true);
+      });
+    });
+    var btnRec = $("c3-btn-recuperar");
+    if (btnRec) {
+      btnRec.addEventListener("click", function () {
+        if (op.estadoRuta === "ERROR_SEGURIDAD") {
+          C3.iniciarRecuperacionManual(op);
+          if (avisoC3) avisoC3.textContent = "Inspección manual en curso. Pulsa de nuevo para reanudar operación segura.";
+        } else if (op.estadoRuta === "RECUPERACION_MANUAL") {
+          C3.completarRecuperacionManual(op, false);
+          if (avisoC3) avisoC3.textContent = "Operación segura restaurada (" + op.estadoRuta + ").";
+        }
+        refrescarDom(true);
+      });
+    }
+    var bSol = $("c3-ped-solicitar");
+    if (bSol) bSol.addEventListener("click", function () { C3.solicitarPedido(op, { destino: op.paradaNombre || "Parada 1" }); refrescarCapa3(); });
+    var bDes = $("c3-ped-despachar");
+    if (bDes) bDes.addEventListener("click", function () { C3.despacharPedido(op); refrescarCapa3(); });
+    var bCan = $("c3-ped-cancelar");
+    if (bCan) {
+      bCan.addEventListener("click", function () {
+        if (op.estadoPedido === "CANCELACION_SEGURA") {
+          C3.confirmarDetencionCancelacion(op);
+          if (avisoC3) avisoC3.textContent = "Cancelación segura completada; ruta aprendida conservada.";
+        } else {
+          C3.cancelarPedidoSeguro(op);
+          detener();
+          if (avisoC3) avisoC3.textContent = "CANCELACION_SEGURA activa: frenado controlado sin borrar la ruta aprendida.";
+        }
+        refrescarCapa3();
+      });
+    }
+    var bEnt = $("c3-ped-entregar");
+    if (bEnt) {
+      bEnt.addEventListener("click", function () {
+        if (op.estadoPedido === "EN_TRANSITO") C3.completarEntregaPedido(op);
+        else if (op.estadoPedido === "ENTREGADO") C3.cerrarEntregaPedido(op);
+        refrescarCapa3();
+      });
+    }
   }
 
   function ponerModo(m) {
@@ -1596,6 +1826,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
 
   function refrescarDom(forzar) {
     if (!corriendo && forzar && sim) dibujar(performance.now());
+    refrescarCapa3();
     var C = nucleo.CFG;
     var nombre = nucleo.NOMBRE_ESTADO[sim.nav.estado];
     var manual = sim.modo === "manual";
