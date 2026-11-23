@@ -70,6 +70,7 @@ assert.equal(mqtt.topicos.sensores_inercial.qos, 0);
 assert.equal(mqtt.topicos.sensores_inercial.retained, false);
 assert.deepEqual(mqtt.comandosValidos, ['adelante', 'atras', 'izquierda', 'derecha', 'frenar', 'auto']);
 assert.equal(mqtt.tiempos.ackTimeoutMs, 5000);
+assert.deepEqual(mqtt.trazabilidad.aplicaA, ['rutas_*', 'pedidos_*']);
 assert.deepEqual(mqtt.trazabilidad.camposObligatorios, [
   'message_id',
   'request_id',
@@ -102,6 +103,14 @@ const ESTADOS_PEDIDO_ESPERADOS = [
   'ENTREGADO',
 ];
 const ALERTAS_MPU_ESPERADAS = ['impacto', 'inclinacion', 'atascamiento'];
+assert.deepEqual(mqtt.capa3Operacional.constantes, {
+  VEL_NORMAL_MS: 0.41,
+  VEL_LENTA_MS: 0.16,
+  LARGO_CANONICO_M: 9.0,
+  RAMPA_DECEL_MS2: 0.55,
+  USOS_PARA_PARADA: 3,
+  ESCALAS_RELOJ: [1, 2, 4],
+});
 assert.deepEqual(mqtt.capa3Operacional.estadosRuta, ESTADOS_RUTA_ESPERADOS);
 assert.deepEqual(mqtt.capa3Operacional.estadosPedido, ESTADOS_PEDIDO_ESPERADOS);
 assert.deepEqual(mqtt.capa3Operacional.alertasMpu6050, ALERTAS_MPU_ESPERADAS);

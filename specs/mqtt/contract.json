@@ -131,6 +131,10 @@
     "keepAliveS": 15
   },
   "trazabilidad": {
+    "aplicaA": [
+      "rutas_*",
+      "pedidos_*"
+    ],
     "camposObligatorios": [
       "message_id",
       "request_id",
@@ -142,6 +146,14 @@
   },
   "capa3Operacional": {
     "fuenteDeVerdad": "prototipos/P05-gemelo-digital/capa3_operacional.js",
+    "constantes": {
+      "VEL_NORMAL_MS": 0.41,
+      "VEL_LENTA_MS": 0.16,
+      "LARGO_CANONICO_M": 9.0,
+      "RAMPA_DECEL_MS2": 0.55,
+      "USOS_PARA_PARADA": 3,
+      "ESCALAS_RELOJ": [1, 2, 4]
+    },
     "estadosRuta": [
       "SIN_RUTA",
       "ESCANEO_IDA",
