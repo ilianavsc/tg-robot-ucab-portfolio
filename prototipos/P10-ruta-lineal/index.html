@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P10 · Ruta lineal con reposicionamiento · TG Robot UCAB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<link rel="stylesheet" href="ruta_lineal.css">
+</head>
+<body data-pagina="prototipos" data-base="../../">
+<header id="menu"></header>
+
+<main class="rl-main">
+  <div class="rl-intro">
+    <a class="volver" href="../index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Prototipos
+    </a>
+    <p class="ceja">P10 · Ruta lineal</p>
+    <h1>Ida, giro a mano y <em>vuelta a la base</em></h1>
+  </div>
+
+  <section class="rl-sim" id="rl-sim" data-estado="EN_BASE" data-seguridad="nominal" aria-label="Simulador de ruta lineal con reposicionamiento manual">
+    <header class="rl-top">
+      <span class="rl-badge" id="rl-badge" role="note"><i aria-hidden="true"></i>SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS</span>
+      <span class="rl-estado-chip" id="rl-estado-chip" role="status" aria-live="polite">EN_BASE</span>
+      <span class="rl-seguridad" id="rl-seguridad"><b id="rl-seg-estado">NOMINAL</b> <span id="rl-seg-motivo">En la base, listo para iniciar</span></span>
+      <button type="button" class="rl-mute" id="rl-mute" aria-pressed="false" title="Silenciar el sonido de la alarma"><span aria-hidden="true">🔔</span> <span class="tx">Sonido</span></button>
+    </header>
+
+    <div class="rl-escena" id="rl-escena">
+      <canvas id="rl-canvas" role="img" aria-label="Pasillo lineal visto en perspectiva: base de inicio, línea guía negra, marca de parada en el destino y el robot. Abajo, vista de detalle del robot sobre la línea con sus 4 sensores."></canvas>
+      <div class="rl-alarma" id="rl-alarma" role="alert" hidden>
+        <p class="rl-alarma-tit"><span aria-hidden="true">🚨</span> Destino alcanzado — reposicionar robot 180° para retorno</p>
+        <p class="rl-alarma-sub">Motores bloqueados. Gira el robot sobre la línea y confirma.</p>
+        <button type="button" class="rl-btn rl-btn-giro" data-accion="girar">⟲ Girar robot 180° y confirmar</button>
+      </div>
+    </div>
+
+    <aside class="rl-panel" id="rl-panel" aria-label="Panel de operación y consola de sensores">
+      <div class="rl-tabs" role="tablist" aria-label="Pestañas del panel">
+        <button type="button" role="tab" class="rl-tab" id="rl-tab-op" aria-controls="rl-pane-op" aria-selected="true" tabindex="0">Operación</button>
+        <button type="button" role="tab" class="rl-tab" id="rl-tab-sen" aria-controls="rl-pane-sen" aria-selected="false" tabindex="-1">Consola de sensores</button>
+      </div>
+
+      <!-- Pestaña 1 · Operación -->
+      <div class="rl-pane" id="rl-pane-op" role="tabpanel" aria-labelledby="rl-tab-op">
+        <ol class="rl-fsm" id="rl-fsm" aria-label="Máquina de estados del ciclo">
+          <li data-fsm="EN_BASE"><b>EN_BASE</b><span>en la base</span></li>
+          <li data-fsm="EN_RUTA_IDA"><b>EN_RUTA_IDA</b><span>ida al destino</span></li>
+          <li data-fsm="ESPERA_REPOSICION"><b>ESPERA_REPOSICION</b><span>alarma · giro 180°</span></li>
+          <li data-fsm="EN_RUTA_RETORNO"><b>EN_RUTA_RETORNO</b><span>vuelta a la base</span></li>
+        </ol>
+        <dl class="rl-datos">
+          <div><dt>Ciclo</dt><dd id="rl-ciclo">0</dd></div>
+          <div><dt>Posición</dt><dd id="rl-pos">0.60 m</dd></div>
+          <div><dt>Velocidad</dt><dd id="rl-vel">0.00 m/s</dd></div>
+          <div><dt>Rumbo</dt><dd id="rl-rumbo">0°</dd></div>
+        </dl>
+        <div class="rl-controles">
+          <button type="button" class="rl-btn rl-btn-pri" data-accion="iniciar">▶ Iniciar ida</button>
+          <button type="button" class="rl-btn rl-btn-obs" data-accion="obstaculo" aria-pressed="false">⛔ Inyectar obstáculo</button>
+          <button type="button" class="rl-btn rl-btn-giro" data-accion="girar">⟲ Girar 180° y confirmar</button>
+          <button type="button" class="rl-btn" data-accion="reiniciar">↺ Reiniciar</button>
+        </div>
+        <h3 class="rl-h3">Registro del recorrido</h3>
+        <ol class="rl-log" id="rl-log" aria-live="polite"></ol>
+      </div>
+
+      <!-- Pestaña 2 · Consola de sensores -->
+      <div class="rl-pane" id="rl-pane-sen" role="tabpanel" aria-labelledby="rl-tab-sen" hidden>
+        <div class="rl-consolas">
+          <article class="rl-card" id="rl-card-tcrt" data-estado="normal">
+            <div class="rl-card-head"><h4>TCRT5000 · 4 canales</h4><span class="rl-badge-s ok" id="rl-b-tcrt">LÍNEA OK</span></div>
+            <div class="rl-leds" role="img" id="rl-leds" aria-label="Sensores S1 a S4">
+              <div><i id="rl-s1"></i><span>S1</span></div><div><i id="rl-s2"></i><span>S2</span></div><div><i id="rl-s3"></i><span>S3</span></div><div><i id="rl-s4"></i><span>S4</span></div>
+            </div>
+            <div class="rl-track" aria-hidden="true"><div class="rl-track-c"></div><div class="rl-track-m" id="rl-err-m"></div></div>
+            <div class="rl-met"><span>Patrón</span><b id="rl-patron">0110</b></div>
+            <div class="rl-met"><span>Error lateral</span><b id="rl-err">+0.0 mm</b></div>
+            <p class="rl-nota-s" id="rl-tcrt-nota">Siguiendo la línea guía</p>
+          </article>
+
+          <article class="rl-card" id="rl-card-us" data-estado="normal">
+            <div class="rl-card-head"><h4>HC-SR04 · frente</h4><span class="rl-badge-s ok" id="rl-b-us">LIBRE</span></div>
+            <canvas class="rl-cv" id="rl-cv-radar" aria-hidden="true"></canvas>
+            <div class="rl-met"><span>Distancia</span><b id="rl-dist">—</b></div>
+            <label class="rl-ctrl" for="rl-in-dist">
+              <span><span>Inyectar obstáculo</span><b id="rl-lbl-dist">60 cm</b></span>
+              <input type="range" id="rl-in-dist" min="5" max="80" step="1" value="60">
+            </label>
+            <button type="button" class="rl-mini" id="rl-quitar" data-accion="quitar">Quitar obstáculo</button>
+          </article>
+
+          <article class="rl-card" id="rl-card-mot" data-estado="normal">
+            <div class="rl-card-head"><h4>Velocidad · Dir.</h4><span class="rl-badge-s aviso" id="rl-b-mot">DETENIDO</span></div>
+            <canvas class="rl-cv" id="rl-cv-velo" aria-hidden="true"></canvas>
+            <div class="rl-barras">
+              <div><span>IZQ</span><i><em id="rl-bar-izq"></em></i><b id="rl-pwm-izq">0%</b></div>
+              <div><span>DER</span><i><em id="rl-bar-der"></em></i><b id="rl-pwm-der">0%</b></div>
+            </div>
+            <div class="rl-met"><span>Dirección</span><b id="rl-dir">DETENIDO</b></div>
+            <p class="rl-nota-s rl-bloq" id="rl-bloqueo">En la base: esperando inicio</p>
+            <label class="rl-ctrl" for="rl-in-vel">
+              <span><span>Consigna (máx. 0.46)</span><b id="rl-lbl-vel">0.40 m/s</b></span>
+              <input type="range" id="rl-in-vel" min="0.1" max="0.46" step="0.01" value="0.40">
+            </label>
+          </article>
+
+          <article class="rl-card" id="rl-card-imu" data-estado="normal">
+            <div class="rl-card-head"><h4>MPU-6050 · IMU</h4><span class="rl-badge-s ok" id="rl-b-imu">ESTABLE</span></div>
+            <canvas class="rl-cv" id="rl-cv-brujula" aria-hidden="true"></canvas>
+            <div class="rl-met"><span>Rumbo (yaw)</span><b id="rl-yaw">0.0°</b></div>
+            <div class="rl-met"><span>Pitch · Roll</span><b id="rl-pr">+0.0° · +0.0°</b></div>
+            <div class="rl-met"><span>Aceleración</span><b id="rl-g">1.00 g</b></div>
+            <div class="rl-seg" role="group" aria-label="Eventos de la IMU">
+              <button type="button" class="rl-mini" data-imu="normal" aria-pressed="true">Normal</button>
+              <button type="button" class="rl-mini aviso" data-imu="inclinacion" aria-pressed="false">Inclinar</button>
+              <button type="button" class="rl-mini peligro" data-imu="impacto" aria-pressed="false">Impacto</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <details class="curiosos">
+    <summary>Para los curiosos</summary>
+    <ul>
+      <li><b>Máquina de estados:</b> <code>EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → (giro 180° + confirmación) → EN_RUTA_RETORNO → EN_BASE</code>. Iniciar ida solo se acepta en la base y el giro solo en la espera de reposición.</li>
+      <li><b>Llegada:</b> la regleta de 4 TCRT5000 (S1…S4, 18 mm entre sí) sigue la cinta negra de 19 mm; al pisar la marca transversal del destino lee <code>1111</code>, frena y bloquea los motores. Los últimos 40 cm antes de cada marca se recorren despacio (0,12 m/s, por odometría).</li>
+      <li><b>Reposicionamiento:</b> el operador gira el robot 180° a mano sobre la línea; la confirmación se valida con el rumbo de la MPU-6050 (180° ± 5°) y con la regleta viendo la cinta. En la base, el robot gira solo sobre la marca de inicio antes de la siguiente ida [supuesto de simulación].</li>
+      <li><b>Seguridad:</b> con un obstáculo a menos de 20 cm al frente se detiene hasta que se retire; entre 20 y 50 cm reduce la velocidad. Un impacto (≈ 2,85 g) detiene el robot hasta volver la IMU a Normal. Velocidad máxima 0,46 m/s.</li>
+      <li>Todo es simulación local (SIL) con datos sintéticos: no hay robot ni MQTT conectados. Pasillo de 6 m de ejemplo [PENDIENTE DE MEDICIÓN FÍSICA].</li>
+    </ul>
+    <div class="acciones">
+      <a href="README.md" class="btn btn-secundario">Ficha técnica (.md)</a>
+    </div>
+  </details>
+</main>
+
+<footer id="pie"></footer>
+<script src="../../datos/proyecto.js"></script>
+<script src="../../assets/sitio.js"></script>
+<script src="ruta_lineal.js"></script>
+<script src="ruta_lineal_ui.js"></script>
+</body>
+</html>

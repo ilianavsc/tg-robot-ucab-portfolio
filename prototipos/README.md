@@ -32,6 +32,7 @@ P = prototipo simulado. H = prueba con hardware real.
 | **P03** | `P03-radar-ultrasonico/` | Simulación del radar ultrasónico (2× HC-SR04P, frente y atrás) y frenado automático ante obstáculos. |
 | **P04** | `P04-simulador-1-esp32/` | Simulador 1 integrado con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT bidireccional con la app web (control remoto desde Admin + Modo Desarrollador). |
 | **P05** | `P05-gemelo-digital/` | Gemelo Digital: calibra y aprende la pista, con puntos de control equitativos en tercios en la segunda vuelta. |
+| **P10** | `P10-ruta-lineal/` | Ruta lineal con reposicionamiento manual: ida por la línea, alarma en el destino, giro de 180° confirmado por el operador y retorno a la base; panel con pestañas Operación y Consola de sensores. |
 
 ## Cómo recompilar los simuladores 3D (P01, P02 y P04)
 Los tres simuladores se empaquetan igual, con esbuild y `three` de npm (ya no se usa el kit teardown). Cada `codigo/` tiene todo el fuente: `main.js` (entrada), los módulos, `style.css`, `fuentes.css`, `plantilla.html` y `construir.mjs`.
@@ -59,3 +60,6 @@ Igual que P02: `P04-simulador-1-esp32/codigo/` se empaqueta con esbuild (`npm in
 
 ## P05 · Gemelo Digital (teach-and-repeat)
 `P05-gemelo-digital/` es el gemelo digital de **movimiento** (SIL). Carga tal cual `specs/pista_canonica.json` (9,0 m) y `specs/navegacion/teach_and_repeat.js`, y usa las 2 pistas del Simulador 1 (`P04-simulador-1-esp32/codigo/pista.js`) sin copiarlas; la planta física (cinta, sensores, cinemática, giroscopio, RSSI de las 2 balizas BLE en los extremos) está en `simulador_movimiento.js` y el radar sale de P03. Pruebas: `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` (48). Se abre por http (no por `file://`).
+
+## P10 · Ruta lineal con reposicionamiento manual
+`P10-ruta-lineal/` no necesita compilar: `ruta_lineal.js` es el núcleo (estado central `SimulationState`, máquina de estados `EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → EN_RUTA_RETORNO → EN_BASE` y sensores) y `ruta_lineal_ui.js` dibuja la escena en canvas y el panel. Pruebas: `node prototipos/P10-ruta-lineal/ruta_lineal.test.js` (10). Se le dio el código P10 porque P06 sigue reservado para el robot virtual y el puente a Firebase.
