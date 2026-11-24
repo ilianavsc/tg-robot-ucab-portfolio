@@ -202,6 +202,9 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   const bMqtt = $('#b-mqtt');
   const mqttDot = $('#mqtt-dot');
   const mqttEstEl = $('#mqtt-estado');
+  const mpuEstEl = $('#mpu-estado');
+  const bMpuRecuperar = $('#b-mpu-recuperar');
+  let seqUiCapa3 = 0;
   const pulsarLedTx = () => {
     const el = $('#led-tx');
     if (!el) return;
@@ -209,7 +212,32 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     void el.offsetWidth;
     el.classList.add('pulso');
   };
-  const mqtt = crearPuenteMqtt({
+  let mqtt;
+  const actualizaMpuUi = () => {
+    if (!mpuEstEl || !mqtt) return;
+    const st = mqtt.capa3.estado_ruta;
+    const bloq = mqtt.movimientoBloqueado;
+    mpuEstEl.setAttribute('data-bloq', bloq ? '1' : '0');
+    if (st === 'ERROR_SEGURIDAD') {
+      mpuEstEl.textContent = `BLOQUEADO · ${String(mqtt.capa3.alerta_mpu || 'seguridad').toUpperCase()}`;
+      if (bMpuRecuperar) {
+        bMpuRecuperar.hidden = false;
+        bMpuRecuperar.textContent = 'Recuperación manual';
+      }
+      actualizaModoTxt(`Seguridad MPU-6050 (${mqtt.capa3.alerta_mpu || 'alerta'}): movimiento bloqueado`);
+    } else if (st === 'RECUPERACION_MANUAL') {
+      mpuEstEl.textContent = 'RECUPERACIÓN MANUAL · BLOQ.';
+      if (bMpuRecuperar) {
+        bMpuRecuperar.hidden = false;
+        bMpuRecuperar.textContent = 'Confirmar y reanudar';
+      }
+      actualizaModoTxt('Recuperación manual activa: confirma para desbloquear movimiento');
+    } else {
+      mpuEstEl.textContent = 'MPU-6050 · OK';
+      if (bMpuRecuperar) bMpuRecuperar.hidden = true;
+    }
+  };
+  mqtt = crearPuenteMqtt({
     sim,
     alModo: (m, txt) => ponModo(m, txt),
     alTx: pulsarLedTx,
@@ -228,9 +256,38 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
         bMqtt.textContent = 'Conectar App';
         bMqtt.setAttribute('aria-pressed', 'false');
       }
+      actualizaMpuUi();
     },
   });
   bMqtt.addEventListener('click', () => mqtt.alternar());
+  $$('[data-mpu]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tipo = btn.getAttribute('data-mpu');
+      mqtt.dispararAlertaInercial(tipo);
+      actualizaMpuUi();
+    });
+  });
+  if (bMpuRecuperar) {
+    bMpuRecuperar.addEventListener('click', () => {
+      seqUiCapa3 += 1;
+      if (mqtt.capa3.estado_ruta === 'ERROR_SEGURIDAD') {
+        mqtt.recibirRutaEscaneo({
+          accion: 'recuperacion_manual',
+          message_id: `p04-ui-rec-${Date.now()}-${seqUiCapa3}`,
+          sequence: seqUiCapa3,
+          schema_version: '2.0.0',
+        });
+      } else if (mqtt.capa3.estado_ruta === 'RECUPERACION_MANUAL') {
+        mqtt.recibirRutaEscaneo({
+          accion: 'reanudar_operacion',
+          message_id: `p04-ui-res-${Date.now()}-${seqUiCapa3}`,
+          sequence: seqUiCapa3,
+          schema_version: '2.0.0',
+        });
+      }
+      actualizaMpuUi();
+    });
+  }
 
   // ---------------------------------------------------------------- botones de la barra
   const bEncender = $('#b-encender');

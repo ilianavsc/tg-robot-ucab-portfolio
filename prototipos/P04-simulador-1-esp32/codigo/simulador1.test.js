@@ -293,6 +293,15 @@ prueba('la plantilla de P04 trae la placa ESP32 con 4 LEDs de línea', () => {
   const main = readFileSync(join(aqui, 'main.js'), 'utf8');
   assert.ok(/ledsEsp32\(/.test(main), 'main.js pinta la placa con ledsEsp32');
   assert.ok(/id="placa-mqtt"/.test(html) && /id="b-mqtt"/.test(html) && /id="mqtt-estado"/.test(html));
+  assert.ok(
+    /id="placa-mpu"/.test(html) &&
+      /data-mpu="impacto"/.test(html) &&
+      /data-mpu="inclinacion"/.test(html) &&
+      /data-mpu="atascamiento"/.test(html) &&
+      /id="b-mpu-recuperar"/.test(html),
+    'plantilla P04 debe exponer botones UI de alertas inerciales y recuperación manual',
+  );
+  assert.ok(/dispararAlertaInercial\(/.test(main), 'main.js debe invocar dispararAlertaInercial desde la UI');
 });
 
 prueba('puente MQTT: tópicos y brokers coinciden con la App Flutter (HiveMQ → EMQX → Mosquitto)', () => {

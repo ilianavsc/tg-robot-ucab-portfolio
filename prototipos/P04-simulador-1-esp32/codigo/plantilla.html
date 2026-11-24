@@ -57,6 +57,17 @@
             <span class="mqtt-est"><i class="mqtt-dot" id="mqtt-dot" aria-hidden="true"></i><span id="mqtt-estado">Desconectado</span></span>
             <button class="mqtt-btn" type="button" id="b-mqtt" aria-pressed="false">Conectar App</button>
           </div>
+          <div class="placa-mpu" id="placa-mpu" role="group" aria-label="Seguridad inercial MPU-6050" aria-live="polite">
+            <div class="mpu-cab">
+              <span class="mpu-est" id="mpu-estado" data-bloq="0">MPU-6050 · OK</span>
+              <button class="mpu-btn rec" type="button" id="b-mpu-recuperar" hidden>Recuperación manual</button>
+            </div>
+            <div class="mpu-btns">
+              <button class="mpu-btn" type="button" data-mpu="impacto">Impacto</button>
+              <button class="mpu-btn" type="button" data-mpu="inclinacion">Inclinación</button>
+              <button class="mpu-btn" type="button" data-mpu="atascamiento">Atascamiento</button>
+            </div>
+          </div>
         </div>
         <div class="minimapa" id="minimapa" role="region" aria-label="Mini-mapa de la ruta estilo Gemelo Digital">
           <div class="minimapa-cab">
