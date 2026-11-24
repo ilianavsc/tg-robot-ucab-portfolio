@@ -391,7 +391,7 @@
       <article class="linea-resumen linea-a">
         <span class="linea-etiqueta tecnica">Línea A · Desarrollo adelantado</span>
         <h2>Avance Técnico (32 semanas · 4 fases)</h2>
-        <p>Construcción de prototipos P01–P05, contrato MQTT/pista, firmware y app Flutter. Refleja el progreso real de ingeniería fuera del ritmo mínimo de la materia.</p>
+        <p>Construcción de prototipos P01–P05 y P10, contrato MQTT v2.0.0 y pista, firmware y app Flutter. Refleja el progreso real de ingeniería fuera del ritmo mínimo de la materia.</p>
         <a class="linea-salto" href="#linea-a-tecnica">Ver avance técnico →</a>
       </article>
     </div>
@@ -493,7 +493,7 @@
       { tipo: "bloque", codigo: "P02", hijos: ["P03"] }
     ],
     2: [
-      { tipo: "bloque", codigo: "P04", hijos: ["P05"] },
+      { tipo: "bloque", codigo: "P04", hijos: ["P05", "P10"] },
       { tipo: "solo", codigo: "P06" },
       { tipo: "solo", codigo: "P07" },
       { tipo: "solo", codigo: "P14" }
@@ -518,11 +518,12 @@
     return estado === "listo" ? "hecho" : estado === "en_pruebas" ? "pruebas" : "pendiente";
   }
   function etiquetaDe(estado) {
-    return estado === "listo" ? "Listo" : estado === "en_pruebas" ? "En pruebas" : "Pendiente";
+    return (D.etiquetas && D.etiquetas.deEstado[estado]) || estado; // Completado · En validación · Planificado
   }
   function chipProto(p) {
     var info = (D.protoResumen && D.protoResumen[p.codigo]) || { corto: p.nombre };
-    var c = '<span class="chip ' + claseDe(p.estado) + '" title="' + p.nombre + '">' + info.corto + "</span>";
+    var e = p.etiquetas;
+    var c = '<span class="chip ' + claseDe(p.estado) + '" title="' + p.codigo + " · " + p.nombre + (e ? " — " + e.estado + " · " + e.ejecucion + " · " + e.capa : "") + '">' + info.corto + "</span>";
     return p.url ? '<a href="' + p.url + '">' + c + "</a>" : c;
   }
   function renderBloques(items) {
@@ -705,7 +706,7 @@
   D.prototipos.forEach(function (p, i) {
     var px = x(U.inicioSemana(p.semana)) + 10, py = 205 + (i % 3) * 34;
     var fill = p.estado === "listo" ? "#0F9D84" : p.estado === "en_pruebas" ? "#6B4EE6" : "#FFFFFF";
-    var estadoTxt = p.estado === "listo" ? "Listo" : p.estado === "en_pruebas" ? "En pruebas" : "Pendiente";
+    var estadoTxt = p.etiquetas ? p.etiquetas.estado + " · " + p.etiquetas.ejecucion + " · " + p.etiquetas.capa : etiquetaDe(p.estado);
     var tituloUnico = (D.protoResumen && D.protoResumen[p.codigo]) ? D.protoResumen[p.codigo].corto : p.nombre;
     var g = '<g><title>' + p.codigo + ": " + tituloUnico + " · " + estadoTxt + '</title><path d="M' + px + " " + (py - 8) + " l8 8 l-8 8 l-8 -8 z" + '" fill="' + fill + '" stroke="#14213D" stroke-width="1.5"/>' +
       t(px + 12, py + 4, p.codigo, 'font-family="JetBrains Mono, monospace" font-size="12" font-weight="600" fill="#14213D"') + "</g>";

@@ -10,14 +10,37 @@
 <link rel="stylesheet" href="../assets/estilo.css">
 <style>
 .lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
-.proto{display:block;text-decoration:none;color:var(--tinta);background:var(--blanco);border:2px solid var(--tinta);border-radius:16px;padding:16px 18px;transition:transform .12s}
+.proto{display:flex;flex-direction:column;text-decoration:none;color:var(--tinta);background:var(--blanco);border:2px solid var(--tinta);border-radius:16px;padding:16px 18px;transition:transform .12s;min-width:0}
 a.proto{box-shadow:5px 5px 0 var(--tinta)}
 a.proto:hover{transform:translate(-2px,-2px)}
-.proto.pendiente{border-style:dashed;border-color:var(--suave);background:transparent;color:var(--suave)}
+.proto.pendiente{border-style:dashed;border-color:var(--suave);background:transparent}
 .proto .cod{font-family:var(--mono);font-weight:600;font-size:14px}
 .proto h3{margin:2px 0 6px}
 .proto p{margin:0 0 10px;font-size:15px;color:var(--suave)}
+.proto .tags{margin-top:auto}
 .fase-titulo{font-family:var(--display);font-size:22px;margin:30px 0 12px}
+/* Etiquetas estándar: estado · tipo de ejecución · capa del sistema (TG.etiquetas en datos/proyecto.js) */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;font-weight:600;line-height:1.2;padding:4px 9px;border-radius:999px;border:1.5px solid transparent;white-space:nowrap}
+.tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.tag.estado-completado{background:#D1FAE5;color:#065F46;border-color:#10B981}
+.tag.estado-validacion{background:#FEF3C7;color:#78350F;border-color:#D97706}
+.tag.estado-planificado{background:transparent;color:#475569;border:1.5px dashed #64748B}
+.tag.ejec-sil{background:#E0F2FE;color:#075985;border-color:#7DD3FC}
+.tag.ejec-vivo{background:#14213D;color:#fff;border-color:#14213D}
+.tag.ejec-vivo::before{background:#2EE6A8;box-shadow:0 0 0 3px rgba(46,230,168,.25)}
+.tag.ejec-doc{background:#F1F5F9;color:#334155;border-color:#CBD5E1}
+.tag.capa{background:#fff;color:var(--tinta);border-color:var(--tinta)}
+.tag.capa::before{border-radius:2px;background:var(--c,#14213D)}
+.tag.capa-hw{--c:#0F9D84}.tag.capa-mqtt{--c:#6B4EE6}.tag.capa-capa3{--c:#F2603D}.tag.capa-app{--c:#2563EB}
+.leyenda-tags{background:var(--blanco);border:2px solid var(--tinta);border-radius:14px;padding:12px 16px;margin:0 0 6px;display:grid;gap:8px}
+.leyenda-tags div{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.leyenda-tags b{font-family:var(--mono);font-size:12.5px;min-width:150px;color:var(--suave)}
+.doc-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.doc{display:flex;flex-direction:column;gap:8px;text-decoration:none;color:var(--tinta);background:var(--blanco);border:2px solid var(--tinta);border-radius:14px;padding:14px 16px;min-width:0}
+.doc h3{margin:0;font-size:18px}
+.doc p{margin:0;font-size:14.5px;color:var(--suave)}
+.doc .tags{margin-top:auto}
 </style>
 </head>
 <body data-pagina="prototipos" data-base="../">
@@ -25,11 +48,14 @@ a.proto:hover{transform:translate(-2px,-2px)}
 <main>
 <p class="ceja">Prototipos</p>
 <h1>Cada prueba, <em>explicada en simple</em></h1>
-<p class="bajada">Los que tienen borde punteado todavía no empiezan.</p>
-<h2 class="fase-titulo" style="margin-top:8px">Listos para usar</h2>
+<p class="bajada">Cada tarjeta lleva 3 etiquetas: en qué estado está, cómo se ejecuta y a qué capa del sistema pertenece. Las de borde punteado todavía no empiezan.</p>
+<section class="leyenda-tags" aria-label="Significado de las etiquetas" id="leyenda"></section>
+<h2 class="fase-titulo" style="margin-top:18px">Listos para usar</h2>
 <div class="lista" id="listos"></div>
-<h2 class="fase-titulo">Lo que viene</h2>
+<h2 class="fase-titulo">En validación y planificados</h2>
 <div id="por-fase"></div>
+<h2 class="fase-titulo">Documentación del sistema</h2>
+<div class="doc-lista" id="documentacion"></div>
 <p style="margin-top:30px"><a href="../archivo-fase-1.html">Archivo Fase I</a>: Wokwi y la primera simulación en Colab.</p>
 </main>
 <footer id="pie"></footer>
@@ -38,6 +64,7 @@ a.proto:hover{transform:translate(-2px,-2px)}
 <script>
 (function(){
   var U = TGU, D = TG, html = "";
+  var ET = D.etiquetas;
   // Categorías limpias (sin prefijo P0X): solo el tema visual de cada tarjeta.
   var categorias = {
     P01: "MQTT",
@@ -48,17 +75,37 @@ a.proto:hover{transform:translate(-2px,-2px)}
     P10: "Ruta lineal",
     P09: "Flutter"
   };
-  function claseEstado(e) { return e === "listo" ? "hecho" : e === "en_pruebas" ? "pruebas" : "pendiente"; }
+  function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+  function tag(dim, valor){
+    var clase = dim === "estado" ? "estado-" + ET.estado[valor] : dim === "ejecucion" ? "ejec-" + ET.ejecucion[valor] : "capa capa-" + ET.capa[valor];
+    var ayuda = dim === "ejecucion" && ET.ayuda[valor] ? ' title="' + esc(ET.ayuda[valor]) + '"' : "";
+    return '<span class="tag ' + clase + '"' + ayuda + ">" + esc(valor) + "</span>";
+  }
+  function tags(e, cod){
+    if (!e) return "";
+    if (cod && D.prototipos) {
+      var p = D.prototipos.filter(function(x){ return x.codigo === cod; })[0];
+      if (p && ET.deEstado[p.estado] !== e.estado && window.console) console.warn(cod + ": la etiqueta de estado no coincide con el campo estado");
+    }
+    return '<div class="tags" aria-label="Etiquetas">' + tag("estado", e.estado) + tag("ejecucion", e.ejecucion) + tag("capa", e.capa) + "</div>";
+  }
   function hrefDe(u) { return /^https?:\/\//.test(u) ? u : "../" + u; }
   function attrsExt(u) { return /^https?:\/\//.test(u) ? ' target="_blank" rel="noopener"' : ""; }
+
+  // Leyenda de las 3 dimensiones
+  document.getElementById("leyenda").innerHTML =
+    "<div><b>Estado</b>" + Object.keys(ET.estado).map(function(v){ return tag("estado", v); }).join("") + "</div>" +
+    "<div><b>Tipo de ejecución</b>" + Object.keys(ET.ejecucion).map(function(v){ return tag("ejecucion", v); }).join("") + "</div>" +
+    "<div><b>Capa del sistema</b>" + Object.keys(ET.capa).map(function(v){ return tag("capa", v); }).join("") + "</div>";
+
   D.fases.forEach(function(f){
     var ps = D.prototipos.filter(function(p){ return !p.principal && U.faseDe(U.inicioSemana(p.semana)).id === f.id; });
     if (!ps.length) return;
-    html += '<h2 class="fase-titulo">Fase ' + f.id + " · " + f.nombre + '</h2><div class="lista">';
+    html += '<h3 class="fase-titulo" style="font-size:19px;margin:18px 0 10px">Fase ' + f.id + " · " + f.nombre + '</h3><div class="lista">';
     ps.forEach(function(p){
-      var et = p.estado === "listo" ? "Listo" : p.estado === "en_pruebas" ? "En pruebas" : "Pendiente";
       var titulo = (D.protoResumen && D.protoResumen[p.codigo]) ? D.protoResumen[p.codigo].corto : p.nombre;
-      var inner = '<span class="cod">' + (categorias[p.codigo] || p.tema) + "</span><h3>" + titulo + "</h3><p>Semana " + p.semana + " · desde el " + U.corto(U.inicioSemana(p.semana)) + '</p><span class="chip ' + claseEstado(p.estado) + '">' + et + "</span>";
+      var linea = (D.protoResumen && D.protoResumen[p.codigo]) ? D.protoResumen[p.codigo].linea : p.tema;
+      var inner = '<span class="cod">' + p.codigo + " · " + (categorias[p.codigo] || p.tema) + "</span><h3>" + titulo + "</h3><p>" + linea + " Semana " + p.semana + " · desde el " + U.corto(U.inicioSemana(p.semana)) + ".</p>" + tags(p.etiquetas, p.codigo);
       html += p.url ? '<a class="proto" href="' + hrefDe(p.url) + '"' + attrsExt(p.url) + ">" + inner + "</a>" : '<div class="proto pendiente">' + inner + "</div>";
     });
     html += "</div>";
@@ -70,7 +117,12 @@ a.proto:hover{transform:translate(-2px,-2px)}
     var p = D.prototipos.filter(function(x){ return x.codigo === cod; })[0];
     if (!p) return "";
     var titulo = (D.protoResumen && D.protoResumen[p.codigo]) ? D.protoResumen[p.codigo].corto : p.nombre;
-    return '<a class="proto" href="' + hrefDe(p.url) + '"' + attrsExt(p.url) + '><span class="cod">' + (categorias[p.codigo] || p.tema) + "</span><h3>" + titulo + "</h3><p>" + p.simuladorTexto + (p.ino ? " · código ESP32" : "") + "</p></a>";
+    return '<a class="proto" href="' + hrefDe(p.url) + '"' + attrsExt(p.url) + '><span class="cod">' + p.codigo + " · " + (categorias[p.codigo] || p.tema) + "</span><h3>" + titulo + "</h3><p>" + p.simuladorTexto + (p.ino ? " · código ESP32" : "") + "</p>" + tags(p.etiquetas, p.codigo) + "</a>";
+  }).join("");
+  // Documentación del sistema con las mismas etiquetas
+  document.getElementById("documentacion").innerHTML = (D.documentacion || []).map(function(d){
+    var md = d.md ? ' data-md="../' + d.url + '" data-titulo="' + esc(d.titulo) + '"' : "";
+    return '<a class="doc" href="' + hrefDe(d.url) + '"' + md + "><h3>" + esc(d.titulo) + "</h3><p>" + esc(d.linea) + "</p>" + tags(d.etiquetas) + "</a>";
   }).join("");
 })();
 </script>

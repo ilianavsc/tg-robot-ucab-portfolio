@@ -43,21 +43,46 @@ window.TG = {
       nota: "Sin clases: tiempo para el trabajo pesado." }
   ],
 
+  /* ---------- ETIQUETAS ESTÁNDAR (badges) ----------
+     Cada prototipo y cada documento lleva exactamente 3 etiquetas, una por dimensión.
+     El estado se corresponde 1:1 con el campo `estado`: listo = Completado, en_pruebas = En validación,
+     pendiente = Planificado (TG.etiquetas.deEstado); las páginas avisan en la consola si no coinciden. */
+  etiquetas: {
+    estado: { "Completado": "completado", "En validación": "validacion", "Planificado": "planificado" },
+    ejecucion: { "SIL · Simulación local": "sil", "EN VIVO · MQTT v2.0.0": "vivo", "Documentación / BOM": "doc" },
+    capa: { "Hardware / Sensores": "hw", "Comunicación / MQTT": "mqtt", "Capa 3 · Operacional": "capa3", "App / Interfaz": "app" },
+    deEstado: { listo: "Completado", en_pruebas: "En validación", pendiente: "Planificado" },
+    ayuda: {
+      "SIL · Simulación local": "Se ejecuta en el navegador o en el PC, sin hardware real (Software In the Loop).",
+      "EN VIVO · MQTT v2.0.0": "Habla en vivo con un broker público usando el contrato specs/mqtt/contract.json v2.0.0 (el robot sigue siendo simulado hasta el HIL).",
+      "Documentación / BOM": "Documento, lista de materiales o plan: todavía no tiene simulador ni código ejecutable."
+    }
+  },
+
   /* estado: "listo" | "en_pruebas" | "pendiente"
-     categoria: "software" | "hardware" | "app"  (agrupación visual del portafolio) */
+     categoria: "software" | "hardware" | "app"  (agrupación visual del portafolio)
+     etiquetas: { estado, ejecucion, capa } con los valores de TG.etiquetas */
   prototipos: [
-    { codigo: "P01", nombre: "Así se hablan el robot y la app", tema: "MQTT", semana: 3, estado: "listo", categoria: "software", etapa: 1, url: "prototipos/P01-mqtt-base/simulador-3d/", principal: true, simulador: "prototipos/P01-mqtt-base/simulador-3d/simulador.html", simuladorTexto: "Simulador 3D de los mensajes", ino: "prototipos/P01-mqtt-base/codigo-esp32/robot_mqtt/robot_mqtt.ino", historico: "prototipos/P01-mqtt-base/README.md", historicoTexto: "Registro de la Fase I: pruebas T1 a T7 y Wokwi" },
-    { codigo: "P02", nombre: "Inspector de hardware", tema: "Sensores y tracción", semana: 5, estado: "listo", categoria: "hardware", etapa: 1, url: "prototipos/P02-sensores/", principal: true, simulador: "prototipos/P02-sensores/simulador.html", simuladorTexto: "Maneja el robot y mira su consola de sensores (velocímetro y 4 sensores de línea)", ino: "prototipos/P02-sensores/codigo-esp32/traccion_encoders/traccion_encoders.ino", historico: "prototipos/P02-sensores/README.md", historicoTexto: "Registro de mediciones físicas (HIL)", nota: "Consolida la línea (4× TCRT5000) y el radar ultrasónico (2× HC-SR04P, TRIG atrás GPIO 15); MPU-6050 reservada para heading hold. Simulado (SIL): falta el registro HIL de diciembre." },
-    { codigo: "P03", nombre: "Radar Ultrasónico (Frente/Atrás)", tema: "Ultrasonido", semana: 6, estado: "listo", categoria: "hardware", etapa: 1, url: "prototipos/P03-radar-ultrasonico/index.html", principal: true, simulador: "prototipos/P03-radar-ultrasonico/index.html", simuladorTexto: "Los ojos de distancia del robot (2× HC-SR04P frente/atrás) para detección de obstáculos." },
-    { codigo: "P04", nombre: "Simulador 1 + ESP32", tema: "Simulador 3D", semana: 13, estado: "listo", categoria: "software", etapa: 2, url: "prototipos/P04-simulador-1-esp32/", principal: true, simulador: "prototipos/P04-simulador-1-esp32/simulador.html", simuladorTexto: "Simulador 1 (2 pistas, manual y automático) con la placa ESP32 y sus 4 LEDs de línea en vivo", ino: "prototipos/P04-simulador-1-esp32/codigo-esp32/seguidor_linea/seguidor_linea.ino" },
-    { codigo: "P05", nombre: "Gemelo Digital", tema: "Teach & Repeat", semana: 16, estado: "listo", categoria: "software", etapa: 2, url: "prototipos/P05-gemelo-digital/index.html", principal: true, simulador: "prototipos/P05-gemelo-digital/index.html", simuladorTexto: "Gemelo digital de movimiento: enseñanza y repetición sobre las 2 pistas del Simulador 1, con radar y sin cinta", historico: "prototipos/P05-gemelo-digital/README.md", historicoTexto: "Ficha técnica del Gemelo Digital" },
-    { codigo: "P10", nombre: "Ruta lineal con reposicionamiento", tema: "Ruta lineal", semana: 17, estado: "listo", categoria: "software", etapa: 2, url: "prototipos/P10-ruta-lineal/", principal: true, simulador: "prototipos/P10-ruta-lineal/", simuladorTexto: "Ida por la línea, alarma en el destino, giro manual de 180° y retorno a la base, con su consola de sensores", historico: "prototipos/P10-ruta-lineal/README.md", historicoTexto: "Ficha técnica de la ruta lineal" },
-    { codigo: "P06", nombre: "Robot virtual y puente", tema: "Firebase", semana: 9, estado: "en_pruebas", categoria: "app", etapa: 2 },
-    { codigo: "P07", nombre: "El cerebro completo", tema: "Firmware", semana: 12, estado: "en_pruebas", categoria: "hardware", etapa: 2 },
-    { codigo: "P09", nombre: "App Flutter (v1 · Modo Demo)", tema: "Flutter", semana: 15, estado: "listo", categoria: "app", etapa: 3, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", principal: true, simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir App Web (Modo Demo)" },
-    { codigo: "P11", nombre: "La alarma llega al teléfono", tema: "Alertas", semana: 23, estado: "en_pruebas", categoria: "app", etapa: 3, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir Centro de Alertas (App, Modo Demo)", nota: "Validado en simulación (ESP32 virtual, hoy retirado, y Modo Demo): obstáculo < 20 cm, sensor sin eco, proximidad 20–50 cm y batería ≤ 10,3 V. Pendiente de hardware físico (diciembre)." },
-    { codigo: "P12", nombre: "Pruebas y estadística", tema: "Análisis", semana: 27, estado: "en_pruebas", categoria: "app", etapa: 3, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir Analítica de Sesión y CSV (App)", nota: "Validado en simulación: velocidad media/máxima, distancia frontal mínima, error medio de línea, paquetes y paradas de emergencia con exportación CSV. Pendiente de los 20+ ensayos con el robot físico." },
-    { codigo: "P14", nombre: "Balizas BLE (Extremos)", tema: "BLE", semana: 7, estado: "pendiente", categoria: "hardware", etapa: 2 }
+    { codigo: "P01", nombre: "Así se hablan el robot y la app", tema: "MQTT", semana: 3, estado: "listo", categoria: "software", etapa: 1, etiquetas: { estado: "Completado", ejecucion: "SIL · Simulación local", capa: "Comunicación / MQTT" }, url: "prototipos/P01-mqtt-base/simulador-3d/", principal: true, simulador: "prototipos/P01-mqtt-base/simulador-3d/simulador.html", simuladorTexto: "Simulador 3D de los mensajes", ino: "prototipos/P01-mqtt-base/codigo-esp32/robot_mqtt/robot_mqtt.ino", historico: "prototipos/P01-mqtt-base/README.md", historicoTexto: "Registro de la Fase I: pruebas T1 a T7 y Wokwi" },
+    { codigo: "P02", nombre: "Inspector de hardware", tema: "Sensores y tracción", semana: 5, estado: "listo", categoria: "hardware", etapa: 1, etiquetas: { estado: "Completado", ejecucion: "SIL · Simulación local", capa: "Hardware / Sensores" }, url: "prototipos/P02-sensores/", principal: true, simulador: "prototipos/P02-sensores/simulador.html", simuladorTexto: "El robot recorre el circuito ovalado (Auto/Manual) con 4 consolas interactivas y la ficha técnica de cada pieza en un panel integrado", ino: "prototipos/P02-sensores/codigo-esp32/traccion_encoders/traccion_encoders.ino", historico: "prototipos/P02-sensores/README.md", historicoTexto: "Registro de mediciones físicas (HIL)", nota: "Circuito 3D con panel oscuro de 4 consolas (HC-SR04, TCRT5000 ×4, velocidad/dirección hasta 0,46 m/s y MPU-6050) sincronizadas en ambos sentidos con un estado central (SimulationState). Simulado (SIL): falta el registro HIL de diciembre." },
+    { codigo: "P03", nombre: "Radar Ultrasónico (Frente/Atrás)", tema: "Ultrasonido", semana: 6, estado: "listo", categoria: "hardware", etapa: 1, etiquetas: { estado: "Completado", ejecucion: "SIL · Simulación local", capa: "Hardware / Sensores" }, url: "prototipos/P03-radar-ultrasonico/index.html", principal: true, simulador: "prototipos/P03-radar-ultrasonico/index.html", simuladorTexto: "Los ojos de distancia del robot (2× HC-SR04P frente/atrás) para detección de obstáculos." },
+    { codigo: "P04", nombre: "Simulador 1 + ESP32", tema: "Simulador 3D", semana: 13, estado: "listo", categoria: "software", etapa: 2, etiquetas: { estado: "Completado", ejecucion: "EN VIVO · MQTT v2.0.0", capa: "Comunicación / MQTT" }, url: "prototipos/P04-simulador-1-esp32/", principal: true, simulador: "prototipos/P04-simulador-1-esp32/simulador.html", simuladorTexto: "Simulador 1 (2 pistas, manual y automático) con la placa ESP32 y sus 4 LEDs de línea en vivo", ino: "prototipos/P04-simulador-1-esp32/codigo-esp32/seguidor_linea/seguidor_linea.ino", nota: "Único prototipo que publica y escucha en vivo con el contrato MQTT v2.0.0 (mqtt_puente.js, schema_version 2.0.0): telemetría, rutas, pedidos y alertas inerciales con la app. El robot es simulado (SIL) hasta el HIL." },
+    { codigo: "P05", nombre: "Gemelo Digital", tema: "Teach & Repeat", semana: 16, estado: "listo", categoria: "software", etapa: 2, etiquetas: { estado: "Completado", ejecucion: "SIL · Simulación local", capa: "Capa 3 · Operacional" }, url: "prototipos/P05-gemelo-digital/index.html", principal: true, simulador: "prototipos/P05-gemelo-digital/index.html", simuladorTexto: "Gemelo digital de movimiento: enseñanza y repetición sobre las 2 pistas del Simulador 1, con radar, tramos sin cinta y la Capa 3 operacional (rutas y pedidos)", historico: "prototipos/P05-gemelo-digital/README.md", historicoTexto: "Ficha técnica del Gemelo Digital" },
+    { codigo: "P10", nombre: "Ruta lineal con reposicionamiento", tema: "Ruta lineal", semana: 17, estado: "listo", categoria: "software", etapa: 2, etiquetas: { estado: "Completado", ejecucion: "SIL · Simulación local", capa: "Capa 3 · Operacional" }, url: "prototipos/P10-ruta-lineal/", principal: true, simulador: "prototipos/P10-ruta-lineal/", simuladorTexto: "Ida por la línea, alarma en el destino, giro manual de 180° y retorno a la base, con su consola de sensores", historico: "prototipos/P10-ruta-lineal/README.md", historicoTexto: "Ficha técnica de la ruta lineal" },
+    { codigo: "P06", nombre: "Robot virtual y puente", tema: "Firebase", semana: 9, estado: "pendiente", categoria: "app", etapa: 2, etiquetas: { estado: "Planificado", ejecucion: "Documentación / BOM", capa: "Comunicación / MQTT" }, nota: "Planificado: puente MQTT → Firebase para el historial de pedidos (RF-10). Todavía no hay código en el repositorio." },
+    { codigo: "P07", nombre: "El cerebro completo", tema: "Firmware", semana: 12, estado: "en_pruebas", categoria: "hardware", etapa: 2, etiquetas: { estado: "En validación", ejecucion: "SIL · Simulación local", capa: "Hardware / Sensores" }, nota: "firmware/robot_integrado.ino (P01 + P02 + P04 + ultrasonidos). Lógica validada en el PC con 10 escenarios SIL (T1–T10, firmware/pruebas_pc) en cada push; falta cargarlo al ESP32 con los motores reales (HIL)." },
+    { codigo: "P09", nombre: "App Flutter (v1 · Modo Demo)", tema: "Flutter", semana: 15, estado: "listo", categoria: "app", etapa: 3, etiquetas: { estado: "Completado", ejecucion: "EN VIVO · MQTT v2.0.0", capa: "App / Interfaz" }, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", principal: true, simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir App Web (Modo Demo)" },
+    { codigo: "P11", nombre: "La alarma llega al teléfono", tema: "Alertas", semana: 23, estado: "en_pruebas", categoria: "app", etapa: 3, etiquetas: { estado: "En validación", ejecucion: "EN VIVO · MQTT v2.0.0", capa: "App / Interfaz" }, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir Centro de Alertas (App, Modo Demo)", nota: "Validado en simulación (ESP32 virtual, hoy retirado, y Modo Demo): obstáculo < 20 cm, sensor sin eco, proximidad 20–50 cm y batería ≤ 10,3 V. Pendiente de hardware físico (diciembre)." },
+    { codigo: "P12", nombre: "Pruebas y estadística", tema: "Análisis", semana: 27, estado: "en_pruebas", categoria: "app", etapa: 3, etiquetas: { estado: "En validación", ejecucion: "EN VIVO · MQTT v2.0.0", capa: "App / Interfaz" }, url: "https://ilianavsc.github.io/tg-robot-ucab-app/", simulador: "https://ilianavsc.github.io/tg-robot-ucab-app/", simuladorTexto: "Abrir Analítica de Sesión y CSV (App)", nota: "Validado en simulación: velocidad media/máxima, distancia frontal mínima, error medio de línea, paquetes y paradas de emergencia con exportación CSV. Pendiente de los 20+ ensayos con el robot físico." },
+    { codigo: "P14", nombre: "Balizas BLE (Extremos)", tema: "BLE", semana: 7, estado: "pendiente", categoria: "hardware", etapa: 2, etiquetas: { estado: "Planificado", ejecucion: "Documentación / BOM", capa: "Hardware / Sensores" }, nota: "Planificado: 2 ESP32 fijos como balizas BLE en los extremos. Hoy existe como diseño (docs/arquitectura/balizas-ble.md) y como supuesto simulado en P05; el escaneo BLE está pendiente de integración en el firmware." }
+  ],
+
+  /* Páginas de documentación del sistema, con las mismas 3 etiquetas que los prototipos */
+  documentacion: [
+    { titulo: "Hardware: catálogo BOM y pines", url: "hardware.html", linea: "Lista de materiales, compras, pines del ESP32 y registro de cambios.", etiquetas: { estado: "En validación", ejecucion: "Documentación / BOM", capa: "Hardware / Sensores" } },
+    { titulo: "Arquitectura y contrato MQTT v2.0.0", url: "arquitectura.html", linea: "Broker con respaldo, recorrido de un pedido y los 13 tópicos del contrato.", etiquetas: { estado: "Completado", ejecucion: "Documentación / BOM", capa: "Comunicación / MQTT" } },
+    { titulo: "Cómo funciona la App", url: "como-funciona-app.html", linea: "Diagramas del flujo de la app con el robot: rutas, pedidos y alertas.", etiquetas: { estado: "Completado", ejecucion: "Documentación / BOM", capa: "App / Interfaz" } },
+    { titulo: "Máquinas de estado (Capa 3)", url: "specs/state-machine.md", md: true, linea: "Teach & repeat, rutas cerrada y lineal, pedidos y recuperación manual.", etiquetas: { estado: "Completado", ejecucion: "Documentación / BOM", capa: "Capa 3 · Operacional" } }
   ],
 
   /* ---------- PORTADA Y CRONOGRAMA RESUMIDOS ---------- */
@@ -86,13 +111,13 @@ window.TG = {
   /* Texto corto de cada prototipo para las tarjetas: nombre corto + qué hace en 1 línea */
   protoResumen: {
     P01: { corto: "Base MQTT", linea: "Arquitectura base de mensajería MQTT: robot y app se hablan sin perder mensajes." },
-    P02: { corto: "Inspector de hardware", linea: "Inspector interactivo de los componentes del robot: manejo Auto/Manual y consola de sensores opcional." },
+    P02: { corto: "Inspector de hardware", linea: "El robot en el circuito 3D con 4 consolas interactivas y la ficha técnica de cada pieza, sincronizadas en vivo." },
     P03: { corto: "Radar Ultrasónico (Frente/Atrás)", linea: "Simulación del radar ultrasónico: mide distancias y frena solo ante obstáculos." },
-    P04: { corto: "Simulador 1 + ESP32", linea: "Simulador 1 integrado con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT bidireccional con la app." },
-    P05: { corto: "Gemelo Digital", linea: "Calibra y aprende la pista; puntos de control equitativos en tercios en la segunda vuelta." },
+    P04: { corto: "Simulador 1 + ESP32", linea: "Simulador 1 con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT v2.0.0 en vivo con la app." },
+    P05: { corto: "Gemelo Digital", linea: "Aprende la pista y la repite (teach & repeat) con la Capa 3 operacional: rutas cerrada/lineal, pedidos y MPU-6050." },
     P10: { corto: "Ruta lineal", linea: "Ida, alarma en el destino, giro manual de 180° y retorno automático a la base." },
-    P06: { corto: "Robot virtual", linea: "Un robot de prueba conectado a Firebase." },
-    P07: { corto: "Firmware ESP32", linea: "Todo el código del ESP32 trabajando junto." },
+    P06: { corto: "Puente a Firebase", linea: "Planificado: guardar pedidos y entregas en Firebase a partir de los mensajes MQTT." },
+    P07: { corto: "Firmware ESP32", linea: "Todo el código del ESP32 junto; lógica de seguridad validada en el PC (T1–T10)." },
     P09: { corto: "App Flutter (v1 · Modo Demo)", linea: "Pide y mira el robot desde el celular, sin robot. Incluye acceso y Modo Demo." },
     P11: { corto: "Centro de Alertas", linea: "Obstáculo, sensor sin eco, proximidad o batería crítica: la alerta llega a la app." },
     P12: { corto: "Analítica y CSV", linea: "Métricas de cada sesión y reporte CSV para las 20+ repeticiones." },
@@ -313,7 +338,7 @@ window.TG = {
     { fecha: "2026-11-18", titulo: "Rigor de pruebas: SIL ahora, HIL con el hardware", estado: "tomada",
       decision: "Todo lo validado sin hardware (simuladores P01–P05, Modo Demo, firmware/pruebas_pc) se llama SIL (Software In the Loop). HIL (Hardware In the Loop) queda para el ESP32 y los sensores reales, con su plantilla en prototipos/P02-sensores/README.md. Las pruebas SIL corren en GitHub Actions antes de cada despliegue.",
       porque: "Un jurado distingue simulación de prueba física: llamar HIL a una inyección de eventos en el navegador sería impreciso.",
-      evidencia: ".github/workflows/deploy_web.yml · prototipos/P05-gemelo-digital/" },
+      evidencia: ".github/workflows/deploy-portfolio.yml · prototipos/P05-gemelo-digital/" },
     { fecha: "2026-11-18", titulo: "Fail-safe del modo manual: 5 s sin órdenes = frenar y quedarse en manual", estado: "tomada",
       decision: "Si en MANUAL pasan 5 s sin órdenes, el firmware ejecuta detener(), se queda en MANUAL con parada 'timeout' y publica la alerta 'timeout_manual'. Nunca pasa solo a AUTÓNOMO: hace falta una orden nueva o 'auto'. El Modo Demo aplica la misma regla.",
       porque: "Antes volvía solo a autónomo: si se caía la app, el robot arrancaba por su cuenta en un pasillo con personas (RNF-07). Un robot detenido es el estado seguro.",
@@ -430,6 +455,22 @@ window.TG = {
 
   /* Una entrada por semana, la más nueva primero */
   bitacora: [
+    { semana: 5, fechas: "23 al 27 nov 2026 (en curso)",
+      hicimos: ["Contrato <b>MQTT v2.0.0</b> en <code>specs/mqtt/contract.json</code>: payloads, QoS, retained, Capa 3 y MPU-6050, validado en la CI por <code>scripts/validar_contratos.mjs</code>",
+        "Capa 3 operacional en el Gemelo Digital (P05): rutas cerrada y lineal, pedidos, tiempos reales y alertas de la MPU-6050",
+        "P04 publica y escucha los tópicos v2.0.0 de la Capa 3 (rutas, pedidos, alertas inerciales y recuperación manual)",
+        "P02: el circuito 3D con un panel oscuro de 4 consolas interactivas y la ficha técnica de cada pieza, en un solo estado central",
+        "P10 nuevo: ruta lineal con alarma en el destino, giro manual de 180° y retorno a la base",
+        "hardware.html vuelve a ser el catálogo BOM; nueva página «Cómo funciona la App» con diagramas"],
+      aprendimos: ["Por completar por el equipo"],
+      sigue: ["Pruebas HIL cuando llegue el pedido de Amazon (estimado 15 al 28 dic)", "Revisar la matriz de auditoría visual (docs/auditoria_visual_prototipos.md) y unificar estilos", "Definir el código y el alcance del puente a Firebase (P06)"] },
+    { semana: 4, fechas: "16 al 20 nov 2026",
+      hicimos: ["Radar ultrasónico (hoy P03): los dos HC-SR04P activos a la vez, obstáculo arrastrable y frenado progresivo con las velocidades del Simulador 1",
+        "Gemelo Digital (hoy P05): integra las 2 pistas del Simulador 1, máquina de 14 estados de aprendizaje y balizas BLE simuladas (Torres de Control B1/B2)",
+        "ESP32 virtual calibrado con los parámetros reales del Simulador 1",
+        "Al cierre de la semana se reordenó la numeración: P01 MQTT, P02 Inspector, P03 Radar, P04 Simulador 1 + ESP32 y P05 Gemelo Digital"],
+      aprendimos: ["Por completar por el equipo"],
+      sigue: ["Contrato MQTT versionado (v2.0.0) y Capa 3 operacional", "Observación en el laboratorio + prueba H0 (Wi-Fi)"] },
     { semana: 3, fechas: "9 al 13 nov 2026",
       hicimos: ["Firmware integrado (P01 + P02 + P04): <a href=\"https://github.com/ilianavsc/tg-robot-ucab-portfolio/blob/main/firmware/robot_integrado.ino\">un solo código para el ESP32</a>, compilado sin errores (71 % de flash y 15 % de RAM)", "Plan de prototipos ajustado al cronograma", "Repositorio y sitio en GitHub", "Banco de pruebas en el navegador", "P01 cerrado: 7 de 7 pruebas, 50 de 50 pedidos", "Primera simulación en Google Colab: <a href=\"archive/P03-motores/avance-01-colab/\">velocidad de los motores</a>", "Simulador 3D de la tracción: <a href=\"prototipos/P02-sensores/\">ESP32, puente H, motor y encoder</a>", "Entrevista en el laboratorio", "Capítulo II ajustado y enviado", "Simulador del seguidor de línea: <a href=\"prototipos/P04-simulador-1-esp32/\">4 TCRT5000 y control PD</a>", "Simulador 3D de los mensajes de P01: <a href=\"prototipos/P01-mqtt-base/simulador-3d/\">QoS, manipulación y última voluntad</a>", "Código ESP32 (.ino) de P01, P02 y P04 con su botón de descarga", "Firmware C++ validado (13/13 tests): órdenes y ACK iguales a los del ESP32 virtual de entonces", "Portada con los 3 prototipos y <a href=\"archivo-fase-1.html\">Archivo Fase I</a>"],
       aprendimos: ["QoS 1 necesita sesión persistente para no perder pedidos", "PubSubClient solo publica con QoS 0", "Wokwi pausa la simulación si la pestaña queda oculta: el broker avisó \"desconectado\" (sirvió para probar el LWT)", "Las rpm de la caja son con 12 V y sin peso; en el robot el motor va cerca de 40 % más lento", "El puente H decide el sentido con 4 interruptores; el PWM decide la fuerza; el encoder da 1 496 cuentas por vuelta de rueda"],

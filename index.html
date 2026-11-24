@@ -116,6 +116,21 @@ a.ir:hover {
 .flujo-app .num{display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--accent-primary);color:#fff;font-family:var(--font-mono);font-size:12px;font-weight:700;text-align:center;line-height:20px;margin-right:6px}
 .flujo-app .flecha{align-self:center;color:var(--accent-primary);font-weight:700;font-size:16px}
 @media (max-width:600px){.flujo-app .flecha{display:none}}
+/* Etiquetas estándar: estado · tipo de ejecución · capa del sistema (TG.etiquetas en datos/proyecto.js) */
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:11.5px;font-weight:600;line-height:1.2;padding:3px 8px;border-radius:999px;border:1.5px solid transparent;white-space:nowrap}
+.tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.tag.estado-completado{background:#D1FAE5;color:#065F46;border-color:#10B981}
+.tag.estado-validacion{background:#FEF3C7;color:#78350F;border-color:#D97706}
+.tag.estado-planificado{background:transparent;color:#475569;border:1.5px dashed #64748B}
+.tag.ejec-sil{background:#E0F2FE;color:#075985;border-color:#7DD3FC}
+.tag.ejec-vivo{background:#14213D;color:#fff;border-color:#14213D}
+.tag.ejec-vivo::before{background:#2EE6A8;box-shadow:0 0 0 3px rgba(46,230,168,.25)}
+.tag.ejec-doc{background:#F1F5F9;color:#334155;border-color:#CBD5E1}
+.tag.capa{background:#fff;color:var(--text-main);border-color:var(--border-dark)}
+.tag.capa::before{border-radius:2px;background:var(--c,#14213D)}
+.tag.capa-hw{--c:#0F9D84}.tag.capa-mqtt{--c:#6B4EE6}.tag.capa-capa3{--c:#F2603D}.tag.capa-app{--c:#2563EB}
+.proto-cabecera .tags{margin:0}
 </style>
 </head>
 <body data-pagina="inicio" data-base="">
@@ -141,8 +156,8 @@ a.ir:hover {
 
     <div class="hero-progreso" aria-label="Avance de prototipos">
       <div class="hero-progreso-top">
-        <span id="hero-avance-label">6/12 prototipos listos</span>
-        <span id="hero-avance-pct">50 % completado</span>
+        <span id="hero-avance-label">Prototipos completados</span>
+        <span id="hero-avance-pct"></span>
       </div>
       <div class="barra-avance" role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="6" id="hero-barra-aria">
         <div class="barra-avance-fill" id="hero-barra-fill" style="width:50%"></div>
@@ -170,16 +185,16 @@ a.ir:hover {
   </section>
 
   <!-- ====================================================================
-       2. PROTOTIPOS CON FILTROS RÁPIDOS ("Todos", "Listos (6)", "En camino (6)")
+       2. PROTOTIPOS CON FILTROS RÁPIDOS (contadores calculados desde TG.prototipos) Y 3 ETIQUETAS POR TARJETA
        ==================================================================== -->
   <section aria-labelledby="t-protos">
     <h2 id="t-protos">Prototipos del Proyecto</h2>
-    <p class="bajada linea-2" style="margin-bottom:16px">Cada módulo se valida primero en simulador y luego en el robot físico.</p>
+    <p class="bajada linea-2" style="margin-bottom:16px">Cada módulo se valida primero en simulador (SIL) y luego en el robot físico (HIL). Cada tarjeta lleva su estado, cómo se ejecuta y su capa del sistema.</p>
 
     <div class="filtros-barra" role="tablist" aria-label="Filtrar prototipos">
       <button type="button" class="filtro-btn activo" data-filtro="todos" role="tab" aria-selected="true" id="f-todos">Todos</button>
-      <button type="button" class="filtro-btn" data-filtro="listos" role="tab" aria-selected="false" id="f-listos">Listos (6)</button>
-      <button type="button" class="filtro-btn" data-filtro="camino" role="tab" aria-selected="false" id="f-camino">En camino (6)</button>
+      <button type="button" class="filtro-btn" data-filtro="listos" role="tab" aria-selected="false" id="f-listos">Completados</button>
+      <button type="button" class="filtro-btn" data-filtro="camino" role="tab" aria-selected="false" id="f-camino">En validación y planificados</button>
     </div>
 
     <div class="rejilla" id="grid-prototipos" aria-live="polite"></div>
@@ -220,12 +235,12 @@ a.ir:hover {
       <div class="estado-card completado">
         <div class="estado-header">
           <span class="chip hecho">Validado en Software</span>
-          <span class="mono" style="font-size:13px;font-weight:700;color:var(--accent-primary)">6/6 listos</span>
+          <span class="mono" style="font-size:13px;font-weight:700;color:var(--accent-primary)" id="resumen-software"></span>
         </div>
-        <h3 style="margin:0 0 6px">Simuladores 3D, Radar, App y Firmware</h3>
+        <h3 style="margin:0 0 6px">Simuladores, Gemelo Digital, App y Firmware</h3>
         <p style="margin:0 0 8px"><span class="chip hecho" title="Firmware compilado en el PC con imitaciones del hardware (SIL) y probado en 10 escenarios T1-T10; corre en GitHub Actions. Falta la prueba en el ESP32 real (HIL).">✓ Firmware C++ · pruebas SIL</span></p>
         <p class="linea-2" style="margin:0;font-size:15.5px;color:var(--text-muted)">
-          Comunicación MQTT, control de motores, seguidor de línea, radar ultrasónico y app móvil en tiempo real.
+          Comunicación MQTT v2.0.0, control de motores, seguidor de línea, radar ultrasónico, Capa 3 operacional y app móvil en tiempo real.
         </p>
 
         <details class="desplegable-tecnico" id="t-firmware">
@@ -234,7 +249,9 @@ a.ir:hover {
             <ul class="estado-lista" style="margin-bottom:14px">
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P01 (MQTT):</strong> 0 órdenes perdidas en 50 envíos y detección de caída LWT en 22 s.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P02 (Tracción):</strong> PWM a 20 kHz e interrupciones de encoders con batería Li-Ion 3S.</div></li>
-              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P04 (Línea):</strong> Control PD a 100 Hz con 4 sensores TCRT5000 a 0,41 m/s.</div></li>
+              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P04 (Línea):</strong> Control PD a 100 Hz con 4 sensores TCRT5000 a 0,41 m/s y puente MQTT v2.0.0 en vivo con la app.</div></li>
+              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P05 (Gemelo Digital):</strong> Teach &amp; repeat con la Capa 3 operacional (rutas cerrada y lineal, pedidos y MPU-6050): 55 pruebas SIL.</div></li>
+              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P10 (Ruta lineal):</strong> Ida, alarma en <code>ESPERA_REPOSICION</code>, giro manual de 180° y retorno a la base: 10 pruebas SIL.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P03 (Ultrasonido):</strong> Radar interactivo en canvas (Adelante y Atrás) publicando en <code>ucab-tg-sf/robot/ultrasonido</code>.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware C++ · pruebas SIL (10 escenarios T1-T10):</strong> órdenes, ACK, duplicados QoS 1, obstáculos, fallo de ultrasonido, timeout manual y corte por batería, probados en el PC (corren solos en GitHub Actions); el contrato MQTT es el de <code>docs/arquitectura/topicos-mqtt.md</code>. Falta la prueba con el ESP32 real (<a href="docs/centro_de_pruebas.md" data-md="docs/centro_de_pruebas.md" data-titulo="Centro de pruebas">flujo de la prueba física</a>).</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware Integrado:</strong> Un solo archivo <code>.ino</code> sin <code>delay()</code> (71 % Flash, 15 % RAM) con fail-safe y corte por batería baja (9,9 V).</div></li>
@@ -312,7 +329,7 @@ a.ir:hover {
 
   /* 1. Hero: barra de avance (calculada dinámicamente de P) */
   var pct = Math.round((listosArr.length / P.length) * 100);
-  document.getElementById("hero-avance-label").textContent = listosArr.length + "/" + P.length + " prototipos listos";
+  document.getElementById("hero-avance-label").textContent = listosArr.length + "/" + P.length + " prototipos completados";
   document.getElementById("hero-avance-pct").textContent = pct + " % completado";
   var fillEl = document.getElementById("hero-barra-fill");
   fillEl.style.width = pct + "%";
@@ -322,8 +339,10 @@ a.ir:hover {
 
   /* 2. Contadores en botones de filtro */
   document.getElementById("f-todos").textContent = "Todos (" + P.length + ")";
-  document.getElementById("f-listos").textContent = "Listos (" + listosArr.length + ")";
-  document.getElementById("f-camino").textContent = "En pruebas (" + caminoArr.length + ")";
+  document.getElementById("f-listos").textContent = "Completados (" + listosArr.length + ")";
+  document.getElementById("f-camino").textContent = "En validación y planificados (" + caminoArr.length + ")";
+  var resumenSw = document.getElementById("resumen-software");
+  if (resumenSw) resumenSw.textContent = listosArr.length + "/" + P.length + " completados";
 
   /* 3. Render de tarjetas compactas de prototipos */
   var gridEl = document.getElementById("grid-prototipos");
@@ -343,10 +362,10 @@ a.ir:hover {
     },
     P02: {
       corto: "Inspector de hardware",
-      linea: "Maneja el robot (como en el Simulador 1) y mira su consola: velocímetro y 4 sensores de línea en vivo.",
+      linea: "El robot recorre el circuito 3D y un panel con 4 consolas interactivas y la ficha técnica de cada pieza reacciona en vivo.",
       boton: "Abrir Inspector",
       url: "prototipos/P02-sensores/",
-      tecnico: "Manual W A S D / D-Pad · consola estilo radar · 2× JGA25-371 · encoders 11 PPR · LiPo 3S.",
+      tecnico: "Auto / Manual (W A S D, D-Pad) · HC-SR04, TCRT5000 ×4, velocidad (máx. 0,46 m/s) y MPU-6050 · 2× JGA25-371 · encoders 11 PPR · Li-Ion 3S · 25 pruebas.",
       links: [
         { label: "Descargar .ino", href: "prototipos/P02-sensores/codigo-esp32/traccion_encoders/traccion_encoders.ino", download: true },
         { label: "Registro HIL (.md)", href: "prototipos/P02-sensores/README.md", md: true, titulo: "P02 · Registro de mediciones físicas (HIL)" }
@@ -368,7 +387,7 @@ a.ir:hover {
       linea: "El robot sigue la cinta negra en 2 pistas (8,05 m y 9,0 m) y la placa ESP32 enciende un LED por sensor.",
       boton: "Abrir Simulador 3D",
       url: "prototipos/P04-simulador-1-esp32/",
-      tecnico: "4× TCRT5000 = 4 LEDs en vivo · PD 100 Hz · 0,41 m/s crucero · 0,46 m/s máx. recta · 19/19 pruebas.",
+      tecnico: "4× TCRT5000 = 4 LEDs en vivo · PD 100 Hz · 0,41 m/s crucero · 0,46 m/s máx. recta · MQTT v2.0.0 (schema_version 2.0.0) · 30 pruebas.",
       links: [
         { label: "Descargar .ino", href: "prototipos/P04-simulador-1-esp32/codigo-esp32/seguidor_linea/seguidor_linea.ino", download: true },
         { label: "Ficha técnica (.md)", href: "prototipos/P04-simulador-1-esp32/README.md", md: true, titulo: "Ficha técnica P04 (Sim 1 + ESP32)" }
@@ -379,9 +398,19 @@ a.ir:hover {
       linea: "El robot aprende la ruta y la repite sobre las 2 pistas del Simulador 1, con radar y tramos sin cinta.",
       boton: "Abrir Gemelo Digital",
       url: "prototipos/P05-gemelo-digital/index.html",
-      tecnico: "Teach & Repeat · pistas A/B del Simulador 1 (P04) · radar ultrasónico (P03) · navegación sin cinta.",
+      tecnico: "Teach & Repeat · Capa 3 operacional (rutas cerrada/lineal, pedidos, MPU-6050) · pistas A/B del Simulador 1 (P04) · radar (P03) · 55 pruebas.",
       links: [
         { label: "Ficha técnica (.md)", href: "prototipos/P05-gemelo-digital/README.md", md: true, titulo: "Ficha técnica P05 · Gemelo Digital" }
+      ]
+    },
+    P10: {
+      corto: "Ruta lineal (P10)",
+      linea: "Ida por la línea, alarma en el destino, giro manual de 180° confirmado y retorno automático a la base.",
+      boton: "Abrir Ruta lineal",
+      url: "prototipos/P10-ruta-lineal/",
+      tecnico: "EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → EN_RUTA_RETORNO · pestaña Consola de sensores · 10 pruebas.",
+      links: [
+        { label: "Ficha técnica (.md)", href: "prototipos/P10-ruta-lineal/README.md", md: true, titulo: "Ficha técnica P10 · Ruta lineal" }
       ]
     },
     P09: {
@@ -396,10 +425,14 @@ a.ir:hover {
     }
   };
 
+  // 3 etiquetas estándar por tarjeta: estado · tipo de ejecución · capa (TG.etiquetas)
+  var ET = D.etiquetas;
   function etiquetaEstado(p) {
-    if (p.estado === "listo") return '<span class="chip hecho">Listo</span>';
-    if (p.estado === "en_pruebas") return '<span class="chip pruebas">En pruebas</span>';
-    return '<span class="chip pendiente">Pendiente · Sem. ' + p.semana + '</span>';
+    var e = p.etiquetas || { estado: ET.deEstado[p.estado] };
+    var html = '<span class="tag estado-' + ET.estado[e.estado] + '">' + e.estado + (p.estado === "pendiente" ? " · Sem. " + p.semana : "") + "</span>";
+    if (e.ejecucion) html += '<span class="tag ejec-' + ET.ejecucion[e.ejecucion] + '" title="' + (ET.ayuda[e.ejecucion] || "") + '">' + e.ejecucion + "</span>";
+    if (e.capa) html += '<span class="tag capa capa-' + ET.capa[e.capa] + '">' + e.capa + "</span>";
+    return '<div class="tags">' + html + "</div>";
   }
 
   function textoBoton(p) {
@@ -417,7 +450,7 @@ a.ir:hover {
       return true;
     });
     // Los Listos primero en orden lógico del proyecto.
-    var ordenListos = ["P01", "P02", "P03", "P04", "P05", "P09"];
+    var ordenListos = ["P01", "P02", "P03", "P04", "P05", "P10", "P09"];
     lista = lista.slice().sort(function (a, b) {
       var ia = ordenListos.indexOf(a.codigo), ib = ordenListos.indexOf(b.codigo);
       if (ia === -1 && ib === -1) return 0;
