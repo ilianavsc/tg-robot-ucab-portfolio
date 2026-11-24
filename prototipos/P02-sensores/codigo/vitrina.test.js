@@ -5,6 +5,7 @@ import assert from 'node:assert';
 import {readFileSync, readdirSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import vm from 'node:vm';
 import {LIMITES, MANUAL, crearDemo} from './demo.js';
 import {R, VMAX, dutyPara, encoderHz} from './model.js';
 import {CINTA, GEO, OBSTACULOS, crearRuta, lineaSensores, ultrasonido, zonaDe} from './ruta.js';
@@ -298,6 +299,115 @@ prueba('integración fichas ↔ consola: 7 fichas con datos en vivo en reposo, c
   assert.ok(/if \(!id\)[\s\S]*?ficha\.hidden = true;[\s\S]*?sincronizaVinculoConsola\(\)/.test(main), 'cerrar ficha limpia vínculo');
   assert.ok(main.includes("bVinc.addEventListener('click', () => ponConsola(consola.hidden))"), 'toggle consola desde la ficha');
   assert.ok(/controls\.addEventListener\('change', \(\) => \{[\s\S]*?if \(!ui\.encendido\) solicitarCuadro\(\)/.test(main), 'órbita e inspección funcionan con robot apagado');
+});
+
+prueba('hardware.html se mantiene como catálogo BOM sin la consola 2x2', () => {
+  const hwHtml = readFileSync(join(aqui, '../../../hardware.html'), 'utf8');
+  assert.ok(!hwHtml.includes('id="inspector-hardware"'), 'hardware.html no debe contener #inspector-hardware');
+  assert.ok(!hwHtml.includes('inspector_hw.css'), 'hardware.html no debe cargar inspector_hw.css');
+  assert.ok(!hwHtml.includes('inspector_hw.js'), 'hardware.html no debe cargar inspector_hw.js');
+  assert.ok(!hwHtml.includes('hw-card-hcsr04'), 'hardware.html no debe incluir tarjetas de la consola 2x2');
+  assert.ok(hwHtml.includes('id="lista"') && hwHtml.includes('id="mat"') && hwHtml.includes('id="pines"'), 'hardware.html mantiene catálogo BOM y pines');
+  assert.ok(hwHtml.includes('lista-materiales-v1.xlsx'), 'hardware.html mantiene enlace a lista de materiales');
+});
+
+prueba('P02 Inspector integra la consola 2x2 con 4 cuadrantes, etiqueta local y ejecución sin errores', () => {
+  const indexHtml = readFileSync(join(aqui, '../index.html'), 'utf8');
+  assert.ok(indexHtml.includes('../../assets/css/inspector_hw.css'), 'P02 index carga inspector_hw.css');
+  assert.ok(indexHtml.includes('../../assets/inspector_hw.js'), 'P02 index carga inspector_hw.js');
+  assert.ok(indexHtml.includes('id="inspector-hardware"') && indexHtml.includes('id="hw-inspector-root"'), 'contenedor de consola 2x2');
+  for (const id of [
+    'hw-card-hcsr04',
+    'hw-card-tcrt5000',
+    'hw-card-motores',
+    'hw-card-mpu6050',
+    'hw-canvas-radar',
+    'hw-canvas-osc',
+    'hw-canvas-vel',
+    'hw-canvas-imu',
+    'hw-sim-badge',
+  ]) {
+    assert.ok(indexHtml.includes(`id="${id}"`), `falta #${id} en P02/index.html`);
+  }
+  assert.ok(/Simulación local de hardware/i.test(indexHtml), 'etiqueta explícita de simulación local');
+  for (const st of ['normal', 'advertencia', 'fallo']) {
+    assert.ok(indexHtml.includes(`data-st-val="${st}"`), `botón de estado ${st}`);
+  }
+
+  // Ejecución real de assets/inspector_hw.js con DOM + Canvas mínimo para validar 0 errores de runtime
+  const jsSrc = readFileSync(join(aqui, '../../../assets/inspector_hw.js'), 'utf8');
+  const noop = () => {};
+  const fakeCtx = {
+    clearRect: noop, beginPath: noop, stroke: noop, fill: noop, arc: noop,
+    moveTo: noop, lineTo: noop, closePath: noop, fillText: noop,
+    lineWidth: 1, font: '', fillStyle: '', strokeStyle: '', textAlign: 'left',
+  };
+  const makeEl = (id, attrs = {}) => {
+    const elAttrs = {...attrs};
+    const classes = new Set();
+    const listeners = {};
+    return {
+      id,
+      attrs: elAttrs,
+      width: 260,
+      height: 132,
+      value: '0',
+      textContent: '',
+      className: '',
+      style: {},
+      classList: {
+        toggle: (c, f) => (f ? classes.add(c) : classes.delete(c)),
+        contains: (c) => classes.has(c),
+      },
+      getAttribute: (k) => elAttrs[k] ?? null,
+      setAttribute: (k, v) => { elAttrs[k] = String(v); },
+      addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
+      trigger: (ev, payload = {}) => (listeners[ev] || []).forEach((fn) => fn(payload)),
+      getContext: () => fakeCtx,
+    };
+  };
+  const byId = {};
+  for (const m of indexHtml.matchAll(/id="([^"]+)"/g)) byId[m[1]] = makeEl(m[1]);
+  const cards = ['hcsr04', 'tcrt5000', 'motores', 'mpu6050'].map((c) => {
+    const el = byId[`hw-card-${c}`];
+    el.getAttribute = (k) => (k === 'data-card' ? c : el.attrs[k] ?? null);
+    return el;
+  });
+  const stBtns = [];
+  for (const c of ['hcsr04', 'tcrt5000', 'motores', 'mpu6050']) {
+    for (const v of ['normal', 'advertencia', 'fallo']) {
+      stBtns.push(makeEl('', {'data-st-card': c, 'data-st-val': v}));
+    }
+  }
+  const pills = ['hcsr04', 'tcrt5000', 'mpu6050', 'motores', 'esp32'].map((c) => makeEl('', {'data-comp': c}));
+  let intervalFn = null;
+  const doc = {
+    readyState: 'complete',
+    getElementById: (id) => byId[id] || null,
+    querySelectorAll: (sel) => {
+      if (sel === '.hw-card') return cards;
+      if (sel === '.hw-zone, .hw-comp-pill' || sel === '.hw-comp-pill') return pills;
+      if (sel === '[data-st-card]') return stBtns;
+      return [];
+    },
+    addEventListener: noop,
+  };
+  const sandbox = {
+    document: doc,
+    window: {setInterval: (fn) => { intervalFn = fn; return 1; }},
+    Math, Number, String,
+  };
+  vm.runInNewContext(jsSrc, sandbox);
+  assert.strictEqual(byId['hw-card-hcsr04'].attrs['data-estado'], 'normal');
+  assert.strictEqual(byId['hw-badge-mpu6050'].textContent, 'ESTABILIDAD OK');
+  assert.ok(typeof intervalFn === 'function', 'animación periódica registrada');
+  intervalFn();
+  // Simula fallo en HC-SR04 y advertencia en MPU-6050
+  stBtns.find((b) => b.getAttribute('data-st-card') === 'hcsr04' && b.getAttribute('data-st-val') === 'fallo').trigger('click');
+  assert.strictEqual(byId['hw-card-hcsr04'].attrs['data-estado'], 'fallo');
+  assert.strictEqual(byId['hw-badge-hcsr04'].textContent, 'FALLO SENSOR');
+  byId['hw-btn-reset'].trigger('click');
+  assert.strictEqual(byId['hw-card-hcsr04'].attrs['data-estado'], 'normal');
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

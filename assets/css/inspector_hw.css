@@ -4,7 +4,29 @@
    ========================================================================== */
 
 .hw-inspector-sec {
-  margin: 0 0 28px;
+  margin: 24px 0 28px;
+}
+
+.hw-inspector-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hw-sim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--tg-surface-alt, #F1F5F9);
+  border: 1px dashed var(--tg-text-muted, #64748B);
+  color: var(--tg-text-muted, #475569);
+  font-family: var(--tg-font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .hw-inspector-shell {
@@ -210,6 +232,8 @@
   margin: 0;
   color: var(--tg-text, #0F172A);
   font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Controles Simular entrada */
@@ -339,8 +363,20 @@
 }
 
 @media (max-width: 680px) {
+  .hw-inspector-shell {
+    padding: 12px;
+  }
+  .hw-consola {
+    padding: 10px;
+  }
   .hw-consola-grid {
     grid-template-columns: 1fr;
+  }
+  .hw-motor-top {
+    grid-template-columns: minmax(0, 1.15fr) auto;
+  }
+  .hw-ficha-row {
+    grid-template-columns: 64px minmax(0, 1fr);
   }
 }
 

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/style.css">
+<link rel="stylesheet" href="../../assets/css/inspector_hw.css">
 <style>
 .simulador-embed-frame{height:680px}
 @media (max-width:768px){.simulador-embed-frame{height:720px}}
@@ -47,7 +48,7 @@
   <div class="pistas-iconos" role="list">
     <div class="pista-icono" role="listitem"><span aria-hidden="true">🔍</span><div>Las 7 piezas integradas<small>toca una tarjeta para ver su ficha y su vínculo</small></div></div>
     <div class="pista-icono" role="listitem"><span aria-hidden="true">⚡</span><div>Encender / Detener<small>inicia estático para inspeccionar sin movimiento</small></div></div>
-    <div class="pista-icono" role="listitem"><span aria-hidden="true">📟</span><div>Consola vinculada<small>resalta LEDs S1–S4, distancia y velocímetro en vivo</small></div></div>
+    <div class="pista-icono" role="listitem"><span aria-hidden="true">📟</span><div>Consola 2×2 en vivo<small>HC-SR04, TCRT5000, motores y MPU-6050 en simulación local</small></div></div>
   </div>
 
   <section aria-label="Simulador">
@@ -57,6 +58,274 @@
         <a href="simulador.html" target="_blank" rel="noopener" class="btn-link-dark">Pantalla completa ↗</a>
       </div>
       <iframe src="simulador.html" class="simulador-embed-frame" id="inspector" title="P02 · Inspector de hardware: 7 componentes integrados con su ficha, manejo y consola vinculada"></iframe>
+    </div>
+  </section>
+
+  <section class="hw-inspector-sec" id="inspector-hardware" aria-labelledby="t-inspector">
+    <div class="hw-inspector-shell" id="hw-inspector-root">
+      <div class="hw-inspector-head">
+        <div>
+          <h2 id="t-inspector">Consola de Sensores 2×2 · Banco de Hardware</h2>
+          <p>Selecciona un componente en el esquema para ver su ficha técnica y probar sus lecturas en vivo en los 4 cuadrantes.</p>
+        </div>
+        <div class="hw-inspector-head-actions">
+          <span class="hw-sim-badge" id="hw-sim-badge">Simulación local de hardware (SIL) · Sin telemetría MQTT real</span>
+          <button type="button" class="hw-btn-reset" id="hw-btn-reset">Restablecer nominal</button>
+        </div>
+      </div>
+
+      <div class="hw-inspector-grid">
+        <!-- Columna Izquierda: Robot Interactivo + Ficha Técnica + Simular Entrada -->
+        <div class="hw-col-izq">
+          <div class="hw-esquema-box">
+            <div class="hw-esquema-titulo">
+              <span>Esquema interactivo · vista superior</span>
+              <span>Hover o clic</span>
+            </div>
+            <svg class="hw-robot-svg" viewBox="0 0 360 230" role="img" aria-label="Esquema interactivo del robot móvil UCAB con zonas clicables">
+              <!-- Chasis base -->
+              <rect x="70" y="34" width="220" height="162" rx="22" fill="#E2E8F0" stroke="#0F172A" stroke-width="2.5"/>
+              <text x="180" y="22" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#475569">FRENTE ▲</text>
+
+              <!-- Zona 1: HC-SR04 (Frente) -->
+              <g class="hw-zone" data-comp="hcsr04" role="button" tabindex="0" aria-label="Sensor ultrasónico HC-SR04">
+                <rect class="hw-zone-shape hw-zone-fill" x="128" y="36" width="104" height="24" rx="6" fill="#FFFFFF" stroke="#0F9D84" stroke-width="2"/>
+                <circle cx="152" cy="48" r="7" fill="#10141A" stroke="#0F9D84" stroke-width="1.5"/>
+                <circle cx="208" cy="48" r="7" fill="#10141A" stroke="#0F9D84" stroke-width="1.5"/>
+                <text x="180" y="51.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" fill="#0F172A">HC-SR04</text>
+              </g>
+
+              <!-- Zona 2: TCRT5000 (Inferior frontal) -->
+              <g class="hw-zone" data-comp="tcrt5000" role="button" tabindex="0" aria-label="Arreglo óptico TCRT5000">
+                <rect class="hw-zone-shape hw-zone-fill" x="114" y="68" width="132" height="22" rx="5" fill="#FFFFFF" stroke="#D97706" stroke-width="2"/>
+                <circle cx="132" cy="79" r="3.5" fill="#0F172A"/>
+                <circle cx="156" cy="79" r="3.5" fill="#0F172A"/>
+                <circle cx="180" cy="79" r="3.5" fill="#0F172A"/>
+                <circle cx="204" cy="79" r="3.5" fill="#0F172A"/>
+                <circle cx="228" cy="79" r="3.5" fill="#0F172A"/>
+                <text x="180" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600" fill="#475569">TCRT5000 (S1–S5)</text>
+              </g>
+
+              <!-- Zona 3: MPU-6050 (Centro del chasis) -->
+              <g class="hw-zone" data-comp="mpu6050" role="button" tabindex="0" aria-label="Sensor inercial MPU-6050">
+                <rect class="hw-zone-shape hw-zone-fill" x="150" y="110" width="60" height="34" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
+                <text x="180" y="125" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" fill="#0F172A">MPU-6050</text>
+                <text x="180" y="137" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#475569">IMU 6-DOF</text>
+              </g>
+
+              <!-- Zona 4: ESP32 (Controlador central) -->
+              <g class="hw-zone" data-comp="esp32" role="button" tabindex="0" aria-label="Microcontrolador ESP32">
+                <rect class="hw-zone-shape hw-zone-fill" x="136" y="152" width="88" height="34" rx="6" fill="#FFFFFF" stroke="#6B4EE6" stroke-width="2"/>
+                <text x="180" y="168" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" fill="#0F172A">ESP32 DevKit</text>
+                <text x="180" y="179" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#475569">Wi-Fi · BLE · PID</text>
+              </g>
+
+              <!-- Zona 5: Motores + Encoders (Tracción trasera izquierda y derecha) -->
+              <g class="hw-zone" data-comp="motores" role="button" tabindex="0" aria-label="Motores DC y Encoders">
+                <rect class="hw-zone-shape hw-zone-fill" x="34" y="128" width="32" height="60" rx="7" fill="#1E293B" stroke="#0F9D84" stroke-width="2"/>
+                <rect class="hw-zone-shape hw-zone-fill" x="294" y="128" width="32" height="60" rx="7" fill="#1E293B" stroke="#0F9D84" stroke-width="2"/>
+                <rect x="74" y="144" width="38" height="28" rx="4" fill="#FFFFFF" stroke="#0F9D84" stroke-width="1.5"/>
+                <rect x="248" y="144" width="38" height="28" rx="4" fill="#FFFFFF" stroke="#0F9D84" stroke-width="1.5"/>
+                <text x="93" y="161" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" font-weight="700" fill="#0F172A">M-IZQ</text>
+                <text x="267" y="161" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" font-weight="700" fill="#0F172A">M-DER</text>
+              </g>
+              <text x="180" y="216" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#475569">TRACCIÓN DIFERENCIAL + ENCODERS PCNT</text>
+            </svg>
+
+            <div class="hw-comp-pills" role="group" aria-label="Selector rápido de componentes">
+              <button type="button" class="hw-comp-pill" data-comp="hcsr04">HC-SR04</button>
+              <button type="button" class="hw-comp-pill" data-comp="tcrt5000">TCRT5000</button>
+              <button type="button" class="hw-comp-pill" data-comp="mpu6050">MPU-6050</button>
+              <button type="button" class="hw-comp-pill" data-comp="motores">Motores</button>
+              <button type="button" class="hw-comp-pill" data-comp="esp32">ESP32</button>
+            </div>
+          </div>
+
+          <!-- Ficha técnica compacta -->
+          <div class="hw-ficha" id="hw-ficha-panel" aria-live="polite">
+            <div class="hw-ficha-head">
+              <h3 id="hw-ficha-nombre">Radar Ultrasónico HC-SR04P</h3>
+              <span class="hw-ficha-tag" id="hw-ficha-tag">PROXIMIDAD</span>
+            </div>
+            <dl class="hw-ficha-dl">
+              <div class="hw-ficha-row"><dt>Función</dt><dd id="hw-ficha-funcion"></dd></div>
+              <div class="hw-ficha-row"><dt>Pines</dt><dd class="mono" id="hw-ficha-pines"></dd></div>
+              <div class="hw-ficha-row"><dt>Señal</dt><dd id="hw-ficha-senal"></dd></div>
+            </dl>
+          </div>
+
+          <!-- Controles interactivos: Simular entrada -->
+          <div class="hw-controles">
+            <span class="hw-controles-titulo">Simular entrada de sensores (local)</span>
+
+            <div class="hw-ctrl-grupo">
+              <label class="hw-ctrl-lbl" for="hw-in-dist">
+                <span>Distancia HC-SR04</span>
+                <span class="hw-ctrl-val" id="hw-lbl-dist">42 cm</span>
+              </label>
+              <input id="hw-in-dist" type="range" min="5" max="80" step="1" value="42">
+            </div>
+
+            <div class="hw-ctrl-grupo">
+              <label class="hw-ctrl-lbl" for="hw-in-linea">
+                <span>Desviación de línea (TCRT5000)</span>
+                <span class="hw-ctrl-val" id="hw-lbl-linea">+0 mm</span>
+              </label>
+              <input id="hw-in-linea" type="range" min="-30" max="30" step="1" value="0">
+            </div>
+
+            <div class="hw-ctrl-grupo">
+              <label class="hw-ctrl-lbl" for="hw-in-vel">
+                <span>Velocidad y Dirección (Motores)</span>
+                <span class="hw-ctrl-val" id="hw-lbl-vel">0.41 m/s</span>
+              </label>
+              <input id="hw-in-vel" type="range" min="0" max="1" step="0.01" value="0.41">
+              <div class="hw-btn-row">
+                <button type="button" class="hw-mini-btn" data-dir="ADELANTE">ADELANTE</button>
+                <button type="button" class="hw-mini-btn" data-dir="ATRÁS">ATRÁS</button>
+                <button type="button" class="hw-mini-btn" data-dir="IZQUIERDA">IZQUIERDA</button>
+                <button type="button" class="hw-mini-btn" data-dir="DERECHA">DERECHA</button>
+                <button type="button" class="hw-mini-btn" data-dir="DETENIDO">DETENIDO</button>
+              </div>
+            </div>
+
+            <div class="hw-ctrl-grupo">
+              <div class="hw-ctrl-lbl">
+                <span>Eventos MPU-6050 (IMU)</span>
+                <span class="hw-ctrl-val">P:<span id="hw-lbl-pitch">0°</span> · R:<span id="hw-lbl-roll">0°</span></span>
+              </div>
+              <div class="hw-btn-row">
+                <button type="button" class="hw-mini-btn" data-mpu-ev="normal">Normal</button>
+                <button type="button" class="hw-mini-btn aviso" data-mpu-ev="inclinacion">Inclinación</button>
+                <button type="button" class="hw-mini-btn peligro" data-mpu-ev="impacto">Impacto</button>
+                <button type="button" class="hw-mini-btn aviso" data-mpu-ev="atascamiento">Atascamiento</button>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+                <input id="hw-in-pitch" type="range" min="-45" max="45" step="1" value="0" aria-label="Pitch grados">
+                <input id="hw-in-roll" type="range" min="-45" max="45" step="1" value="0" aria-label="Roll grados">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Consola de Sensores Visual (2x2 Oscura) -->
+        <div class="hw-consola" aria-label="Consola de sensores en vivo">
+          <div class="hw-consola-bar">
+            <span class="hw-consola-bar-title">CONSOLA DE SENSORES · COCKPIT 2×2</span>
+            <span class="hw-consola-bar-sub">SIMULACIÓN LOCAL · TABULAR-NUMS · SIN MQTT REAL</span>
+          </div>
+
+          <div class="hw-consola-grid">
+            <!-- Tarjeta 1: Radar Ultrasónico (HC-SR04) -->
+            <article class="hw-card" id="hw-card-hcsr04" data-card="hcsr04" data-estado="normal">
+              <div class="hw-card-head">
+                <span class="hw-card-title">1 · RADAR HC-SR04</span>
+                <span class="hw-badge ok" id="hw-badge-hcsr04">DESPEJADO</span>
+              </div>
+              <div class="hw-canvas-wrap">
+                <canvas id="hw-canvas-radar" width="260" height="132" aria-label="Radar semicircular HC-SR04"></canvas>
+              </div>
+              <div class="hw-metrics-row">
+                <div class="hw-metric"><span class="hw-metric-k">Distancia</span><span class="hw-metric-v" id="hw-val-dist">42 cm</span></div>
+                <div class="hw-metric"><span class="hw-metric-k">Zona</span><span class="hw-metric-v" id="hw-val-zona">LIBRE</span></div>
+              </div>
+              <div class="hw-card-estado-row">
+                <button type="button" class="hw-st-btn" data-st-card="hcsr04" data-st-val="normal">OK</button>
+                <button type="button" class="hw-st-btn aviso" data-st-card="hcsr04" data-st-val="advertencia">Aviso</button>
+                <button type="button" class="hw-st-btn fallo" data-st-card="hcsr04" data-st-val="fallo">Fallo</button>
+              </div>
+            </article>
+
+            <!-- Tarjeta 2: Sensor de Línea (TCRT5000) -->
+            <article class="hw-card" id="hw-card-tcrt5000" data-card="tcrt5000" data-estado="normal">
+              <div class="hw-card-head">
+                <span class="hw-card-title">2 · LÍNEA TCRT5000</span>
+                <span class="hw-badge ok" id="hw-badge-tcrt5000">LÍNEA OK</span>
+              </div>
+              <div class="hw-tcrt-array" aria-label="Arreglo de 5 sensores ópticos S1 a S5">
+                <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s1"></span><span>S1</span></div>
+                <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s2"></span><span>S2</span></div>
+                <div class="hw-tcrt-ch"><span class="hw-tcrt-led on" id="hw-tcrt-s3"></span><span>S3</span></div>
+                <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s4"></span><span>S4</span></div>
+                <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s5"></span><span>S5</span></div>
+              </div>
+              <div class="hw-pid-track" title="Error lateral PID">
+                <div class="hw-pid-center"></div>
+                <div class="hw-pid-marker" id="hw-pid-marker" style="left:50%"></div>
+              </div>
+              <div class="hw-canvas-wrap">
+                <canvas id="hw-canvas-osc" width="260" height="58" aria-label="Oscilograma de error PID en tiempo real"></canvas>
+              </div>
+              <div class="hw-metrics-row">
+                <div class="hw-metric"><span class="hw-metric-k">Error PID</span><span class="hw-metric-v" id="hw-val-linea">+0.0 mm</span></div>
+              </div>
+              <div class="hw-card-estado-row">
+                <button type="button" class="hw-st-btn" data-st-card="tcrt5000" data-st-val="normal">OK</button>
+                <button type="button" class="hw-st-btn aviso" data-st-card="tcrt5000" data-st-val="advertencia">Aviso</button>
+                <button type="button" class="hw-st-btn fallo" data-st-card="tcrt5000" data-st-val="fallo">Fallo</button>
+              </div>
+            </article>
+
+            <!-- Tarjeta 3: Velocidad y Dirección (Motores) -->
+            <article class="hw-card" id="hw-card-motores" data-card="motores" data-estado="normal">
+              <div class="hw-card-head">
+                <span class="hw-card-title">3 · MOTORES Y RUMBO</span>
+                <span class="hw-badge ok" id="hw-badge-motores">ADELANTE</span>
+              </div>
+              <div class="hw-motor-top">
+                <div class="hw-canvas-wrap">
+                  <canvas id="hw-canvas-vel" width="150" height="96" aria-label="Velocímetro circular 0 a 1 m/s"></canvas>
+                </div>
+                <div class="hw-dpad" aria-label="Indicador direccional">
+                  <span></span>
+                  <span class="hw-dpad-arrow on" id="hw-arrow-ADELANTE" title="Adelante">▲</span>
+                  <span></span>
+                  <span class="hw-dpad-arrow" id="hw-arrow-IZQUIERDA" title="Izquierda">◀</span>
+                  <span class="hw-dpad-center">DIR</span>
+                  <span class="hw-dpad-arrow" id="hw-arrow-DERECHA" title="Derecha">▶</span>
+                  <span></span>
+                  <span class="hw-dpad-arrow" id="hw-arrow-ATRÁS" title="Atrás">▼</span>
+                  <span></span>
+                </div>
+              </div>
+              <div class="hw-diff-bars">
+                <div class="hw-diff-row"><span>M-IZQ</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-izq" style="width:41%"></div></div><span id="hw-txt-izq">41%</span></div>
+                <div class="hw-diff-row"><span>M-DER</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-der" style="width:41%"></div></div><span id="hw-txt-der">41%</span></div>
+              </div>
+              <div class="hw-metrics-row">
+                <div class="hw-metric"><span class="hw-metric-k">Velocidad</span><span class="hw-metric-v" id="hw-val-vel">0.41 m/s</span></div>
+                <div class="hw-metric"><span class="hw-metric-k">PWM</span><span class="hw-metric-v" id="hw-val-pwm">41 %</span></div>
+              </div>
+              <div class="hw-card-estado-row">
+                <button type="button" class="hw-st-btn" data-st-card="motores" data-st-val="normal">OK</button>
+                <button type="button" class="hw-st-btn aviso" data-st-card="motores" data-st-val="advertencia">Aviso</button>
+                <button type="button" class="hw-st-btn fallo" data-st-card="motores" data-st-val="fallo">Fallo</button>
+              </div>
+            </article>
+
+            <!-- Tarjeta 4: Sensor Inercial (MPU-6050 IMU) -->
+            <article class="hw-card" id="hw-card-mpu6050" data-card="mpu6050" data-estado="normal">
+              <div class="hw-card-head">
+                <span class="hw-card-title">4 · INERCIAL MPU-6050</span>
+                <span class="hw-badge ok" id="hw-badge-mpu6050">ESTABILIDAD OK</span>
+              </div>
+              <div class="hw-canvas-wrap">
+                <canvas id="hw-canvas-imu" width="260" height="122" aria-label="Chasis wireframe 3D del robot móvil"></canvas>
+              </div>
+              <div class="hw-metrics-row">
+                <div class="hw-metric"><span class="hw-metric-k">PITCH</span><span class="hw-metric-v" id="hw-val-pitch">0.0°</span></div>
+                <div class="hw-metric"><span class="hw-metric-k">ROLL</span><span class="hw-metric-v" id="hw-val-roll">0.0°</span></div>
+                <div class="hw-metric"><span class="hw-metric-k">ACEL (g)</span><span class="hw-metric-v" id="hw-val-acel">1.00 g</span></div>
+              </div>
+              <div class="hw-card-estado-row">
+                <button type="button" class="hw-st-btn" data-st-card="mpu6050" data-st-val="normal">OK</button>
+                <button type="button" class="hw-st-btn aviso" data-st-card="mpu6050" data-st-val="advertencia">Aviso</button>
+                <button type="button" class="hw-st-btn fallo" data-st-card="mpu6050" data-st-val="fallo">Fallo</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -84,5 +353,6 @@
 <footer id="pie"></footer>
 <script src="../../datos/proyecto.js"></script>
 <script src="../../assets/sitio.js"></script>
+<script src="../../assets/inspector_hw.js"></script>
 </body>
 </html>
