@@ -27,18 +27,19 @@
 **Listo cuando:** ves `MQTT conectado` en el monitor.
 
 ### Paso 2 · Abrir la App Flutter (2 min)
-1. Abre `https://ilianavsc.github.io/tg-robot-ucab/app/` en el celular o el laptop.
-2. Si aparece **MODO DEMO**, pulsa **Desconectar** o **Conectar** para salir de él.
-3. Pulsa **Conectar**.
-4. Mira el nombre del broker: debe decir **HiveMQ**.
+1. Abre `https://ilianavsc.github.io/tg-robot-ucab-app/` en el celular o el laptop.
+2. En el **Dashboard**, si aparece **MODO DEMO**, pulsa **Desconectar** o **Conectar** para salir de él.
+3. Pulsa **Conectar** y verifica la navegación principal: **Dashboard**, **Escaneo de ruta**, **Pedidos unificados** y **Alertas**.
+4. Mira el nombre del broker: debe decir **HiveMQ** (orden de respaldo MQTT v2.0.0: HiveMQ → EMQX → Mosquitto).
 
 **Listo cuando:** la app dice `Enlace MQTT · HiveMQ` y empieza a mostrar la telemetría del ESP32 (llega cada 2 s).
 
 > Si dice EMQX o Mosquitto, el ESP32 no la ve (usa HiveMQ). Pulsa **Desconectar** y **Conectar** otra vez.
 
-### Paso 3 · Enviar una orden (1 min)
-1. En la tarjeta de órdenes pulsa **Frenar** (es la orden segura: no mueve nada).
+### Paso 3 · Enviar una orden y probar vistas (1 min)
+1. En el **Dashboard**, pulsa **Frenar** (es la orden segura: no mueve nada).
 2. Anota la hora.
+3. Verifica también que las pestañas **Escaneo de ruta**, **Pedidos unificados** y **Alertas** reflejen el estado en vivo del contrato MQTT v2.0.0 (`rutas/estado`, `pedidos/estado` y `alertas`).
 
 ### Paso 4 · Verificar el ACK (3 min)
 1. En la app, la caja "último ACK" pasa de gris a ámbar (esperando) y luego a verde: `confirmó "frenar" en N ms`.

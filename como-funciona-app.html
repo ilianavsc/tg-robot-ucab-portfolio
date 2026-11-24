@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TG Robot UCAB · Cómo funciona la App por dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.indice-flujos{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px}
+.indice-flujos a{display:inline-flex;align-items:center;min-height:44px;padding:8px 14px;border-radius:var(--tg-radius-full);background:var(--tg-surface);border:2px solid var(--tg-border-strong);color:var(--tg-text);font-family:var(--tg-font-mono);font-size:13px;font-weight:600;text-decoration:none;box-shadow:3px 3px 0 var(--tg-border-strong)}
+.indice-flujos a:hover{background:var(--tg-accent-soft);color:var(--tg-accent-hover)}
+.flujo-card{background:var(--tg-surface);border:2px solid var(--tg-border-strong);border-radius:var(--tg-radius-xl);padding:20px;margin:0 0 24px;box-shadow:var(--shadow-hard)}
+.flujo-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px}
+.flujo-head h2{margin:0;font-family:var(--tg-font-display);font-size:24px;line-height:1.2}
+.flujo-tag{font-family:var(--tg-font-mono);font-size:12px;font-weight:600;padding:4px 10px;border-radius:var(--tg-radius-full);background:var(--tg-accent-soft);color:var(--tg-accent-hover);border:1.5px solid var(--tg-accent)}
+.flujo-desc{margin:0 0 14px;color:var(--tg-text-muted);font-size:15.5px}
+.mermaid-box{background:var(--tg-bg);border:1.5px solid var(--tg-border);border-radius:var(--tg-radius-lg);padding:14px;overflow-x:auto;max-width:100%}
+.mermaid{display:flex;justify-content:center;min-width:0}
+.mermaid svg{max-width:100%;height:auto}
+.flujo-notas{margin:12px 0 0;padding-left:20px;font-size:14.5px;color:var(--tg-text-muted);display:grid;gap:4px}
+.flujo-notas code{font-family:var(--tg-font-mono);font-size:13px;color:var(--tg-text)}
+.cta-app{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--tg-surface);border:2px solid var(--tg-border-strong);border-left:8px solid var(--tg-accent);border-radius:var(--tg-radius-xl);padding:18px 20px;margin-top:8px}
+.cta-app p{margin:0;font-size:15.5px;color:var(--tg-text-muted)}
+.cta-app strong{color:var(--tg-text)}
+.cta-acciones{display:flex;flex-wrap:wrap;gap:10px}
+.cta-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 16px;border-radius:var(--tg-radius-md);border:2px solid var(--tg-border-strong);background:var(--tg-accent);color:#fff;font-family:var(--tg-font-display);font-weight:700;font-size:15px;text-decoration:none}
+.cta-btn:hover{background:var(--tg-accent-hover);color:#fff}
+.cta-btn.sec{background:var(--tg-surface-alt);color:var(--tg-text)}
+.cta-btn.sec:hover{background:var(--tg-accent-soft);color:var(--tg-text)}
+@media (max-width:640px){
+  .flujo-card{padding:14px}
+  .mermaid-box{padding:10px}
+  .mermaid{justify-content:flex-start}
+  .mermaid svg{min-width:560px;max-width:none}
+}
+</style>
+</head>
+<body data-pagina="como-funciona-app" data-base="">
+<header id="menu"></header>
+<main>
+  <p class="ceja">El Proyecto · App Flutter</p>
+  <h1>Cómo funciona la App <em>por dentro</em></h1>
+  <p class="bajada">Cinco diagramas que explican cómo se comunica la App Flutter con el robot (P04 / ESP32) mediante el contrato <strong>MQTT v2.0.0</strong>, cómo opera la Capa 3 de rutas y pedidos, y cómo responde la seguridad inercial del MPU-6050.</p>
+
+  <nav class="indice-flujos" aria-label="Índice de diagramas">
+    <a href="#d-arquitectura">1. Arquitectura MQTT</a>
+    <a href="#d-rutas">2. Rutas (N=3 vs Lineal)</a>
+    <a href="#d-pedidos">3. Pedidos y cancelación</a>
+    <a href="#d-seguridad">4. Seguridad MPU-6050</a>
+    <a href="#d-flujo-app">5. Flujo de la App</a>
+  </nav>
+
+  <section class="flujo-card" id="d-arquitectura" aria-labelledby="t-d1">
+    <div class="flujo-head">
+      <h2 id="t-d1">1. Arquitectura de comunicación MQTT v2.0.0</h2>
+      <span class="flujo-tag">WSS + TCP · QoS 0/1/2</span>
+    </div>
+    <p class="flujo-desc">La App Flutter se conecta directo por WebSocket seguro (WSS) al clúster de respaldo MQTT (HiveMQ → EMQX → Mosquitto) sin intermediarios, intercambiando telemetría, rutas, pedidos y alertas con P04 (SIL) o el ESP32 físico (HIL).</p>
+    <div class="mermaid-box">
+      <pre class="mermaid">
+flowchart LR
+  OP["Operador en laboratorio"] <--> APP["App Flutter Web / Movil"]
+  APP <-->|"WSS · MQTT v2.0.0"| BRK["Broker MQTT (HiveMQ / EMQX / Mosquitto)"]
+  BRK <-->|"WSS (SIL) / TCP 1883 (HIL)"| ROB["Simulador P04 / ESP32"]
+      </pre>
+    </div>
+    <ul class="flujo-notas">
+      <li><code>estado</code>, <code>ultrasonido</code> y <code>sensores/inercial</code> viajan en <strong>QoS 0</strong>; comandos, <code>rutas/*</code> y <code>pedidos/*</code> en <strong>QoS 1</strong>; <code>alertas</code> críticas en <strong>QoS 2</strong>.</li>
+      <li><code>conexion</code>, <code>rutas/estado</code> y <code>pedidos/estado</code> son <strong>retenidos</strong> para restaurar el estado vigente al reconectar.</li>
+    </ul>
+  </section>
+
+  <section class="flujo-card" id="d-rutas" aria-labelledby="t-d2">
+    <div class="flujo-head">
+      <h2 id="t-d2">2. Ciclo de Rutas: Cerrada (N = 3) vs. Lineal</h2>
+      <span class="flujo-tag">Capa 3 Operacional</span>
+    </div>
+    <p class="flujo-desc">Las rutas cerradas permiten operar en bucle y desbloquean el reescaneo con parada tras completar <strong>N = 3 usos</strong> exitosos. Las rutas lineales exigen doble escaneo con confirmación manual obligatoria en <code>ESPERA_REPOSICION</code>.</p>
+    <div class="mermaid-box">
+      <pre class="mermaid">
+flowchart TD
+  INI["SIN_RUTA"] -->|"Ruta cerrada"| C1["ESCANEO_IDA"]
+  C1 --> C2["OPERACION_BUCLE"]
+  C2 -->|"Contador usos_completados = 3"| C3["REESCANEO_PARADA"]
+  C3 --> C4["OPERACION_CON_PARADA"]
+
+  INI -->|"Ruta lineal"| L1["ESCANEO_IDA"]
+  L1 --> L2["ESPERA_REPOSICION (movimiento bloqueado)"]
+  L2 -->|"Confirmacion manual_usuario"| L3["ESCANEO_RETORNO"]
+  L3 --> C4
+      </pre>
+    </div>
+    <ul class="flujo-notas">
+      <li>En <code>ESPERA_REPOSICION</code> no existe timeout automático: el operador debe publicar <code>rutas/reposicionamiento</code> con <code>confirmado: true</code>.</li>
+      <li>Los ciclos interrumpidos por obstáculo o falla no incrementan <code>usos_completados</code>.</li>
+    </ul>
+  </section>
+
+  <section class="flujo-card" id="d-pedidos" aria-labelledby="t-d3">
+    <div class="flujo-head">
+      <h2 id="t-d3">3. Pedidos y Cancelación Segura</h2>
+      <span class="flujo-tag">ruta_preservada = true</span>
+    </div>
+    <p class="flujo-desc">Los pedidos solo se habilitan cuando existe una parada configurada. Si el operador cancela un pedido en curso, el robot ejecuta frenado controlado en <code>CANCELACION_SEGURA</code> sin borrar la ruta aprendida.</p>
+    <div class="mermaid-box">
+      <pre class="mermaid">
+flowchart LR
+  SP["SIN_PEDIDO"] -->|"pedidos/solicitud"| SOL["SOLICITADO"]
+  SOL --> TR["EN_TRANSITO"]
+  TR -->|"Llegada a parada"| ENT["ENTREGADO"]
+  TR -->|"pedidos/cancelacion"| CAN["CANCELACION_SEGURA"]
+  SOL -->|"pedidos/cancelacion"| CAN
+  CAN -->|"ruta_preservada = true"| RP["Ruta preservada (lista para nuevo pedido)"]
+  ENT --> RP
+      </pre>
+    </div>
+    <ul class="flujo-notas">
+      <li>Cada solicitud y cancelación incluye trazabilidad obligatoria: <code>message_id</code>, <code>request_id</code>, <code>sequence</code>, <code>timestamp</code> y <code>schema_version</code>.</li>
+    </ul>
+  </section>
+
+  <section class="flujo-card" id="d-seguridad" aria-labelledby="t-d4">
+    <div class="flujo-head">
+      <h2 id="t-d4">4. Seguridad Inercial (MPU-6050) y Recuperación Manual</h2>
+      <span class="flujo-tag">QoS 2 · Fail-Safe</span>
+    </div>
+    <p class="flujo-desc">Cualquier evento anómalo del MPU-6050 (<code>impacto</code>, <code>inclinacion</code> o <code>atascamiento</code>) tiene prioridad absoluta sobre rutas y pedidos: bloquea el movimiento y exige intervención humana antes de reanudar.</p>
+    <div class="mermaid-box">
+      <pre class="mermaid">
+flowchart LR
+  MPU["MPU-6050 (impacto / inclinacion / atascamiento)"] -->|"Alerta QoS 2"| ERR["ERROR_SEGURIDAD"]
+  ERR --> BLQ["Bloqueo total (movimiento_bloqueado = true)"]
+  BLQ -->|"Inspeccion del operador"| REC["RECUPERACION_MANUAL"]
+  REC -->|"Confirmacion segura"| OK["Reanudacion de operacion"]
+      </pre>
+    </div>
+    <ul class="flujo-notas">
+      <li>Durante <code>ERROR_SEGURIDAD</code> y <code>RECUPERACION_MANUAL</code> el robot rechaza órdenes autónomas y solo limpia la alerta al confirmar recuperación manual.</li>
+    </ul>
+  </section>
+
+  <section class="flujo-card" id="d-flujo-app" aria-labelledby="t-d5">
+    <div class="flujo-head">
+      <h2 id="t-d5">5. Flujo de pantallas en la App Flutter</h2>
+      <span class="flujo-tag">UX Unificada</span>
+    </div>
+    <p class="flujo-desc">La interfaz organiza la operación diaria en un flujo lineal: diagnóstico rápido al inicio, validación o escaneo de ruta, gestión unificada de pedidos, centro de alertas y panel de diagnóstico técnico.</p>
+    <div class="mermaid-box">
+      <pre class="mermaid">
+flowchart LR
+  IN["Inicio (Dashboard)"] --> RT["Ruta disponible (Escaneo de ruta)"]
+  RT --> SG["Seguimiento (Pedidos unificados)"]
+  SG --> AL["Alertas (Centro QoS 2)"]
+  AL --> DG["Diagnostico (MQTT / ACK / Telemetria)"]
+      </pre>
+    </div>
+    <ul class="flujo-notas">
+      <li>Todas las vistas funcionan tanto conectadas al broker MQTT v2.0.0 como en <strong>Modo Demo</strong> sin red.</li>
+    </ul>
+  </section>
+
+  <div class="cta-app">
+    <p><strong>Prueba la App en vivo</strong> o consulta el detalle de los 13 tópicos del contrato MQTT v2.0.0.</p>
+    <div class="cta-acciones">
+      <a class="cta-btn" href="https://ilianavsc.github.io/tg-robot-ucab-app/" target="_blank" rel="noopener">Abrir App Web ↗</a>
+      <a class="cta-btn sec" href="arquitectura.html">Ver Arquitectura</a>
+      <a class="cta-btn sec" href="prototipos/centro-pruebas.html">Centro de pruebas</a>
+    </div>
+  </div>
+</main>
+<footer id="pie"></footer>
+<script src="datos/proyecto.js"></script>
+<script src="assets/sitio.js"></script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#E6F7F2',
+      primaryTextColor: '#0F172A',
+      primaryBorderColor: '#0F9D84',
+      lineColor: '#334155',
+      secondaryColor: '#F1F5F9',
+      tertiaryColor: '#FEF3C7',
+      fontFamily: 'Atkinson Hyperlegible, system-ui, sans-serif'
+    }
+  });
+</script>
+</body>
+</html>

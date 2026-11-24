@@ -244,6 +244,7 @@ for (const slug of ['capitulo-1', 'marco-preliminar', 'capitulo-2']) {
 const archivosWebActivos = [
   'index.html',
   'arquitectura.html',
+  'como-funciona-app.html',
   'bitacora.html',
   'cronograma.html',
   'decisiones.html',

@@ -11,99 +11,114 @@
 <style>
 .diagrama{padding:14px}
 .diagrama .desliza{overflow-x:auto}
-.diagrama svg{min-width:760px;width:100%;height:auto;display:block}
+.diagrama svg{min-width:720px;width:100%;height:auto;display:block}
 .pasos{margin:0;padding-left:0;list-style:none;display:grid;gap:10px;counter-reset:p}
 .pasos li{counter-increment:p;display:grid;grid-template-columns:40px 1fr;gap:12px;background:var(--blanco);border-radius:12px;padding:12px 16px;font-size:16px}
 .pasos li::before{content:counter(p);font-family:var(--display);font-weight:700;font-size:24px;line-height:1.1;color:var(--llega)}
 .buzones{list-style:none;padding:0;margin:0;display:grid;gap:8px}
-.buzones li{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;align-items:center;background:var(--blanco);border-radius:12px;padding:12px 16px;border-left:6px solid var(--c)}
+.buzones li{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:12px;align-items:center;background:var(--blanco);border-radius:12px;padding:12px 16px;border-left:6px solid var(--c)}
 .buzones code{font-family:var(--mono);font-size:14px;overflow-wrap:anywhere}
 .buzones small{color:var(--suave);font-size:14px}
+.capa3-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:0 0 14px}
+.capa3-box{background:var(--blanco);border:2px solid var(--tinta);border-radius:14px;padding:14px 16px}
+.capa3-box h3{margin:0 0 6px;font-family:var(--display);font-size:18px}
+.capa3-box p{margin:0;font-size:14.5px;color:var(--suave)}
 @media (max-width:640px){.buzones li{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-pagina="arquitectura" data-base="">
 <header id="menu"></header>
 <main>
-<p class="ceja">Arquitectura</p>
+<p class="ceja">Arquitectura · Contrato MQTT v2.0.0</p>
 <h1>El sistema <em>completo</em></h1>
-<p class="bajada">Cinco piezas que se pasan mensajes. Las de borde verde ya funcionan <strong>en simulación (SIL)</strong>; las punteadas vienen en las próximas fases. Hoy la App (P09) habla <strong>directo con el broker</strong> por WebSocket; cuando exista el puente (P06) leerá también de Firebase. La validación con el robot físico (HIL) empieza en diciembre.</p>
+<p class="bajada">La arquitectura opera bajo el contrato canónico <strong>MQTT v2.0.0</strong> (<code>specs/mqtt/contract.json</code>): la <strong>App Flutter</strong> habla directo por WebSocket seguro (WSS) con el clúster de respaldo MQTT (<strong>HiveMQ → EMQX → Mosquitto</strong>), y el mismo contrato enlaza el simulador <strong>P04 (SIL)</strong>, el <strong>Gemelo Digital (P05)</strong> y el <strong>ESP32 físico (HIL)</strong>.</p>
 
 <section aria-labelledby="t-mapa">
-  <h2 id="t-mapa">El mapa</h2>
+  <h2 id="t-mapa">El mapa del sistema</h2>
   <div class="tarjeta sombra diagrama"><div class="desliza">
-  <svg viewBox="0 0 1000 330" role="img" aria-label="El robot habla con el broker por MQTT; el puente pasa los mensajes a Firebase; la app lee Firebase y hoy también el broker; el banco P01 se conecta al broker">
+  <svg viewBox="0 0 960 280" role="img" aria-label="La App Flutter se comunica por MQTT v2.0.0 WSS con el broker HiveMQ, EMQX y Mosquitto; el broker enlaza el ESP32 físico, el simulador P04 y el banco de pruebas P01">
     <defs><marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#14213D"/></marker></defs>
     <g font-family="Atkinson Hyperlegible, sans-serif" font-size="13" fill="#4A5A73">
-      <line x1="174" y1="110" x2="226" y2="110" stroke="#14213D" stroke-width="1.6" marker-start="url(#fl)" marker-end="url(#fl)"/>
-      <text x="200" y="98" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5">MQTT</text>
-      <line x1="381" y1="110" x2="433" y2="110" stroke="#14213D" stroke-width="1.6" stroke-dasharray="5 4" marker-start="url(#fl)" marker-end="url(#fl)"/>
-      <text x="407" y="98" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5">MQTT</text>
-      <line x1="588" y1="110" x2="640" y2="110" stroke="#14213D" stroke-width="1.6" stroke-dasharray="5 4" marker-start="url(#fl)" marker-end="url(#fl)"/>
-      <line x1="795" y1="110" x2="847" y2="110" stroke="#14213D" stroke-width="1.6" stroke-dasharray="5 4" marker-start="url(#fl)" marker-end="url(#fl)"/>
-      <line x1="303" y1="160" x2="303" y2="218" stroke="#14213D" stroke-width="1.6" marker-start="url(#fl)" marker-end="url(#fl)"/>
-      <text x="312" y="194" font-family="JetBrains Mono, monospace" font-size="11.5">WebSocket</text>
+      <line x1="214" y1="100" x2="366" y2="100" stroke="#14213D" stroke-width="2" marker-start="url(#fl)" marker-end="url(#fl)"/>
+      <text x="290" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5">MQTT v2.0.0 · WSS</text>
+      <line x1="594" y1="100" x2="736" y2="100" stroke="#14213D" stroke-width="2" marker-start="url(#fl)" marker-end="url(#fl)"/>
+      <text x="665" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5">WSS (SIL) / TCP 1883</text>
+      <line x1="480" y1="150" x2="480" y2="196" stroke="#14213D" stroke-width="1.8" marker-start="url(#fl)" marker-end="url(#fl)"/>
+      <text x="492" y="178" font-family="JetBrains Mono, monospace" font-size="11">WSS · QA</text>
     </g>
     <g font-family="Bricolage Grotesque, sans-serif">
-      <rect x="20" y="60" width="152" height="100" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
-      <text x="96" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Robot</text>
-      <text x="96" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">ESP32 · P01/P07</text>
-      <text x="96" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">SIL · falta HIL</text>
+      <rect x="24" y="48" width="188" height="104" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
+      <text x="118" y="86" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">App Flutter</text>
+      <text x="118" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">Dashboard · Rutas</text>
+      <text x="118" y="126" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">Pedidos · Alertas</text>
 
-      <rect x="227" y="60" width="152" height="100" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
-      <text x="303" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Broker</text>
-      <text x="303" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">HiveMQ+EMQX+Mosq.</text>
-      <text x="303" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">funciona</text>
+      <rect x="368" y="48" width="224" height="104" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
+      <text x="480" y="86" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Broker MQTT v2.0.0</text>
+      <text x="480" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">HiveMQ → EMQX → Mosquitto</text>
+      <text x="480" y="126" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">13 tópicos · QoS 0 / 1 / 2</text>
 
-      <rect x="434" y="60" width="152" height="100" rx="14" fill="#FFFFFF" stroke="#4A5A73" stroke-width="2" stroke-dasharray="6 4"/>
-      <text x="510" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Puente</text>
-      <text x="510" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">MQTT a Firebase</text>
-      <text x="510" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">P06 · Fase III</text>
+      <rect x="738" y="48" width="198" height="104" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
+      <text x="837" y="86" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Robot (P04 / ESP32)</text>
+      <text x="837" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">Capa 3 + MPU-6050</text>
+      <text x="837" y="126" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">SIL activo · HIL listo</text>
 
-      <rect x="641" y="60" width="152" height="100" rx="14" fill="#FFFFFF" stroke="#4A5A73" stroke-width="2" stroke-dasharray="6 4"/>
-      <text x="717" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Firebase</text>
-      <text x="717" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">datos, usuarios, avisos</text>
-      <text x="717" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">P06 · Fase III</text>
-
-      <rect x="848" y="60" width="132" height="100" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
-      <text x="914" y="100" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">App</text>
-      <text x="914" y="122" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">Flutter · P09</text>
-      <text x="914" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">+P11 · P12 (web)</text>
-
-      <rect x="217" y="220" width="172" height="86" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
-      <text x="303" y="256" text-anchor="middle" font-weight="700" font-size="16" fill="#14213D">ESP32 virtual</text>
-      <text x="303" y="278" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5" fill="#4A5A73">banco P01</text>
-      <text x="303" y="295" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">funciona (SIL)</text>
+      <rect x="368" y="198" width="224" height="66" rx="14" fill="#FFFFFF" stroke="#6B4EE6" stroke-width="2"/>
+      <text x="480" y="226" text-anchor="middle" font-weight="700" font-size="15.5" fill="#14213D">Banco P01 y Gemelo P05</text>
+      <text x="480" y="246" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">Pruebas SIL · specs/state-machine.md</text>
     </g>
   </svg></div></div>
+  <p class="suave" style="font-size:15px;margin-top:10px">¿Quieres ver los 5 flujos detallados con diagramas Mermaid? Abre <a href="como-funciona-app.html">Cómo funciona la App por dentro</a>.</p>
+</section>
+
+<section aria-labelledby="t-capa3">
+  <h2 id="t-capa3">Capa 3 Operacional: rutas, pedidos y seguridad</h2>
+  <div class="capa3-grid">
+    <div class="capa3-box">
+      <h3>Rutas (Cerrada vs. Lineal)</h3>
+      <p>Ruta cerrada opera en bucle y tras <strong>3 usos completados</strong> habilita reescaneo con parada. Ruta lineal exige confirmación manual en <code>ESPERA_REPOSICION</code> antes del retorno.</p>
+    </div>
+    <div class="capa3-box">
+      <h3>Pedidos y cancelación segura</h3>
+      <p>Un pedido pasa por <code>SOLICITADO → EN_TRANSITO → ENTREGADO</code>. Si se cancela, entra en <code>CANCELACION_SEGURA</code> con <code>ruta_preservada: true</code> sin perder la ruta aprendida.</p>
+    </div>
+    <div class="capa3-box">
+      <h3>Seguridad MPU-6050</h3>
+      <p>Impacto, inclinación o atascamiento disparan alerta <strong>QoS 2</strong>, bloquean movimiento en <code>ERROR_SEGURIDAD</code> y requieren <code>RECUPERACION_MANUAL</code> del operador.</p>
+    </div>
+  </div>
 </section>
 
 <section aria-labelledby="t-viaje">
-  <h2 id="t-viaje">Cómo viaja un pedido</h2>
-  <p class="bajada">Así funcionará cuando estén todas las piezas.</p>
+  <h2 id="t-viaje">Cómo viaja un pedido en MQTT v2.0.0</h2>
   <ol class="pasos">
-    <li><span>Un estudiante pide "5 resistencias de 1k" en la app.</span></li>
-    <li><span>La app guarda el pedido en Firebase.</span></li>
-    <li><span>El puente lo ve y lo deja en el buzón <code class="mono">robot/ordenes</code> del broker (QoS 1).</span></li>
-    <li><span>El robot lo recibe y responde "recibí P-0007" en <code class="mono">robot/ordenes/ack</code>.</span></li>
-    <li><span>Mientras trabaja, envía su estado cada 2 s; si alguien lo levanta, envía una alarma (QoS 2).</span></li>
-    <li><span>El puente pasa todo a Firebase y la app muestra el avance y las notificaciones.</span></li>
+    <li><span>El operador selecciona la parada y solicita el pedido en la <strong>App Flutter</strong> (requiere ruta con parada configurada).</span></li>
+    <li><span>La app publica en <code class="mono">ucab-tg-sf/robot/pedidos/solicitud</code> (QoS 1) con <code>message_id</code>, <code>request_id</code>, <code>sequence</code>, <code>timestamp</code> y <code>schema_version: "2.0.0"</code>.</span></li>
+    <li><span>El robot (P04 o ESP32) valida que no exista bloqueo de seguridad, confirma el estado retenido en <code class="mono">pedidos/estado</code> (<code>SOLICITADO → EN_TRANSITO</code>) y comienza el recorrido.</span></li>
+    <li><span>Mientras avanza, publica telemetría en <code class="mono">estado</code>, <code class="mono">ultrasonido</code> y <code class="mono">sensores/inercial</code> (MPU-6050). Ante impacto, inclinación o atascamiento emite alerta QoS 2 y bloquea movimiento.</span></li>
+    <li><span>Si el operador cancela, envía <code class="mono">pedidos/cancelacion</code> (<code>CANCELACION_SEGURA</code>): el robot frena con rampa controlada (0,55 m/s²) y preserva la ruta aprendida.</span></li>
   </ol>
 </section>
 
 <section aria-labelledby="t-buzones">
-  <h2 id="t-buzones">Los buzones (tópicos MQTT)</h2>
+  <h2 id="t-buzones">Los 13 tópicos del contrato MQTT v2.0.0</h2>
   <ul class="buzones">
-    <li style="--c:#0F9D84"><code>ucab-tg-sf/robot/estado</code><small>Robot → app · QoS 0 · cómo está el robot y por qué está parado, cada 2 s</small></li>
-    <li style="--c:#0F9D84"><code>ucab-tg-sf/robot/ultrasonido</code><small>Robot → app · QoS 0 · 2× HC-SR04P (frente/atrás) y si cada sensor responde, cada 0,5 s</small></li>
-    <li style="--c:#F2603D"><code>ucab-tg-sf/robot/ordenes</code><small>App → robot · QoS 1 · pedidos y órdenes de movimiento (un <code>id</code> repetido no se ejecuta dos veces)</small></li>
-    <li style="--c:#0F9D84"><code>ucab-tg-sf/robot/ordenes/ack</code><small>Robot → app · QoS 1 · "recibí el pedido P-…"</small></li>
-    <li style="--c:#6B4EE6"><code>ucab-tg-sf/robot/alertas</code><small>Robot → app · QoS 2 · obstáculo, sensor sin eco, batería (aviso y corte), timeout manual, antirrobo</small></li>
-    <li style="--c:#F2B33D"><code>ucab-tg-sf/robot/conexion</code><small>Robot y broker · QoS 1 retenido · "en línea" o "desconectado"</small></li>
+    <li style="--c:#0F9D84"><code>ucab-tg-sf/robot/estado</code><small>Robot → app · QoS 0 · estado operativo, velocidad y motivo de parada</small></li>
+    <li style="--c:#0F9D84"><code>ucab-tg-sf/robot/ultrasonido</code><small>Robot → app · QoS 0 · 2× HC-SR04P (frente/atrás) y validez de eco</small></li>
+    <li style="--c:#0F9D84"><code>ucab-tg-sf/robot/sensores/inercial</code><small>Robot → app · QoS 0 · telemetría continua MPU-6050 (pitch, roll, acel_g, alerta)</small></li>
+    <li style="--c:#F2603D"><code>ucab-tg-sf/robot/ordenes</code><small>App → robot · QoS 1 · comandos manuales/auto y freno remoto deduplicados</small></li>
+    <li style="--c:#0F9D84"><code>ucab-tg-sf/robot/ordenes/ack</code><small>Robot → app · QoS 1 · confirmación con <code>id</code> y latencia</small></li>
+    <li style="--c:#6B4EE6"><code>ucab-tg-sf/robot/alertas</code><small>Robot → app · QoS 2 · obstáculo &lt; 20 cm, sensor sin eco, batería, impacto/inclinación/atascamiento</small></li>
+    <li style="--c:#F2B33D"><code>ucab-tg-sf/robot/conexion</code><small>Robot y broker · QoS 1 retenido · LWT "en linea" / "desconectado"</small></li>
+    <li style="--c:#2563EB"><code>ucab-tg-sf/robot/rutas/estado</code><small>Robot → app · QoS 1 retenido · tipo_ruta, estado_ruta, parada_configurada, usos_completados, movimiento_bloqueado</small></li>
+    <li style="--c:#2563EB"><code>ucab-tg-sf/robot/rutas/escaneo</code><small>App → robot · QoS 1 · iniciar, pausar, reanudar o finalizar escaneo (ida / retorno / bucle)</small></li>
+    <li style="--c:#2563EB"><code>ucab-tg-sf/robot/rutas/reposicionamiento</code><small>App → robot · QoS 1 · confirmación manual obligatoria en <code>ESPERA_REPOSICION</code></small></li>
+    <li style="--c:#D97706"><code>ucab-tg-sf/robot/pedidos/solicitud</code><small>App → robot · QoS 1 · solicitud de pedido con <code>request_id</code>, <code>parada_id</code> y <code>con_carga</code></small></li>
+    <li style="--c:#D97706"><code>ucab-tg-sf/robot/pedidos/estado</code><small>Robot → app · QoS 1 retenido · estado vigente del pedido y <code>ruta_preservada</code></small></li>
+    <li style="--c:#D97706"><code>ucab-tg-sf/robot/pedidos/cancelacion</code><small>App → robot · QoS 1 · cancelación segura (<code>CANCELACION_SEGURA</code>) sin perder la ruta</small></li>
   </ul>
-  <p class="suave" style="font-size:15px;margin-bottom:6px">Así se ve un pedido por dentro:</p>
-  <pre style="font-family:var(--mono);font-size:14px;background:var(--blanco);border:2px solid var(--tinta);border-radius:12px;padding:12px 14px;overflow-x:auto;margin:0 0 10px">{"id":"P-0001","componente":"Resistencia 1k","cantidad":5,"estante":"A3"}</pre>
-  <p class="suave" style="font-size:15px">Probado en <a href="prototipos/P01-mqtt-base/">P01</a>, en la <a href="https://ilianavsc.github.io/tg-robot-ucab-app/" target="_blank" rel="noopener">App P09</a> (Modo Demo) y en el <a href="prototipos/P05-gemelo-digital/">Gemelo Digital (P05)</a>. Contrato JSON completo: <a href="docs/arquitectura/topicos-mqtt.md">docs/arquitectura/topicos-mqtt.md</a>.</p>
+  <p class="suave" style="font-size:15px;margin:14px 0 6px">Ejemplo de payload de solicitud de pedido (MQTT v2.0.0):</p>
+  <pre style="font-family:var(--mono);font-size:13.5px;background:var(--blanco);border:2px solid var(--tinta);border-radius:12px;padding:12px 14px;overflow-x:auto;margin:0 0 10px">{"request_id":"PED-0001","parada_id":"P1","con_carga":true,"message_id":"msg-0042","sequence":42,"timestamp":"2026-11-24T01:30:00Z","schema_version":"2.0.0"}</pre>
+  <p class="suave" style="font-size:15px">Probado en <a href="prototipos/P01-mqtt-base/">P01</a>, <a href="prototipos/P04-simulador-1-esp32/">P04</a>, el <a href="prototipos/P05-gemelo-digital/">Gemelo Digital (P05)</a> y la <a href="https://ilianavsc.github.io/tg-robot-ucab-app/" target="_blank" rel="noopener">App Flutter</a>. Referencia técnica: <a href="docs/arquitectura/topicos-mqtt.md">docs/arquitectura/topicos-mqtt.md</a> y <a href="specs/state-machine.md">specs/state-machine.md</a>.</p>
 </section>
 </main>
 <footer id="pie"></footer>

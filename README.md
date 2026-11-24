@@ -13,13 +13,17 @@ Cada prototipo tiene una página visual que se entiende en 30 segundos, con sus 
 ## App web (Flutter) — lista para el jurado
 👉 **https://ilianavsc.github.io/tg-robot-ucab-app/**
 
-Trae **Modo Demo**: simula la telemetría del robot cada 2 s sin internet ni broker,
-así la demostración no depende de la red del laboratorio.
-Código en [`ilianavsc/tg-robot-ucab-app`](https://github.com/ilianavsc/tg-robot-ucab-app), desplegado automáticamente por GitHub Actions en cada push a `main`.
+Estructura actual de la App (contrato **MQTT v2.0.0** y **Capa 3 Operacional**):
+- **Dashboard:** estado en vivo, telemetría HC-SR04/TCRT5000/MPU-6050, conexión MQTT (HiveMQ → EMQX → Mosquitto) y **Modo Demo** offline.
+- **Escaneo de ruta:** flujo guiado para Ruta Cerrada (bucle con contador `N = 3`) y Ruta Lineal (`ESPERA_REPOSICION` con confirmación manual).
+- **Pedidos unificados:** solicitud sobre parada configurada, seguimiento en vivo y **cancelación segura** preservando la ruta aprendida.
+- **Alertas y diagnóstico:** Centro de Alertas QoS 2 (obstáculo, batería, impacto/inclinación/atascamiento MPU-6050) y recuperación manual.
+
+Ver diagramas interactivos en [`como-funciona-app.html`](como-funciona-app.html). Código en [`ilianavsc/tg-robot-ucab-app`](https://github.com/ilianavsc/tg-robot-ucab-app), desplegado automáticamente por GitHub Actions en cada push a `main`.
 
 ## Resumen
-Robot móvil de bajo costo que busca y transporta componentes electrónicos dentro del laboratorio, con una app para hacer pedidos y recibir alertas.
-Control con ESP32, navegación por línea con fusión de sensores, comunicación MQTT y app en Flutter con Firebase.
+Robot móvil de bajo costo que busca y transporta componentes electrónicos dentro del laboratorio, con una app para gestionar rutas, pedidos y alertas.
+Control con ESP32, navegación por línea con fusión de sensores (TCRT5000, HC-SR04P, MPU-6050), comunicación directa **MQTT v2.0.0** y app en Flutter.
 
 ## Fases (32 semanas, 26/10/2026 al 11/06/2027)
 
@@ -59,8 +63,7 @@ H0 (Wi-Fi del laboratorio) es una prueba de hardware, no un prototipo numerado.
 
 1. **Prototipos P01 → P05** en <https://ilianavsc.github.io/tg-robot-ucab-portfolio/prototipos/>: mensajes MQTT (P01),
    inspector de componentes (P02), radar (P03), Simulador 1 con la placa ESP32 (P04) y Gemelo Digital (P05).
-2. **App (P09)**: <https://ilianavsc.github.io/tg-robot-ucab-app/> → botón **Modo Demo**: estado, ultrasonidos,
-   **Centro de Alertas (P11)** y **Analítica de Sesión (P12)** con la misma regla de seguridad que el firmware.
+2. **App (P09)**: <https://ilianavsc.github.io/tg-robot-ucab-app/> → **Dashboard**, **Escaneo de ruta**, **Pedidos unificados** y **Alertas** (con **Modo Demo** offline o conectada en vivo por MQTT v2.0.0 al simulador P04 / ESP32).
 3. Con el **ESP32 real** (desde diciembre) la app y el banco P01 se conectan a él por MQTT (mismo broker).
 
 Para correr la app en local, clona [`tg-robot-ucab-app`](https://github.com/ilianavsc/tg-robot-ucab-app) y ejecuta `flutter pub get && flutter run -d chrome`.
@@ -71,11 +74,11 @@ hardware (`firmware/pruebas_pc/`). Las pruebas **HIL** (*Hardware In the Loop*) 
 cuando llegue el hardware: ESP32 real, sensores reales y la app; sus mediciones se anotan
 en [`prototipos/P02-sensores/README.md`](prototipos/P02-sensores/README.md).
 
-**Verificación automática (CI):** cada push a `main` corre, antes de publicar: `sh firmware/pruebas_pc/correr.sh` (SIL T1–T10), `node --check`, `node specs/navegacion/teach_and_repeat.test.js` (13/13), `node prototipos/P01-mqtt-base/simulador-3d/codigo/pruebas.mjs`, `node prototipos/P02-sensores/codigo/vitrina.test.js` (19/19), `node prototipos/P03-radar-ultrasonico/radar_motor.test.js` (6/6), `node prototipos/P04-simulador-1-esp32/codigo/simulador1.test.js` (25/25) y `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` (50/50); si algo falla, no se despliega.
-Contratos JSON de todos los tópicos: [`docs/arquitectura/topicos-mqtt.md`](docs/arquitectura/topicos-mqtt.md).
+**Verificación automática (CI):** cada push a `main` corre, antes de publicar: `sh firmware/pruebas_pc/correr.sh` (SIL T1–T10), `node --check`, `node scripts/validar_contratos.mjs`, `node specs/navegacion/teach_and_repeat.test.js` (13/13), `node prototipos/P01-mqtt-base/simulador-3d/codigo/pruebas.mjs`, `node prototipos/P02-sensores/codigo/vitrina.test.js` (21/21), `node prototipos/P03-radar-ultrasonico/radar_motor.test.js` (6/6), `node prototipos/P04-simulador-1-esp32/codigo/simulador1.test.js` (30/30) y `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` (55/55); si algo falla, no se despliega.
+Contratos JSON de todos los tópicos: [`specs/mqtt/contract.json`](specs/mqtt/contract.json) y [`docs/arquitectura/topicos-mqtt.md`](docs/arquitectura/topicos-mqtt.md).
 
 ## Carpetas
-- `index.html` y las demás páginas de la raíz: el sitio (inicio, cronograma, prototipos, requerimientos, hardware, arquitectura, decisiones y bitácora)
+- `index.html` y las demás páginas de la raíz: el sitio (inicio, cronograma, prototipos, requerimientos, hardware, arquitectura, **cómo funciona la app**, decisiones, tesis y bitácora)
 - `datos/proyecto.js` **el único archivo que hay que editar para actualizar el sitio** (fases, prototipos, pendientes, decisiones, bitácora)
 - `assets/` estilo y menú compartidos por todas las páginas
 - `prototipos/` una carpeta por prototipo con su página visual (`index.html`), `codigo/` y `evidencias/`
