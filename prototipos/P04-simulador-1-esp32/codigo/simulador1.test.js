@@ -670,4 +670,46 @@ prueba('MQTT v2.0.0: disparo dual MPU-6050 (alertas QoS 2 + sensores/inercial Qo
   puente.desconectar();
 });
 
+prueba('MQTT v2.0.0: finalizar respeta parada_configurada del payload y reanudar_operacion refresca UI y libera freno', () => {
+  const s = crearSim({pistaId: 'B', modo: 'auto', encendido: true});
+  const publicados = [];
+  const listeners = {};
+  const notificaciones = [];
+  const clienteMock = {
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    subscribe() {},
+    publish(topic, payload, opts) { publicados.push({topic, payload: JSON.parse(payload), opts}); },
+    removeAllListeners() {},
+    end() {},
+  };
+
+  const puente = crearPuenteMqtt({
+    sim: s,
+    crearCliente: () => clienteMock,
+    alEstado: (ev) => notificaciones.push(ev.detalle),
+  });
+  puente.conectar();
+  listeners.connect.forEach((fn) => fn());
+  const enviar = (topic, obj) => listeners.message.forEach((fn) => fn(topic, JSON.stringify(obj)));
+
+  // Inicia escaneo cerrada sin parada y al finalizar recibe parada_configurada: true
+  enviar(TOPICOS.rutas_escaneo, {accion: 'iniciar_escaneo', tipo_ruta: 'cerrada', parada_configurada: false, message_id: 'f1', sequence: 1, schema_version: '2.0.0'});
+  enviar(TOPICOS.rutas_escaneo, {accion: 'finalizar', parada_configurada: true, message_id: 'f2', sequence: 2, schema_version: '2.0.0'});
+  const pubRuta = publicados.filter((p) => p.topic === TOPICOS.rutas_estado).pop();
+  assert.strictEqual(pubRuta.payload.parada_configurada, true);
+  assert.strictEqual(pubRuta.payload.estado_ruta, 'OPERACION_CON_PARADA');
+
+  // Impacto -> recuperación remota -> reanudar_operacion refresca UI (alEstado) y libera freno/modo auto
+  puente.dispararAlertaInercial('impacto', 2.85);
+  assert.strictEqual(puente.remoto.freno, true);
+  const nAntes = notificaciones.length;
+  enviar(TOPICOS.rutas_escaneo, {accion: 'recuperacion_manual', message_id: 'f3', sequence: 3, schema_version: '2.0.0'});
+  enviar(TOPICOS.rutas_escaneo, {accion: 'reanudar_operacion', message_id: 'f4', sequence: 4, schema_version: '2.0.0'});
+  assert.ok(notificaciones.length >= nAntes + 2, 'debe notificar a la UI en recuperación y reanudación');
+  assert.strictEqual(puente.remoto.freno, false);
+  assert.strictEqual(s.modo, 'auto');
+  assert.strictEqual(puente.capa3.estado_ruta, 'OPERACION_CON_PARADA');
+  puente.desconectar();
+});
+
 console.log(`\nP04 Simulador 1: ${ok}/${ok} pruebas pasaron`);

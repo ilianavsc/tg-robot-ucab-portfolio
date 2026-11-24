@@ -434,6 +434,9 @@ export function crearPuenteMqtt({
       return {ok: true, estado_ruta: capa3.estado_ruta, publicado: pub};
     }
     if (accion === 'finalizar') {
+      if (typeof parsed.parada_configurada === 'boolean') {
+        capa3.parada_configurada = parsed.parada_configurada;
+      }
       if (capa3.estado_ruta === 'ESCANEO_IDA' && capa3.tipo_ruta === 'lineal') {
         capa3.estado_ruta = 'ESPERA_REPOSICION';
         frenarPorSeguridad('espera_reposicion');
@@ -442,6 +445,7 @@ export function crearPuenteMqtt({
         capa3.estado_ruta = capa3.parada_configurada ? 'OPERACION_CON_PARADA' : 'OPERACION_BUCLE';
       }
       const pub = publicarRutasEstado();
+      notificar(`escaneo finalizado (${capa3.estado_ruta})`);
       return {ok: true, estado_ruta: capa3.estado_ruta, publicado: pub};
     }
     if (accion === 'recuperacion_manual') {
@@ -453,6 +457,7 @@ export function crearPuenteMqtt({
       capa3.estado_ruta = 'RECUPERACION_MANUAL';
       const pub = publicarRutasEstado();
       publicarSensoresInercial();
+      notificar('recuperación manual');
       return {ok: true, estado_ruta: capa3.estado_ruta, publicado: pub};
     }
     if (accion === 'reanudar' || accion === 'reanudar_operacion') {
@@ -462,6 +467,14 @@ export function crearPuenteMqtt({
       capa3.roll = 0.0;
       capa3.acel_g = 1.0;
       parada = 'ninguna';
+      remoto.activo = false;
+      remoto.f = 0;
+      remoto.t = 0;
+      remoto.freno = false;
+      remoto.restanteS = 0;
+      sim.entrada.f = 0;
+      sim.entrada.t = 0;
+      sim.entrada.freno = false;
       if (capa3.estado_pedido === 'CANCELACION_SEGURA') {
         capa3.estado_pedido = 'SIN_PEDIDO';
         capa3.request_id = null;
@@ -469,8 +482,10 @@ export function crearPuenteMqtt({
       capa3.estado_ruta = capa3.ruta_aprendida
         ? (capa3.parada_configurada ? 'OPERACION_CON_PARADA' : 'OPERACION_BUCLE')
         : 'SIN_RUTA';
+      alModo('auto', 'Recuperación manual completada · robot operativo');
       const pub = publicarRutasEstado();
       publicarSensoresInercial();
+      notificar('recuperación completada');
       return {ok: true, estado_ruta: capa3.estado_ruta, publicado: pub};
     }
     return {ok: false, motivo: 'accion_desconocida'};
