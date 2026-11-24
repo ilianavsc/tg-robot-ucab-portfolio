@@ -712,4 +712,51 @@ prueba('MQTT v2.0.0: finalizar respeta parada_configurada del payload y reanudar
   puente.desconectar();
 });
 
+prueba('MQTT v2.0.0: 3 ciclos completos en Ruta Cerrada incrementan usos_completados a 3 en rutas/estado y habilitan reescaneo', () => {
+  const s = crearSim({pistaId: 'A', modo: 'auto', encendido: true});
+  const publicados = [];
+  const listeners = {};
+  const clienteMock = {
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    subscribe() {},
+    publish(topic, payload, opts) { publicados.push({topic, payload: JSON.parse(payload), opts}); },
+    removeAllListeners() {},
+    end() {},
+  };
+
+  const puente = crearPuenteMqtt({sim: s, crearCliente: () => clienteMock});
+  puente.conectar();
+  listeners.connect.forEach((fn) => fn());
+  const enviar = (topic, obj) => listeners.message.forEach((fn) => fn(topic, JSON.stringify(obj)));
+
+  // Cerrar escaneo de Ruta Cerrada sin parada -> OPERACION_BUCLE con 0 usos
+  enviar(TOPICOS.rutas_escaneo, {accion: 'iniciar_escaneo', tipo_ruta: 'cerrada', parada_configurada: false, message_id: 'u1', sequence: 1, schema_version: '2.0.0'});
+  enviar(TOPICOS.rutas_escaneo, {accion: 'finalizar', parada_configurada: false, message_id: 'u2', sequence: 2, schema_version: '2.0.0'});
+  assert.strictEqual(puente.capa3.estado_ruta, 'OPERACION_BUCLE');
+  assert.strictEqual(puente.capa3.usos_completados, 0);
+  assert.strictEqual(puente.puedeReescanearParada, false);
+  assert.strictEqual(puente.recibirRutaEscaneo({accion: 'reescanear_parada', message_id: 'u-pre', sequence: 3, schema_version: '2.0.0'}).ok, false);
+
+  // Simular 3 vueltas completas reales en Pista A (~62 s)
+  for (let t = 0; t < 65 && puente.capa3.usos_completados < 3; t += 0.05) {
+    s.avanzar(0.05);
+    puente.avanzar(0.05);
+  }
+  assert.strictEqual(puente.capa3.usos_completados, 3, `esperaba 3 usos completados, obtuvo ${puente.capa3.usos_completados}`);
+  assert.strictEqual(puente.puedeReescanearParada, true);
+
+  const pubsRuta = publicados.filter((p) => p.topic === TOPICOS.rutas_estado);
+  const ultimo = pubsRuta[pubsRuta.length - 1];
+  assert.strictEqual(ultimo.payload.usos_completados, 3);
+  assert.strictEqual(ultimo.opts.qos, 1);
+  assert.strictEqual(ultimo.opts.retain, true);
+
+  // Al llegar a 3 usos habilita reescanear_parada -> REESCANEO_PARADA -> OPERACION_CON_PARADA
+  enviar(TOPICOS.rutas_escaneo, {accion: 'reescanear_parada', message_id: 'u3', sequence: 4, schema_version: '2.0.0'});
+  assert.strictEqual(puente.capa3.estado_ruta, 'REESCANEO_PARADA');
+  enviar(TOPICOS.rutas_escaneo, {accion: 'finalizar', parada_configurada: true, message_id: 'u4', sequence: 5, schema_version: '2.0.0'});
+  assert.strictEqual(puente.capa3.estado_ruta, 'OPERACION_CON_PARADA');
+  puente.desconectar();
+});
+
 console.log(`\nP04 Simulador 1: ${ok}/${ok} pruebas pasaron`);

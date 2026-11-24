@@ -55,6 +55,8 @@ export const MOVIMIENTO_BLOQUEADO_EN = [
   'RECUPERACION_MANUAL',
 ];
 
+export const USOS_PARA_PARADA = 3;
+
 export const TIMEOUT_MANUAL_S = 5.0;
 const INTERVALO_PUB_S = 1.5;
 const INTENTOS_POR_BROKER = 2;
@@ -152,6 +154,15 @@ export function crearPuenteMqtt({
   };
 
   const movimientoBloqueado = () => MOVIMIENTO_BLOQUEADO_EN.includes(capa3.estado_ruta);
+
+  const puedeReescanearParada = () =>
+    capa3.tipo_ruta === 'cerrada' &&
+    !capa3.parada_configurada &&
+    capa3.estado_ruta === 'OPERACION_BUCLE' &&
+    capa3.usos_completados >= USOS_PARA_PARADA;
+
+  let vueltasPrevias = sim?.lectura ? sim.lectura().vueltas : 0;
+  let salidasPrevias = sim?.lectura ? sim.lectura().salidas : 0;
 
   const ahoraMs = () => Date.now();
 
@@ -429,8 +440,24 @@ export function crearPuenteMqtt({
       }
       capa3.tipo_ruta = tipo;
       capa3.parada_configurada = paradaOk;
+      capa3.usos_completados = 0;
+      if (sim?.lectura) {
+        const L0 = sim.lectura();
+        vueltasPrevias = L0.vueltas;
+        salidasPrevias = L0.salidas;
+      }
       capa3.estado_ruta = parsed.fase === 'retorno' ? 'ESCANEO_RETORNO' : 'ESCANEO_IDA';
       const pub = publicarRutasEstado();
+      return {ok: true, estado_ruta: capa3.estado_ruta, publicado: pub};
+    }
+    if (accion === 'reescanear_parada') {
+      if (!puedeReescanearParada()) {
+        return {ok: false, motivo: 'requiere_3_usos'};
+      }
+      capa3.parada_configurada = true;
+      capa3.estado_ruta = 'REESCANEO_PARADA';
+      const pub = publicarRutasEstado();
+      notificar('reescaneo para parada habilitado');
       return {ok: true, estado_ruta: capa3.estado_ruta, publicado: pub};
     }
     if (accion === 'finalizar') {
@@ -742,6 +769,27 @@ export function crearPuenteMqtt({
       }
       aplicarRemotoASim();
     }
+    if (sim?.lectura) {
+      const L = sim.lectura();
+      if (L.vueltas < vueltasPrevias) {
+        vueltasPrevias = L.vueltas;
+        salidasPrevias = L.salidas;
+      } else if (L.vueltas > vueltasPrevias) {
+        const deltaVueltas = L.vueltas - vueltasPrevias;
+        const sinFallo = L.salidas === salidasPrevias && !movimientoBloqueado();
+        vueltasPrevias = L.vueltas;
+        salidasPrevias = L.salidas;
+        if (
+          sinFallo &&
+          capa3.tipo_ruta === 'cerrada' &&
+          (capa3.estado_ruta === 'OPERACION_BUCLE' || capa3.estado_ruta === 'OPERACION_CON_PARADA')
+        ) {
+          capa3.usos_completados += deltaVueltas;
+          publicarRutasEstado();
+          notificar(`uso completado (${capa3.usos_completados}/${USOS_PARA_PARADA})`);
+        }
+      }
+    }
     if (estado === 'conectado') {
       tPub += dt;
       if (tPub >= INTERVALO_PUB_S) {
@@ -758,6 +806,7 @@ export function crearPuenteMqtt({
     get ultimoAck() { return ultimoAck; },
     get parada() { return parada; },
     get movimientoBloqueado() { return movimientoBloqueado(); },
+    get puedeReescanearParada() { return puedeReescanearParada(); },
     capa3,
     registroTrazabilidad,
     remoto,
