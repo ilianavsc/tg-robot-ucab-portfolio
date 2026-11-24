@@ -446,8 +446,13 @@ export function crearPuenteMqtt({
     }
     if (accion === 'recuperacion_manual') {
       if (capa3.estado_ruta !== 'ERROR_SEGURIDAD') return {ok: false, motivo: 'no_en_error_seguridad'};
+      capa3.alerta_mpu = null;
+      capa3.pitch = 0.0;
+      capa3.roll = 0.0;
+      capa3.acel_g = 1.0;
       capa3.estado_ruta = 'RECUPERACION_MANUAL';
       const pub = publicarRutasEstado();
+      publicarSensoresInercial();
       return {ok: true, estado_ruta: capa3.estado_ruta, publicado: pub};
     }
     if (accion === 'reanudar' || accion === 'reanudar_operacion') {

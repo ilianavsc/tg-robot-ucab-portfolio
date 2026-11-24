@@ -653,6 +653,14 @@ prueba('MQTT v2.0.0: disparo dual MPU-6050 (alertas QoS 2 + sensores/inercial Qo
   assert.strictEqual(puente.recibirOrden(JSON.stringify({id: 'b1', cmd: 'adelante'})).bloqueado, true);
   enviar(TOPICOS.rutas_escaneo, {accion: 'recuperacion_manual', message_id: 'r1', sequence: 10, schema_version: '2.0.0'});
   assert.strictEqual(puente.capa3.estado_ruta, 'RECUPERACION_MANUAL');
+  assert.strictEqual(puente.capa3.alerta_mpu, null, 'RECUPERACION_MANUAL debe limpiar alerta_mpu');
+  const pubImuRec = publicados.filter((p) => p.topic === TOPICOS.sensores_inercial).pop();
+  assert.strictEqual(pubImuRec.payload.alerta, null, 'sensores/inercial debe emitir alerta: null tras RECUPERACION_MANUAL');
+  // Telemetría periódica posterior sigue emitiendo alerta: null y no reactiva ERROR_SEGURIDAD
+  puente.publicarTelemetria();
+  const pubImuPost = publicados.filter((p) => p.topic === TOPICOS.sensores_inercial).pop();
+  assert.strictEqual(pubImuPost.payload.alerta, null);
+  assert.strictEqual(puente.capa3.estado_ruta, 'RECUPERACION_MANUAL');
   assert.strictEqual(puente.recibirOrden(JSON.stringify({id: 'b2', cmd: 'auto'})).bloqueado, true);
 
   // Reanudar tras recuperación manual libera el bloqueo
