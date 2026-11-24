@@ -311,103 +311,179 @@ prueba('hardware.html se mantiene como catálogo BOM sin la consola 2x2', () => 
   assert.ok(hwHtml.includes('lista-materiales-v1.xlsx'), 'hardware.html mantiene enlace a lista de materiales');
 });
 
-prueba('P02 Inspector integra la consola 2x2 con 4 cuadrantes, etiqueta local y ejecución sin errores', () => {
-  const indexHtml = readFileSync(join(aqui, '../index.html'), 'utf8');
-  assert.ok(indexHtml.includes('../../assets/css/inspector_hw.css'), 'P02 index carga inspector_hw.css');
-  assert.ok(indexHtml.includes('../../assets/inspector_hw.js'), 'P02 index carga inspector_hw.js');
-  assert.ok(indexHtml.includes('id="inspector-hardware"') && indexHtml.includes('id="hw-inspector-root"'), 'contenedor de consola 2x2');
-  for (const id of [
-    'hw-card-hcsr04',
-    'hw-card-tcrt5000',
-    'hw-card-motores',
-    'hw-card-mpu6050',
-    'hw-canvas-radar',
-    'hw-canvas-osc',
-    'hw-canvas-vel',
-    'hw-canvas-imu',
-    'hw-sim-badge',
-  ]) {
-    assert.ok(indexHtml.includes(`id="${id}"`), `falta #${id} en P02/index.html`);
-  }
-  assert.ok(/Simulación local de hardware/i.test(indexHtml), 'etiqueta explícita de simulación local');
-  for (const st of ['normal', 'advertencia', 'fallo']) {
-    assert.ok(indexHtml.includes(`data-st-val="${st}"`), `botón de estado ${st}`);
-  }
+// ---- Inspector unificado: estado central + robot 3D + consolas 2×2
+const indexP02 = () => readFileSync(join(aqui, '../index.html'), 'utf8');
+const cargarEstado = (conDom = null) => {
+  const src = readFileSync(join(aqui, '../../../assets/inspector_hw.js'), 'utf8');
+  const sandbox = {Math, Number, String, console};
+  if (conDom) Object.assign(sandbox, conDom);
+  sandbox.window = sandbox;
+  vm.runInNewContext(src, sandbox);
+  return sandbox;
+};
 
-  // Ejecución real de assets/inspector_hw.js con DOM + Canvas mínimo para validar 0 errores de runtime
-  const jsSrc = readFileSync(join(aqui, '../../../assets/inspector_hw.js'), 'utf8');
-  const noop = () => {};
-  const fakeCtx = {
-    clearRect: noop, beginPath: noop, stroke: noop, fill: noop, arc: noop,
-    moveTo: noop, lineTo: noop, closePath: noop, fillText: noop,
-    lineWidth: 1, font: '', fillStyle: '', strokeStyle: '', textAlign: 'left',
+prueba('P02 index: sin iframe ni fichas flotantes; layout robot 3D + 4 consolas con sus controles dentro', () => {
+  const html = indexP02();
+  assert.ok(!/<iframe/i.test(html), 'sin iframe');
+  assert.ok(!/hw-ficha|hw-controles|hw-esquema|pistas-iconos/.test(html), 'sin fichas flotantes ni sección de controles aparte');
+  assert.ok(html.includes('../../assets/css/inspector_hw.css') && html.includes('../../assets/inspector_hw.js'));
+  assert.ok(/<script src="inspector3d\.js"/.test(html), 'carga el robot 3D empaquetado');
+  assert.ok(html.indexOf('assets/inspector_hw.js') < html.indexOf('inspector3d.js'), 'el estado central carga antes que el 3D');
+  for (const id of ['inspector-hardware', 'hw-inspector-root', 'hw-stage', 'hw-robot3d', 'hw-sim-badge', 'hw-seguridad-estado', 'hw-btn-reset']) {
+    assert.ok(html.includes(`id="${id}"`), `falta #${id}`);
+  }
+  // cada control vive dentro de su consola
+  const tarjeta = (c) => {
+    const a = html.indexOf(`id="hw-card-${c}"`);
+    return html.slice(a, html.indexOf('</article>', a));
   };
-  const makeEl = (id, attrs = {}) => {
-    const elAttrs = {...attrs};
-    const classes = new Set();
-    const listeners = {};
+  assert.ok(/id="hw-in-dist"/.test(tarjeta('hcsr04')));
+  assert.ok(/id="hw-in-linea"/.test(tarjeta('tcrt5000')));
+  assert.ok(/id="hw-in-vel"/.test(tarjeta('motores')) && /data-dir="ADELANTE"/.test(tarjeta('motores')));
+  assert.ok(/id="hw-in-pitch"/.test(tarjeta('mpu6050')) && /data-mpu-ev="impacto"/.test(tarjeta('mpu6050')));
+  for (const c of ['hcsr04', 'tcrt5000', 'motores', 'mpu6050']) {
+    for (const st of ['normal', 'advertencia', 'fallo']) assert.ok(tarjeta(c).includes(`data-st-card="${c}" data-st-val="${st}"`), `salud ${st} en ${c}`);
+  }
+  const css = readFileSync(join(aqui, '../../../assets/css/inspector_hw.css'), 'utf8');
+  assert.ok(/grid-template-columns:\s*minmax\(0,\s*55fr\)\s*minmax\(0,\s*45fr\)/.test(css), 'columnas 55 / 45');
+  assert.ok(/\.hw-consolas\s*\{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(css), 'consolas 2×2');
+  assert.ok(/@media \(max-width: 640px\)[\s\S]*\.hw-stage \{ height: 35vh/.test(css), 'móvil: robot ~35 % de alto');
+});
+
+prueba('límites técnicos exactos: 4 canales TCRT5000, 0,46 m/s y HC-SR04 de 5 a 80 cm; badge SIL', () => {
+  const html = indexP02();
+  assert.ok(/id="hw-in-dist" type="range" min="5" max="80"/.test(html));
+  assert.ok(/id="hw-in-vel" type="range" min="0" max="0\.46"/.test(html));
+  assert.strictEqual((html.match(/id="hw-tcrt-s\d"/g) || []).length, 4);
+  assert.ok(!html.includes('hw-tcrt-s5'));
+  assert.ok(html.includes('SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS'));
+  const {SimulationState: S} = cargarEstado();
+  assert.strictEqual(S.LIMITES.canalesTcrt, 4);
+  assert.strictEqual(S.LIMITES.vMax, 0.46);
+  assert.strictEqual(S.LIMITES.distMinCm, 5);
+  assert.strictEqual(S.LIMITES.distMaxCm, 80);
+  S.set({hcsr04: {distanciaCm: 200}, motores: {velocidadMs: 1}});
+  assert.strictEqual(S.get().hcsr04.distanciaCm, 80);
+  assert.strictEqual(S.get().motores.velocidadMs, 0.46);
+  S.set({hcsr04: {distanciaCm: 1}});
+  assert.strictEqual(S.get().hcsr04.distanciaCm, 5);
+  assert.strictEqual(S.get().tcrt5000.canales.length, 4);
+  assert.ok(Math.abs(MANUAL.avance * VMAX - 0.46) < 0.005, 'coincide con el manejo del Simulador 1');
+});
+
+prueba('SimulationState: un solo estado para distancia, línea, velocidad/PWM, IMU y seguridad', () => {
+  const {SimulationState: S} = cargarEstado();
+  let avisos = 0;
+  S.subscribe(() => avisos++);
+  const s = S.get();
+  assert.strictEqual(s.seguridad.estado, 'NOMINAL');
+  assert.strictEqual(s.tcrt5000.patron, '0110');
+  assert.ok(s.motores.velEfectivaMs > 0 && s.motores.pwm > 0);
+  // obstáculo < 20 cm: parada; solo deja retroceder
+  S.set({hcsr04: {distanciaCm: 12}});
+  assert.strictEqual(s.seguridad.estado, 'PARADA');
+  assert.strictEqual(s.motores.velEfectivaMs, 0);
+  assert.ok(s.motores.bloqueado);
+  S.set({motores: {direccion: 'ATRÁS'}});
+  assert.ok(s.motores.velEfectivaMs < 0, 'retrocede');
+  S.set({hcsr04: {distanciaCm: 35}, motores: {direccion: 'ADELANTE'}});
+  assert.strictEqual(s.seguridad.estado, 'PRECAUCION');
+  // desvío de línea cambia los 4 canales
+  S.set({hcsr04: {distanciaCm: 70}, tcrt5000: {desvioMm: 27}});
+  assert.strictEqual(s.tcrt5000.patron, '0001');
+  S.set({tcrt5000: {desvioMm: -30}});
+  assert.strictEqual(s.tcrt5000.patron, '1000');
+  S.set({tcrt5000: {desvioMm: 0}});
+  // impacto e inclinación
+  S.eventoMpu('impacto');
+  assert.strictEqual(s.mpu6050.alerta, 'impacto');
+  assert.strictEqual(s.seguridad.estado, 'PARADA');
+  S.set({motores: {direccion: 'ATRÁS'}});
+  assert.strictEqual(s.motores.velEfectivaMs, 0, 'con impacto no se mueve ni hacia atrás');
+  S.eventoMpu('normal');
+  S.set({motores: {direccion: 'ADELANTE'}, mpu6050: {pitchDeg: 25}});
+  assert.strictEqual(s.mpu6050.alerta, 'inclinacion');
+  assert.strictEqual(s.seguridad.estado, 'PRECAUCION');
+  S.set({mpu6050: {pitchDeg: 40}});
+  assert.strictEqual(s.seguridad.estado, 'PARADA');
+  S.reset();
+  assert.strictEqual(s.seguridad.estado, 'NOMINAL');
+  assert.ok(avisos >= 10, 'notifica a los suscriptores (consolas y robot 3D)');
+});
+
+prueba('consolas y robot 3D leen y escriben en el mismo estado (DOM simulado, sin errores)', () => {
+  const html = indexP02();
+  const noop = () => {};
+  const ctx = new Proxy({}, {get: (t, k) => (k in t ? t[k] : noop), set: (t, k, v) => ((t[k] = v), true)});
+  const mk = (id, attrs = {}) => {
+    const clases = new Set();
+    const oy = {};
     return {
-      id,
-      attrs: elAttrs,
-      width: 260,
-      height: 132,
-      value: '0',
-      textContent: '',
-      className: '',
-      style: {},
-      classList: {
-        toggle: (c, f) => (f ? classes.add(c) : classes.delete(c)),
-        contains: (c) => classes.has(c),
-      },
-      getAttribute: (k) => elAttrs[k] ?? null,
-      setAttribute: (k, v) => { elAttrs[k] = String(v); },
-      addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
-      trigger: (ev, payload = {}) => (listeners[ev] || []).forEach((fn) => fn(payload)),
-      getContext: () => fakeCtx,
+      id, attrs, value: '0', textContent: '', className: '', style: {}, width: 260, height: 100,
+      classList: {toggle: (c, f) => (f ? clases.add(c) : clases.delete(c)), contains: (c) => clases.has(c)},
+      getAttribute: (k) => attrs[k] ?? null,
+      setAttribute: (k, v) => { attrs[k] = String(v); },
+      addEventListener: (ev, fn) => (oy[ev] ||= []).push(fn),
+      disparar(ev, e = {}) { (oy[ev] || []).forEach((fn) => fn({target: this, ...e})); },
+      getContext: () => ctx,
     };
   };
   const byId = {};
-  for (const m of indexHtml.matchAll(/id="([^"]+)"/g)) byId[m[1]] = makeEl(m[1]);
+  for (const m of html.matchAll(/id="([^"]+)"/g)) byId[m[1]] = mk(m[1]);
+  const conAttr = (re) => [...html.matchAll(re)].map((m) => {
+    const attrs = {};
+    for (const a of m[0].matchAll(/(data-[\w-]+)="([^"]*)"/g)) attrs[a[1]] = a[2];
+    return mk('', attrs);
+  });
+  const dirs = conAttr(/<button[^>]*data-dir="[^"]+"[^>]*>/g);
+  const evs = conAttr(/<button[^>]*data-mpu-ev="[^"]+"[^>]*>/g);
+  const sts = conAttr(/<button[^>]*data-st-card="[^"]+"[^>]*>/g);
   const cards = ['hcsr04', 'tcrt5000', 'motores', 'mpu6050'].map((c) => {
     const el = byId[`hw-card-${c}`];
-    el.getAttribute = (k) => (k === 'data-card' ? c : el.attrs[k] ?? null);
+    el.attrs['data-card'] = c;
     return el;
   });
-  const stBtns = [];
-  for (const c of ['hcsr04', 'tcrt5000', 'motores', 'mpu6050']) {
-    for (const v of ['normal', 'advertencia', 'fallo']) {
-      stBtns.push(makeEl('', {'data-st-card': c, 'data-st-val': v}));
-    }
-  }
-  const pills = ['hcsr04', 'tcrt5000', 'mpu6050', 'motores', 'esp32'].map((c) => makeEl('', {'data-comp': c}));
-  let intervalFn = null;
-  const doc = {
-    readyState: 'complete',
-    getElementById: (id) => byId[id] || null,
-    querySelectorAll: (sel) => {
-      if (sel === '.hw-card') return cards;
-      if (sel === '.hw-zone, .hw-comp-pill' || sel === '.hw-comp-pill') return pills;
-      if (sel === '[data-st-card]') return stBtns;
-      return [];
-    },
+  const sel = {'[data-dir]': dirs, '[data-mpu-ev]': evs, '[data-st-card]': sts, '.hw-card': cards};
+  let tick = null;
+  const sb = cargarEstado({
+    document: {readyState: 'complete', getElementById: (id) => byId[id] || null, querySelectorAll: (s) => sel[s] || [], addEventListener: noop},
+    setInterval: (fn) => { tick = fn; return 1; },
     addEventListener: noop,
-  };
-  const sandbox = {
-    document: doc,
-    window: {setInterval: (fn) => { intervalFn = fn; return 1; }},
-    Math, Number, String,
-  };
-  vm.runInNewContext(jsSrc, sandbox);
-  assert.strictEqual(byId['hw-card-hcsr04'].attrs['data-estado'], 'normal');
-  assert.strictEqual(byId['hw-badge-mpu6050'].textContent, 'ESTABILIDAD OK');
-  assert.ok(typeof intervalFn === 'function', 'animación periódica registrada');
-  intervalFn();
-  // Simula fallo en HC-SR04 y advertencia en MPU-6050
-  stBtns.find((b) => b.getAttribute('data-st-card') === 'hcsr04' && b.getAttribute('data-st-val') === 'fallo').trigger('click');
+  });
+  const S = sb.SimulationState;
+  assert.ok(typeof tick === 'function');
+  tick();
+  assert.strictEqual(byId['hw-badge-hcsr04'].textContent, 'DESPEJADO');
+  assert.strictEqual(byId['hw-seguridad-estado'].textContent, 'NOMINAL');
+  // slider de distancia → estado → consola + seguridad
+  byId['hw-in-dist'].value = '12';
+  byId['hw-in-dist'].disparar('input');
+  assert.strictEqual(S.get().hcsr04.distanciaCm, 12);
+  assert.strictEqual(byId['hw-val-dist'].textContent, '12 cm');
+  assert.strictEqual(byId['hw-seguridad-estado'].textContent, 'PARADA DE SEGURIDAD');
   assert.strictEqual(byId['hw-card-hcsr04'].attrs['data-estado'], 'fallo');
-  assert.strictEqual(byId['hw-badge-hcsr04'].textContent, 'FALLO SENSOR');
-  byId['hw-btn-reset'].trigger('click');
-  assert.strictEqual(byId['hw-card-hcsr04'].attrs['data-estado'], 'normal');
+  assert.strictEqual(byId['hw-val-vel'].textContent, '0.00 m/s');
+  // desvío de línea → LEDs
+  byId['hw-in-linea'].value = '27';
+  byId['hw-in-linea'].disparar('input');
+  assert.strictEqual(byId['hw-tcrt-s4'].className, 'hw-tcrt-led on');
+  assert.strictEqual(byId['hw-tcrt-s1'].className, 'hw-tcrt-led');
+  assert.strictEqual(byId['hw-val-patron'].textContent, '0001');
+  // botón de impacto
+  evs.find((b) => b.getAttribute('data-mpu-ev') === 'impacto').disparar('click');
+  assert.strictEqual(byId['hw-badge-mpu6050'].textContent, 'IMPACTO');
+  // un cambio desde el robot 3D (clic en una pieza) se refleja en las consolas
+  S.set({seleccion: 'tcrt5000'}, '3d');
+  assert.ok(cards[1].classList.contains('resaltada') && !cards[0].classList.contains('resaltada'));
+  byId['hw-btn-reset'].disparar('click');
+  assert.strictEqual(byId['hw-seguridad-estado'].textContent, 'NOMINAL');
+  assert.strictEqual(byId['hw-badge-hcsr04'].textContent, 'DESPEJADO');
+  // el robot 3D usa solo SimulationState
+  const src3d = readFileSync(join(aqui, 'inspector3d.js'), 'utf8');
+  assert.ok(src3d.includes('window.SimulationState') && src3d.includes("S.set({seleccion"));
+  assert.ok(/buildRobot/.test(src3d) && /pitchDeg/.test(src3d) && /distanciaCm/.test(src3d) && /canales/.test(src3d));
+  const bundle = readFileSync(join(aqui, '../inspector3d.js'), 'utf8');
+  assert.ok(bundle.includes('SimulationState') && bundle.includes('hw-robot3d'), 'bundle generado y vigente');
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

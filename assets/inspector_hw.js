@@ -1,231 +1,291 @@
 /* ==========================================================================
-   INSPECTOR DE HARDWARE Y CONSOLA DE SENSORES UNIFICADA (TG Robot UCAB)
-   Esquema interactivo del robot + fichas técnicas + consola oscura 2x2
-   (HC-SR04, TCRT5000, Motores/Encoders, MPU-6050 wireframe 3D)
+   INSPECTOR DE HARDWARE P02 · ESTADO CENTRAL + CONSOLAS INTERACTIVAS 2×2
+   --------------------------------------------------------------------------
+   SimulationState es la única fuente de verdad de la simulación local (SIL):
+   distancia HC-SR04, 4 canales TCRT5000, velocidad/PWM, pitch/roll/alertas
+   MPU-6050 y estado de seguridad. Las consolas (este archivo) y el robot 3D
+   (prototipos/P02-sensores/inspector3d.js) leen y escriben solo aquí.
+   Todos los datos son sintéticos: no hay telemetría MQTT real.
    ========================================================================== */
-(function () {
+(function (raiz) {
   'use strict';
 
-  var FICHAS = {
-    hcsr04: {
-      nombre: 'Radar Ultrasónico HC-SR04P',
-      tag: 'PROXIMIDAD',
-      funcion: 'Mide distancia a obstáculos frontales y traseros (2–400 cm) para frenado de seguridad (< 30 cm advertencia / < 20 cm parada).',
-      pines: 'Frente: TRIG GPIO 23, ECHO GPIO 33 · Atrás: TRIG GPIO 15, ECHO GPIO 5',
-      senal: 'Digital 3,3 V · pulso TRIG 10 µs + ancho de pulso ECHO (100 ms alternado)',
-      cards: ['hcsr04']
-    },
-    tcrt5000: {
-      nombre: 'Arreglo Óptico TCRT5000 (5 canales)',
-      tag: 'SEGUIMIENTO',
-      funcion: 'Detecta la cinta negra sobre el piso del laboratorio y calcula el error lateral en mm para el lazo PID de dirección.',
-      pines: 'GPIO 36 (VP), GPIO 39 (VN), GPIO 34, GPIO 35 (ADC1) + canal central S3',
-      senal: 'Analógica 12 bits (ADC1, compatible con Wi-Fi activo) · muestreo 50 Hz',
-      cards: ['tcrt5000']
-    },
-    mpu6050: {
-      nombre: 'Sensor Inercial MPU-6050 (IMU 6 ejes)',
-      tag: 'SEGURIDAD IMU',
-      funcion: 'Supervisa pitch, roll y aceleración (g) en el centro del chasis para disparar alertas de impacto, inclinación o atascamiento.',
-      pines: 'GPIO 21 (SDA), GPIO 22 (SCL), GPIO 2 (INT opcional)',
-      senal: 'Bus digital I2C (400 kHz) · telemetría QoS 0 y alertas críticas QoS 2',
-      cards: ['mpu6050']
-    },
-    motores: {
-      nombre: 'Motores DC + Driver L298N + Encoders',
-      tag: 'TRACCIÓN',
-      funcion: 'Tracción diferencial trasera (crucero 0,41 m/s, lenta 0,16 m/s) con odometría por encoders en cuadratura PCNT.',
-      pines: 'L298N: ENA 25, IN1 26, IN2 27 · ENB 14, IN3 4, IN4 13 · Encoders: 18/19 y 16/17',
-      senal: 'PWM (LEDC 1 kHz) + lectura de pulsos en cuadratura por hardware (PCNT)',
-      cards: ['motores']
-    },
-    esp32: {
-      nombre: 'Controlador Central ESP32 DevKit (30 pines)',
-      tag: 'MCU + WI-FI',
-      funcion: 'Ejecuta el firmware de control PID, seguridad local (< 20 cm), odometría, MPU-6050 y puente MQTT con la app móvil.',
-      pines: 'VIN 5,0 V (LM2596) · 3V3 bus sensores · GPIO 32 divisor batería 3S',
-      senal: 'Wi-Fi 2,4 GHz (MQTT) · BLE balizas · ADC1 + I2C + LEDC + PCNT',
-      cards: ['hcsr04', 'tcrt5000', 'motores', 'mpu6050']
-    }
+  // ------------------------------------------------------------------ límites técnicos
+  var LIMITES = {
+    distMinCm: 5, // slider HC-SR04
+    distMaxCm: 80,
+    paradaCm: 20, // < 20 cm: parada (firmware)
+    precaucionCm: 50, // 20–50 cm: precaución
+    canalesTcrt: 4, // regleta de 4 TCRT5000 (S1…S4)
+    tcrtPosMm: [-27, -9, 9, 27], // S1..S4, 18 mm entre sí
+    tcrtUmbralMm: 12, // medio ancho de la cinta (9,5 mm) + huella del sensor
+    desvioMaxMm: 30,
+    vMax: 0.46, // m/s: PWM 0,8 × 0,57 m/s (Speed 200 + L298N)
+    vPwm100: 0.57, // m/s al 100 % de PWM
+    giroDif: 0.45, // diferencia de PWM al girar (manejo del Simulador 1)
+    inclinacionDeg: 20, // alerta de inclinación
+    vuelcoDeg: 30, // parada por inclinación peligrosa
+    anguloMaxDeg: 45
   };
 
-  var estado = {
-    seleccionado: 'hcsr04',
-    distanciaCm: 42,
-    lineaMm: 0,
-    velocidadMs: 0.41,
-    direccion: 'ADELANTE',
-    pitchDeg: 0,
-    rollDeg: 0,
-    acelG: 1.00,
-    eventoMpu: 'normal', // normal | inclinacion | impacto | atascamiento
-    salud: {
-      hcsr04: 'normal',   // normal | advertencia | fallo
-      tcrt5000: 'normal',
-      motores: 'normal',
-      mpu6050: 'normal'
-    },
-    radarAngulo: 0,
-    radarDir: 1,
-    oscBuffer: []
+  var DIRECCIONES = ['ADELANTE', 'ATRÁS', 'IZQUIERDA', 'DERECHA', 'DETENIDO'];
+  var EVENTOS_MPU = {
+    normal: {pitchDeg: 0, rollDeg: 0, acelG: 1.0},
+    inclinacion: {pitchDeg: 24, rollDeg: -22, acelG: 1.12},
+    impacto: {pitchDeg: 9, rollDeg: 6, acelG: 2.85},
+    atascamiento: {pitchDeg: 3, rollDeg: 1, acelG: 0.08}
   };
-
-  for (var i = 0; i < 64; i++) estado.oscBuffer.push(0);
-
-  function $(id) {
-    return document.getElementById(id);
-  }
+  var SALUDES = ['normal', 'advertencia', 'fallo'];
 
   function clamp(v, lo, hi) {
+    v = Number(v);
+    if (!isFinite(v)) v = lo;
     return Math.max(lo, Math.min(hi, v));
   }
 
-  function seleccionarComponente(comp) {
-    if (!FICHAS[comp]) return;
-    estado.seleccionado = comp;
-    var f = FICHAS[comp];
+  function nominal() {
+    return {
+      hcsr04: {distanciaCm: 60, zona: 'libre'},
+      tcrt5000: {desvioMm: 0, canales: [0, 1, 1, 0], patron: '0110', errorMm: 0, linea: 'centrada'},
+      motores: {velocidadMs: 0.3, direccion: 'ADELANTE', velEfectivaMs: 0, pwmIzq: 0, pwmDer: 0, pwm: 0, bloqueado: false},
+      mpu6050: {pitchDeg: 0, rollDeg: 0, acelG: 1.0, evento: 'normal', alerta: null},
+      salud: {hcsr04: 'normal', tcrt5000: 'normal', motores: 'normal', mpu6050: 'normal'},
+      seguridad: {estado: 'NOMINAL', motivos: []},
+      seleccion: null,
+      origen: 'SIL',
+      version: 0
+    };
+  }
 
-    // Iluminar zonas SVG y pills
-    document.querySelectorAll('.hw-zone').forEach(function (el) {
-      el.classList.toggle('activo', el.getAttribute('data-comp') === comp);
-    });
-    document.querySelectorAll('.hw-comp-pill').forEach(function (el) {
-      el.classList.toggle('activo', el.getAttribute('data-comp') === comp);
-    });
-
-    // Actualizar ficha técnica
-    if ($('hw-ficha-nombre')) $('hw-ficha-nombre').textContent = f.nombre;
-    if ($('hw-ficha-tag')) $('hw-ficha-tag').textContent = f.tag;
-    if ($('hw-ficha-funcion')) $('hw-ficha-funcion').textContent = f.funcion;
-    if ($('hw-ficha-pines')) $('hw-ficha-pines').textContent = f.pines;
-    if ($('hw-ficha-senal')) $('hw-ficha-senal').textContent = f.senal;
-
-    // Resaltar tarjeta(s) en la consola 2x2
-    document.querySelectorAll('.hw-card').forEach(function (card) {
-      var id = card.getAttribute('data-card');
-      card.classList.toggle('resaltada', f.cards.indexOf(id) !== -1);
+  // ------------------------------------------------------------------ derivaciones (puras)
+  function canalesTcrt(desvioMm) {
+    return LIMITES.tcrtPosMm.map(function (p) {
+      return Math.abs(p - desvioMm) <= LIMITES.tcrtUmbralMm ? 1 : 0;
     });
   }
 
-  function calcularCanalesTcrt(mm) {
-    // 5 canales posicionados en [-24, -12, 0, +12, +24] mm
-    var pos = [-24, -12, 0, 12, 24];
-    return pos.map(function (p) {
-      return Math.abs(mm - p) <= 9;
-    });
+  function zonaDe(cm) {
+    if (cm < LIMITES.paradaCm) return 'critica';
+    if (cm < LIMITES.precaucionCm) return 'precaucion';
+    return 'libre';
   }
 
-  function calcularMotoresDiferencial() {
-    var v = estado.velocidadMs;
-    var d = estado.direccion;
-    if (estado.salud.motores === 'fallo' || d === 'DETENIDO' || v <= 0.005) {
-      return { izq: 0, der: 0, pwm: 0 };
+  function derivar(s) {
+    var h = s.hcsr04, t = s.tcrt5000, m = s.motores, i = s.mpu6050, sal = s.salud;
+    var motivos = [];
+    var parada = false;
+    var precaucion = false;
+
+    // HC-SR04
+    h.zona = sal.hcsr04 === 'fallo' ? 'fallo' : zonaDe(h.distanciaCm);
+    if (h.zona === 'fallo') { parada = true; motivos.push('HC-SR04 sin eco (fail-safe)'); }
+    else if (h.zona === 'critica') { parada = true; motivos.push('Obstáculo a ' + Math.round(h.distanciaCm) + ' cm (< 20 cm)'); }
+    else if (h.zona === 'precaucion') { precaucion = true; motivos.push('Obstáculo en zona de precaución'); }
+
+    // TCRT5000 (4 canales)
+    if (sal.tcrt5000 === 'fallo') {
+      t.canales = [0, 0, 0, 0];
+      t.linea = 'fallo';
+      precaucion = true;
+      motivos.push('TCRT5000 sin señal óptica');
+    } else {
+      t.canales = canalesTcrt(t.desvioMm);
+      var activos = t.canales.reduce(function (a, b) { return a + b; }, 0);
+      t.linea = activos === 0 ? 'perdida' : Math.abs(t.desvioMm) > 18 ? 'deriva' : 'centrada';
+      if (t.linea === 'perdida') { precaucion = true; motivos.push('Línea perdida (0000)'); }
+      else if (t.linea === 'deriva') { precaucion = true; motivos.push('Deriva lateral alta'); }
     }
-    var basePct = Math.round(clamp(v / 1.0, 0, 1) * 100);
-    if (d === 'ADELANTE') return { izq: basePct, der: basePct, pwm: basePct };
-    if (d === 'ATRÁS') return { izq: basePct, der: basePct, pwm: basePct };
-    if (d === 'IZQUIERDA') return { izq: Math.round(basePct * 0.35), der: basePct, pwm: basePct };
-    if (d === 'DERECHA') return { izq: basePct, der: Math.round(basePct * 0.35), pwm: basePct };
-    return { izq: 0, der: 0, pwm: 0 };
+    t.patron = t.canales.join('');
+    t.errorMm = sal.tcrt5000 === 'fallo' ? 0 : t.desvioMm;
+
+    // MPU-6050
+    var inc = Math.max(Math.abs(i.pitchDeg), Math.abs(i.rollDeg));
+    i.alerta = null;
+    if (sal.mpu6050 === 'fallo') { parada = true; i.alerta = 'fallo'; motivos.push('MPU-6050 sin respuesta I2C'); }
+    else if (i.evento === 'impacto' || i.acelG > 2) { parada = true; i.alerta = 'impacto'; motivos.push('Impacto detectado (' + i.acelG.toFixed(2) + ' g)'); }
+    else if (inc > LIMITES.vuelcoDeg) { parada = true; i.alerta = 'inclinacion'; motivos.push('Inclinación peligrosa > 30°'); }
+    else if (inc > LIMITES.inclinacionDeg || i.evento === 'inclinacion') { precaucion = true; i.alerta = 'inclinacion'; motivos.push('Inclinación > 20°'); }
+    else if (i.evento === 'atascamiento') { precaucion = true; i.alerta = 'atascamiento'; motivos.push('Atascamiento: ruedas sin avance'); }
+
+    if (sal.motores === 'fallo') { parada = true; motivos.push('Driver L298N en fallo'); }
+    ['hcsr04', 'tcrt5000', 'motores', 'mpu6050'].forEach(function (k) {
+      if (sal[k] === 'advertencia') { precaucion = true; motivos.push('Aviso en ' + k.toUpperCase()); }
+    });
+
+    s.seguridad.estado = parada ? 'PARADA' : precaucion ? 'PRECAUCION' : 'NOMINAL';
+    s.seguridad.motivos = motivos;
+
+    // Motores: la parada solo deja retroceder si el único motivo es el obstáculo frontal (como el firmware)
+    var soloObstaculo = parada && h.zona === 'critica' && i.alerta !== 'impacto' && i.alerta !== 'fallo' &&
+      !(Math.max(Math.abs(i.pitchDeg), Math.abs(i.rollDeg)) > LIMITES.vuelcoDeg) && sal.motores !== 'fallo' && sal.mpu6050 !== 'fallo';
+    var v = m.direccion === 'DETENIDO' ? 0 : m.velocidadMs;
+    m.bloqueado = false;
+    if (parada && v > 0 && !(soloObstaculo && m.direccion === 'ATRÁS')) { v = 0; m.bloqueado = true; }
+    if (i.alerta === 'atascamiento') v = 0; // las ruedas giran pero el robot no avanza
+    var base = m.direccion === 'DETENIDO' || m.bloqueado ? 0 : Math.round((m.velocidadMs / LIMITES.vPwm100) * 100);
+    var izq = base, der = base;
+    if (m.direccion === 'IZQUIERDA') izq = Math.round(base * (1 - LIMITES.giroDif));
+    if (m.direccion === 'DERECHA') der = Math.round(base * (1 - LIMITES.giroDif));
+    m.pwmIzq = izq;
+    m.pwmDer = der;
+    m.pwm = base;
+    m.velEfectivaMs = v === 0 ? 0 : m.direccion === 'ATRÁS' ? -v : v;
+    return s;
   }
 
-  function dibujarRadar() {
-    var canvas = $('hw-canvas-radar');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
+  function normalizar(s) {
+    s.hcsr04.distanciaCm = clamp(s.hcsr04.distanciaCm, LIMITES.distMinCm, LIMITES.distMaxCm);
+    s.tcrt5000.desvioMm = clamp(s.tcrt5000.desvioMm, -LIMITES.desvioMaxMm, LIMITES.desvioMaxMm);
+    s.motores.velocidadMs = Math.round(clamp(s.motores.velocidadMs, 0, LIMITES.vMax) * 100) / 100;
+    if (DIRECCIONES.indexOf(s.motores.direccion) === -1) s.motores.direccion = 'DETENIDO';
+    s.mpu6050.pitchDeg = clamp(s.mpu6050.pitchDeg, -LIMITES.anguloMaxDeg, LIMITES.anguloMaxDeg);
+    s.mpu6050.rollDeg = clamp(s.mpu6050.rollDeg, -LIMITES.anguloMaxDeg, LIMITES.anguloMaxDeg);
+    s.mpu6050.acelG = clamp(s.mpu6050.acelG, 0, 4);
+    if (!EVENTOS_MPU[s.mpu6050.evento]) s.mpu6050.evento = 'normal';
+    for (var k in s.salud) if (SALUDES.indexOf(s.salud[k]) === -1) s.salud[k] = 'normal';
+  }
+
+  // ------------------------------------------------------------------ store
+  function crearEstado() {
+    var estado = derivar(nominal());
+    var oyentes = [];
+    var SECCIONES = ['hcsr04', 'tcrt5000', 'motores', 'mpu6050', 'salud'];
+
+    function emitir(origen) {
+      estado.version++;
+      oyentes.slice().forEach(function (fn) {
+        try { fn(estado, origen); } catch (e) { if (raiz.console) raiz.console.error(e); }
+      });
+    }
+
+    return {
+      LIMITES: LIMITES,
+      get: function () { return estado; },
+      // set({hcsr04: {distanciaCm: 12}}, 'consola'): mezcla por sección, normaliza y recalcula lo derivado
+      set: function (patch, origen) {
+        patch = patch || {};
+        SECCIONES.forEach(function (sec) {
+          if (patch[sec]) for (var k in patch[sec]) estado[sec][k] = patch[sec][k];
+        });
+        if ('seleccion' in patch) estado.seleccion = patch.seleccion;
+        normalizar(estado);
+        derivar(estado);
+        emitir(origen || 'api');
+        return estado;
+      },
+      eventoMpu: function (ev, origen) {
+        var e = EVENTOS_MPU[ev] || EVENTOS_MPU.normal;
+        return this.set({mpu6050: {evento: EVENTOS_MPU[ev] ? ev : 'normal', pitchDeg: e.pitchDeg, rollDeg: e.rollDeg, acelG: e.acelG}, salud: {mpu6050: 'normal'}}, origen);
+      },
+      reset: function (origen) {
+        var sel = estado.seleccion;
+        var n = derivar(nominal());
+        for (var k in n) if (k !== 'version') estado[k] = n[k];
+        estado.seleccion = sel;
+        emitir(origen || 'reset');
+        return estado;
+      },
+      subscribe: function (fn) {
+        oyentes.push(fn);
+        return function () { oyentes = oyentes.filter(function (f) { return f !== fn; }); };
+      }
+    };
+  }
+
+  var SimulationState = crearEstado();
+  raiz.SimulationState = SimulationState;
+
+  // ================================================================== UI: consolas
+  var doc = raiz.document;
+  if (!doc) return;
+
+  function $(id) { return doc.getElementById(id); }
+  function todos(sel) { return Array.prototype.slice.call(doc.querySelectorAll(sel)); }
+  function texto(id, t) { var el = $(id); if (el) el.textContent = t; }
+  function clase(id, c) { var el = $(id); if (el) el.className = c; }
+  function n1(v) { return (v >= 0 ? '+' : '') + v.toFixed(1); }
+
+  var anim = {radar: 0, radarDir: 1, osc: []};
+  for (var q = 0; q < 64; q++) anim.osc.push(0);
+
+  // Ajusta el canvas a su caja (nítido en pantallas retina) y devuelve contexto + tamaño CSS
+  function lienzo(id) {
+    var c = $(id);
+    if (!c || !c.getContext) return null;
+    var ctx = c.getContext('2d');
+    if (!ctx) return null;
+    var w = c.clientWidth || c.width;
+    var h = c.clientHeight || c.height;
+    var dpr = Math.min(raiz.devicePixelRatio || 1, 2);
+    var W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (c.clientWidth && (c.width !== W || c.height !== H)) { c.width = W; c.height = H; }
+    if (ctx.setTransform) ctx.setTransform(c.clientWidth ? dpr : 1, 0, 0, c.clientWidth ? dpr : 1, 0, 0);
     ctx.clearRect(0, 0, w, h);
+    return {ctx: ctx, w: w, h: h};
+  }
 
-    var cx = w / 2;
-    var cy = h - 14;
-    var maxR = Math.min(w * 0.44, h - 24);
-    var fallo = estado.salud.hcsr04 === 'fallo';
-    var dist = estado.distanciaCm;
-    var peligro = !fallo && dist < 30;
+  var COL = {cian: '#00F2FE', ok: '#2EE6A8', aviso: '#F59E0B', peligro: '#EF4444', tenue: '#849495', linea: '#262A31', claro: '#E0FDFF'};
 
-    // Arcos de 10 / 30 / 50 cm
-    var anillos = [
-      { cm: 10, frac: 10 / 60, col: 'rgba(239,68,68,0.45)' },
-      { cm: 30, frac: 30 / 60, col: 'rgba(245,158,11,0.45)' },
-      { cm: 50, frac: 50 / 60, col: 'rgba(0,242,254,0.32)' }
-    ];
+  function dibujarRadar(s) {
+    var L = lienzo('hw-canvas-radar');
+    if (!L) return;
+    var ctx = L.ctx, w = L.w, h = L.h;
+    var cx = w / 2, cy = h - 10, maxR = Math.min(w * 0.46, h - 16);
+    var fallo = s.salud.hcsr04 === 'fallo';
+    var d = s.hcsr04.distanciaCm;
+    var z = s.hcsr04.zona;
     ctx.lineWidth = 1;
     ctx.font = '10px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#849495';
-    anillos.forEach(function (a) {
-      var r = maxR * a.frac;
+    [[20, 'rgba(239,68,68,0.55)'], [50, 'rgba(245,158,11,0.5)'], [80, 'rgba(0,242,254,0.3)']].forEach(function (a) {
+      var r = maxR * (a[0] / LIMITES.distMaxCm);
       ctx.beginPath();
-      ctx.strokeStyle = a.col;
+      ctx.strokeStyle = a[1];
       ctx.arc(cx, cy, r, Math.PI, 0, false);
       ctx.stroke();
-      ctx.fillText(a.cm + 'cm', cx + r - 24, cy - 3);
+      ctx.fillStyle = COL.tenue;
+      ctx.fillText(a[0] + '', cx + r - 14, cy - 2);
     });
-
-    // Cono de detección (±28°)
-    var c1 = -Math.PI / 2 - (28 * Math.PI) / 180;
-    var c2 = -Math.PI / 2 + (28 * Math.PI) / 180;
+    var ab = (15 * Math.PI) / 180;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, maxR, c1, c2, false);
+    ctx.arc(cx, cy, maxR, -Math.PI / 2 - ab * 2, -Math.PI / 2 + ab * 2, false);
     ctx.closePath();
-    ctx.fillStyle = fallo
-      ? 'rgba(239,68,68,0.08)'
-      : peligro
-        ? 'rgba(239,68,68,0.16)'
-        : 'rgba(0,242,254,0.12)';
+    ctx.fillStyle = fallo ? 'rgba(239,68,68,0.08)' : z === 'critica' ? 'rgba(239,68,68,0.2)' : z === 'precaucion' ? 'rgba(245,158,11,0.14)' : 'rgba(0,242,254,0.1)';
     ctx.fill();
-
     if (fallo) {
       ctx.fillStyle = '#F87171';
-      ctx.font = 'bold 12px "JetBrains Mono", monospace';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('SIN ECO · FALLO HC-SR04', cx, cy - maxR * 0.45);
+      ctx.fillText('SIN ECO · FALLO', cx, cy - maxR * 0.45);
       ctx.textAlign = 'left';
       return;
     }
-
-    // Haz de barrido animado
-    var ang = -Math.PI / 2 + estado.radarAngulo;
+    var col = z === 'critica' ? COL.peligro : z === 'precaucion' ? COL.aviso : COL.cian;
+    var ang = -Math.PI / 2 + anim.radar;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(ang) * maxR, cy + Math.sin(ang) * maxR);
-    ctx.strokeStyle = peligro ? '#EF4444' : '#00F2FE';
+    ctx.strokeStyle = col;
     ctx.lineWidth = 2;
     ctx.stroke();
-
-    // Punto de eco detectado
-    var rEco = clamp(dist / 60, 0.08, 1.0) * maxR;
-    var ex = cx;
-    var ey = cy - rEco;
+    var r = (d / LIMITES.distMaxCm) * maxR;
     ctx.beginPath();
-    ctx.arc(ex, ey, 6, 0, Math.PI * 2);
-    ctx.fillStyle = peligro ? '#EF4444' : '#00F2FE';
+    ctx.arc(cx, cy - r, 5, 0, Math.PI * 2);
+    ctx.fillStyle = col;
     ctx.fill();
-    ctx.beginPath();
-    ctx.arc(ex, ey, 11, 0, Math.PI * 2);
-    ctx.strokeStyle = peligro ? 'rgba(239,68,68,0.55)' : 'rgba(0,242,254,0.45)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
   }
 
-  function dibujarOscilograma() {
-    var canvas = $('hw-canvas-osc');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-
-    // Línea central
-    ctx.strokeStyle = '#262A31';
+  function dibujarOsc(s) {
+    var L = lienzo('hw-canvas-osc');
+    if (!L) return;
+    var ctx = L.ctx, w = L.w, h = L.h;
+    ctx.strokeStyle = COL.linea;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, h / 2);
     ctx.lineTo(w, h / 2);
     ctx.stroke();
-
-    if (estado.salud.tcrt5000 === 'fallo') {
+    if (s.salud.tcrt5000 === 'fallo') {
       ctx.fillStyle = '#F87171';
       ctx.font = 'bold 11px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
@@ -233,496 +293,297 @@
       ctx.textAlign = 'left';
       return;
     }
-
     ctx.beginPath();
-    ctx.strokeStyle = Math.abs(estado.lineaMm) > 18 ? '#F59E0B' : '#00F2FE';
+    ctx.strokeStyle = s.tcrt5000.linea === 'centrada' ? COL.cian : COL.aviso;
     ctx.lineWidth = 2;
-    var n = estado.oscBuffer.length;
+    var n = anim.osc.length;
     for (var i = 0; i < n; i++) {
       var x = (i / (n - 1)) * w;
-      var y = h / 2 - (estado.oscBuffer[i] / 35) * (h * 0.42);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      var y = h / 2 - (anim.osc[i] / 34) * (h * 0.44);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
   }
 
-  function dibujarVelocimetro() {
-    var canvas = $('hw-canvas-vel');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-
-    var cx = w / 2;
-    var cy = h - 14;
-    var r = Math.min(w * 0.42, h - 22);
-    var fallo = estado.salud.motores === 'fallo';
-    var v = fallo || estado.direccion === 'DETENIDO' ? 0 : estado.velocidadMs;
-
-    // Arco base
+  function dibujarVelo(s) {
+    var L = lienzo('hw-canvas-vel');
+    if (!L) return;
+    var ctx = L.ctx, w = L.w, h = L.h;
+    var cx = w / 2, cy = h - 13, r = Math.min(w * 0.36, h - 30);
+    var fallo = s.salud.motores === 'fallo';
+    var v = Math.abs(s.motores.velEfectivaMs);
+    var f = clamp(v / LIMITES.vMax, 0, 1);
+    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.arc(cx, cy, r, Math.PI, 0, false);
-    ctx.strokeStyle = '#262A31';
+    ctx.strokeStyle = COL.linea;
     ctx.lineWidth = 8;
     ctx.stroke();
-
-    // Arco activo
-    if (!fallo && v > 0) {
-      var fin = Math.PI + clamp(v / 1.0, 0, 1) * Math.PI;
+    if (!fallo && f > 0) {
       ctx.beginPath();
-      ctx.arc(cx, cy, r, Math.PI, fin, false);
-      ctx.strokeStyle = v > 0.75 ? '#F59E0B' : '#00F2FE';
-      ctx.lineWidth = 8;
+      ctx.arc(cx, cy, r, Math.PI, Math.PI + f * Math.PI, false);
+      ctx.strokeStyle = s.motores.velEfectivaMs < 0 ? COL.aviso : COL.cian;
       ctx.stroke();
     }
-
-    // Marcas 0.0 / 0.5 / 1.0
-    ctx.fillStyle = '#849495';
+    ctx.lineCap = 'butt';
+    ctx.fillStyle = COL.tenue;
     ctx.font = '9.5px "JetBrains Mono", monospace';
-    ctx.fillText('0.0', cx - r - 6, cy + 10);
-    ctx.fillText('0.5', cx - 9, cy - r - 4);
-    ctx.fillText('1.0', cx + r - 12, cy + 10);
-
-    // Aguja
-    var ang = Math.PI + clamp(v / 1.0, 0, 1) * Math.PI;
+    ctx.textAlign = 'center';
+    ctx.fillText('0', cx - r, cy + 11);
+    ctx.fillText('0.23', cx, cy - r - 6);
+    ctx.fillText('0.46', cx + r, cy + 11);
+    ctx.textAlign = 'left';
+    var ang = Math.PI + f * Math.PI;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(ang) * (r - 8), cy + Math.sin(ang) * (r - 8));
-    ctx.strokeStyle = fallo ? '#EF4444' : '#E0FDFF';
+    ctx.lineTo(cx + Math.cos(ang) * (r - 10), cy + Math.sin(ang) * (r - 10));
+    ctx.strokeStyle = fallo ? COL.peligro : COL.claro;
     ctx.lineWidth = 2.5;
     ctx.stroke();
-
     ctx.beginPath();
     ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-    ctx.fillStyle = fallo ? '#EF4444' : '#00F2FE';
+    ctx.fillStyle = fallo ? COL.peligro : COL.cian;
     ctx.fill();
   }
 
-  function dibujarImu3D() {
-    var canvas = $('hw-canvas-imu');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-
-    var fallo = estado.salud.mpu6050 === 'fallo';
-    if (fallo) {
+  // Horizonte artificial: pitch desplaza, roll gira
+  function dibujarHorizonte(s) {
+    var L = lienzo('hw-canvas-imu');
+    if (!L) return;
+    var ctx = L.ctx, w = L.w, h = L.h;
+    var cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 4;
+    if (s.salud.mpu6050 === 'fallo') {
       ctx.fillStyle = '#F87171';
-      ctx.font = 'bold 12px "JetBrains Mono", monospace';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('BUS I2C SIN RESPUESTA · MPU-6050', w / 2, h / 2 + 4);
+      ctx.fillText('I2C SIN RESPUESTA', cx, cy + 4);
       ctx.textAlign = 'left';
       return;
     }
-
-    var pitch = (estado.pitchDeg * Math.PI) / 180;
-    var roll = (estado.rollDeg * Math.PI) / 180;
-    var yaw = 0.42; // vista 3/4 fija para percibir el volumen 3D del robot móvil
-
-    function proyectar(pt) {
-      var x = pt[0], y = pt[1], z = pt[2];
-      // Rotación Roll (eje Z longitudinal)
-      var x1 = x * Math.cos(roll) - y * Math.sin(roll);
-      var y1 = x * Math.sin(roll) + y * Math.cos(roll);
-      var z1 = z;
-      // Rotación Pitch (eje X lateral)
-      var y2 = y1 * Math.cos(pitch) - z1 * Math.sin(pitch);
-      var z2 = y1 * Math.sin(pitch) + z1 * Math.cos(pitch);
-      var x2 = x1;
-      // Vista 3/4 (yaw + elevación fija)
-      var x3 = x2 * Math.cos(yaw) + z2 * Math.sin(yaw);
-      var z3 = -x2 * Math.sin(yaw) + z2 * Math.cos(yaw);
-      var elev = 0.38;
-      var y4 = y2 * Math.cos(elev) - z3 * Math.sin(elev);
-      var z4 = y2 * Math.sin(elev) + z3 * Math.cos(elev);
-      var persp = 220 / (220 + z4);
-      return [w / 2 + x3 * persp, h / 2 - y4 * persp];
-    }
-
-    var alerta = estado.eventoMpu !== 'normal' || Math.abs(estado.pitchDeg) > 20 || Math.abs(estado.rollDeg) > 20;
-    var colorWire = alerta ? '#EF4444' : '#00F2FE';
-
-    // Chasis wireframe de robot móvil (caja rectangular + flecha frontal + 4 ruedas)
-    var cw = 34, ch = 12, cl = 48;
-    var verts = [
-      [-cw, -ch, -cl], [cw, -ch, -cl], [cw, -ch, cl], [-cw, -ch, cl],
-      [-cw, ch, -cl],  [cw, ch, -cl],  [cw, ch, cl],  [-cw, ch, cl]
-    ];
-    var edges = [
-      [0,1],[1,2],[2,3],[3,0],
-      [4,5],[5,6],[6,7],[7,4],
-      [0,4],[1,5],[2,6],[3,7]
-    ];
-    var p = verts.map(proyectar);
-
-    ctx.strokeStyle = colorWire;
-    ctx.lineWidth = 1.6;
-    edges.forEach(function (e) {
-      ctx.beginPath();
-      ctx.moveTo(p[e[0]][0], p[e[0]][1]);
-      ctx.lineTo(p[e[1]][0], p[e[1]][1]);
-      ctx.stroke();
-    });
-
-    // Flecha frontal indicando el frente del robot (+Z)
-    var fBase = proyectar([0, ch + 1, 10]);
-    var fTip = proyectar([0, ch + 1, cl - 6]);
-    var fL = proyectar([-10, ch + 1, cl - 18]);
-    var fR = proyectar([10, ch + 1, cl - 18]);
-    ctx.strokeStyle = '#E0FDFF';
+    var al = s.mpu6050.alerta;
+    var col = al === 'impacto' || (al === 'inclinacion' && s.seguridad.estado === 'PARADA') ? COL.peligro : al ? COL.aviso : COL.cian;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.translate(cx, cy);
+    ctx.rotate((-s.mpu6050.rollDeg * Math.PI) / 180);
+    var off = (s.mpu6050.pitchDeg / LIMITES.anguloMaxDeg) * R;
+    ctx.fillStyle = 'rgba(0,242,254,0.10)';
+    ctx.fillRect(-R * 2, -R * 2, R * 4, R * 2 + off);
+    ctx.fillStyle = 'rgba(132,148,149,0.18)';
+    ctx.fillRect(-R * 2, off, R * 4, R * 2);
+    ctx.strokeStyle = col;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(fBase[0], fBase[1]);
-    ctx.lineTo(fTip[0], fTip[1]);
-    ctx.moveTo(fL[0], fL[1]);
-    ctx.lineTo(fTip[0], fTip[1]);
-    ctx.lineTo(fR[0], fR[1]);
+    ctx.moveTo(-R * 2, off);
+    ctx.lineTo(R * 2, off);
     ctx.stroke();
-
-    // 4 ruedas del chasis móvil
-    var ruedas = [
-      [-cw - 6, -ch, -cl + 14], [cw + 6, -ch, -cl + 14],
-      [-cw - 6, -ch, cl - 14],  [cw + 6, -ch, cl - 14]
-    ];
-    ctx.strokeStyle = '#94A3B8';
-    ctx.lineWidth = 2.2;
-    ruedas.forEach(function (rw) {
-      var a = proyectar([rw[0], rw[1] - 4, rw[2] - 8]);
-      var b = proyectar([rw[0], rw[1] - 4, rw[2] + 8]);
-      ctx.beginPath();
-      ctx.moveTo(a[0], a[1]);
-      ctx.lineTo(b[0], b[1]);
-      ctx.stroke();
-    });
+    ctx.restore();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = COL.claro;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx - R * 0.5, cy);
+    ctx.lineTo(cx - R * 0.15, cy);
+    ctx.lineTo(cx, cy + R * 0.12);
+    ctx.lineTo(cx + R * 0.15, cy);
+    ctx.lineTo(cx + R * 0.5, cy);
+    ctx.stroke();
   }
 
-  function actualizarDom() {
-    // 1. HC-SR04
-    var stH = estado.salud.hcsr04;
-    var falloH = stH === 'fallo';
+  function badge(id, txt, tipo) {
+    texto(id, txt);
+    clase(id, 'hw-badge ' + tipo);
+  }
+
+  var SEG_TXT = {NOMINAL: 'NOMINAL', PRECAUCION: 'PRECAUCIÓN', PARADA: 'PARADA DE SEGURIDAD'};
+
+  function render(s) {
+    var sal = s.salud;
+    // ---- 1 · HC-SR04
+    var h = s.hcsr04;
     var cardH = $('hw-card-hcsr04');
-    var badgeH = $('hw-badge-hcsr04');
-    var distEf = estado.distanciaCm;
-    var estCardH = falloH ? 'fallo' : (distEf < 30 || stH === 'advertencia' ? 'advertencia' : 'normal');
-    if (cardH) cardH.setAttribute('data-estado', estCardH);
-    if (badgeH) {
-      if (falloH) {
-        badgeH.textContent = 'FALLO SENSOR';
-        badgeH.className = 'hw-badge peligro';
-      } else if (distEf < 30) {
-        badgeH.textContent = 'OBSTÁCULO CERCANO';
-        badgeH.className = 'hw-badge peligro';
-      } else if (stH === 'advertencia') {
-        badgeH.textContent = 'ECO RUIDOSO';
-        badgeH.className = 'hw-badge aviso';
-      } else {
-        badgeH.textContent = 'DESPEJADO';
-        badgeH.className = 'hw-badge ok';
-      }
-    }
-    if ($('hw-val-dist')) {
-      $('hw-val-dist').textContent = falloH ? '--- cm' : distEf.toFixed(0) + ' cm';
-      $('hw-val-dist').className = 'hw-metric-v' + (falloH || distEf < 30 ? ' peligro' : '');
-    }
-    if ($('hw-val-zona')) {
-      $('hw-val-zona').textContent = falloH ? 'FALLO' : (distEf < 20 ? 'PARADA' : (distEf < 30 ? 'ALERTA' : 'LIBRE'));
-    }
+    if (cardH) cardH.setAttribute('data-estado', h.zona === 'fallo' ? 'fallo' : h.zona === 'critica' ? 'fallo' : h.zona === 'precaucion' || sal.hcsr04 === 'advertencia' ? 'advertencia' : 'normal');
+    if (h.zona === 'fallo') badge('hw-badge-hcsr04', 'FALLO SENSOR', 'peligro');
+    else if (h.zona === 'critica') badge('hw-badge-hcsr04', 'PARADA', 'peligro');
+    else if (h.zona === 'precaucion') badge('hw-badge-hcsr04', 'PRECAUCIÓN', 'aviso');
+    else if (sal.hcsr04 === 'advertencia') badge('hw-badge-hcsr04', 'ECO RUIDOSO', 'aviso');
+    else badge('hw-badge-hcsr04', 'DESPEJADO', 'ok');
+    texto('hw-val-dist', h.zona === 'fallo' ? '--- cm' : Math.round(h.distanciaCm) + ' cm');
+    clase('hw-val-dist', 'hw-metric-v' + (h.zona === 'fallo' || h.zona === 'critica' ? ' peligro' : h.zona === 'precaucion' ? ' aviso' : ''));
+    texto('hw-val-zona', {fallo: 'FALLO', critica: 'PARADA', precaucion: 'PRECAUCIÓN', libre: 'LIBRE'}[h.zona]);
+    texto('hw-lbl-dist', Math.round(h.distanciaCm) + ' cm');
 
-    // 2. TCRT5000
-    var stT = estado.salud.tcrt5000;
-    var falloT = stT === 'fallo';
+    // ---- 2 · TCRT5000
+    var t = s.tcrt5000;
     var cardT = $('hw-card-tcrt5000');
-    var badgeT = $('hw-badge-tcrt5000');
-    var estCardT = falloT ? 'fallo' : (Math.abs(estado.lineaMm) > 18 || stT === 'advertencia' ? 'advertencia' : 'normal');
-    if (cardT) cardT.setAttribute('data-estado', estCardT);
-    if (badgeT) {
-      if (falloT) {
-        badgeT.textContent = 'FALLO ÓPTICO';
-        badgeT.className = 'hw-badge peligro';
-      } else if (Math.abs(estado.lineaMm) > 18 || stT === 'advertencia') {
-        badgeT.textContent = 'DERIVA ALTA';
-        badgeT.className = 'hw-badge aviso';
-      } else {
-        badgeT.textContent = 'LÍNEA OK';
-        badgeT.className = 'hw-badge ok';
-      }
+    if (cardT) cardT.setAttribute('data-estado', t.linea === 'fallo' ? 'fallo' : t.linea !== 'centrada' || sal.tcrt5000 === 'advertencia' ? 'advertencia' : 'normal');
+    if (t.linea === 'fallo') badge('hw-badge-tcrt5000', 'FALLO ÓPTICO', 'peligro');
+    else if (t.linea === 'perdida') badge('hw-badge-tcrt5000', 'LÍNEA PERDIDA', 'peligro');
+    else if (t.linea === 'deriva') badge('hw-badge-tcrt5000', 'DERIVA ALTA', 'aviso');
+    else if (sal.tcrt5000 === 'advertencia') badge('hw-badge-tcrt5000', 'RUIDO ÓPTICO', 'aviso');
+    else badge('hw-badge-tcrt5000', 'LÍNEA OK', 'ok');
+    for (var c = 0; c < LIMITES.canalesTcrt; c++) {
+      clase('hw-tcrt-s' + (c + 1), 'hw-tcrt-led' + (t.linea === 'fallo' ? ' fault' : t.canales[c] ? ' on' : ''));
     }
-    var canales = calcularCanalesTcrt(estado.lineaMm);
-    for (var c = 0; c < 5; c++) {
-      var led = $('hw-tcrt-s' + (c + 1));
-      if (led) {
-        led.className = 'hw-tcrt-led' + (falloT ? ' fault' : (canales[c] ? ' on' : ''));
-      }
+    var mk = $('hw-pid-marker');
+    if (mk) {
+      mk.style.display = t.linea === 'fallo' ? 'none' : 'block';
+      mk.style.left = 50 + (t.desvioMm / LIMITES.desvioMaxMm) * 44 + '%';
     }
-    var pidMarker = $('hw-pid-marker');
-    if (pidMarker) {
-      pidMarker.style.display = falloT ? 'none' : 'block';
-      var pctPid = 50 + clamp(estado.lineaMm / 30, -1, 1) * 44;
-      pidMarker.style.left = pctPid + '%';
-    }
-    if ($('hw-val-linea')) {
-      $('hw-val-linea').textContent = falloT ? '--- mm' : (estado.lineaMm >= 0 ? '+' : '') + estado.lineaMm.toFixed(1) + ' mm';
-      $('hw-val-linea').className = 'hw-metric-v' + (falloT ? ' peligro' : (Math.abs(estado.lineaMm) > 18 ? ' aviso' : ''));
-    }
+    texto('hw-val-linea', t.linea === 'fallo' ? '--- mm' : n1(t.errorMm) + ' mm');
+    clase('hw-val-linea', 'hw-metric-v' + (t.linea === 'fallo' || t.linea === 'perdida' ? ' peligro' : t.linea === 'deriva' ? ' aviso' : ''));
+    texto('hw-val-patron', t.linea === 'fallo' ? '----' : t.patron);
+    texto('hw-lbl-linea', (t.desvioMm >= 0 ? '+' : '') + Math.round(t.desvioMm) + ' mm');
 
-    // 3. Motores
-    var stM = estado.salud.motores;
-    var falloM = stM === 'fallo';
-    var dif = calcularMotoresDiferencial();
+    // ---- 3 · Velocidad y dirección
+    var m = s.motores;
+    var falloM = sal.motores === 'fallo';
     var cardM = $('hw-card-motores');
-    var badgeM = $('hw-badge-motores');
-    var estCardM = falloM ? 'fallo' : (stM === 'advertencia' || estado.velocidadMs > 0.75 ? 'advertencia' : 'normal');
-    if (cardM) cardM.setAttribute('data-estado', estCardM);
-    if (badgeM) {
-      if (falloM) {
-        badgeM.textContent = 'FALLO DRIVER';
-        badgeM.className = 'hw-badge peligro';
-      } else if (stM === 'advertencia') {
-        badgeM.textContent = 'SOBRECORRIENTE';
-        badgeM.className = 'hw-badge aviso';
-      } else {
-        badgeM.textContent = estado.direccion;
-        badgeM.className = 'hw-badge ok';
-      }
-    }
-    var vShow = falloM ? '--- m/s' : (estado.direccion === 'DETENIDO' ? '0.00 m/s' : estado.velocidadMs.toFixed(2) + ' m/s');
-    if ($('hw-val-vel')) {
-      $('hw-val-vel').textContent = vShow;
-      $('hw-val-vel').className = 'hw-metric-v' + (falloM ? ' peligro' : '');
-    }
-    if ($('hw-val-pwm')) $('hw-val-pwm').textContent = falloM ? '--- %' : dif.pwm + ' %';
-    if ($('hw-bar-izq')) $('hw-bar-izq').style.width = dif.izq + '%';
-    if ($('hw-bar-der')) $('hw-bar-der').style.width = dif.der + '%';
-    if ($('hw-txt-izq')) $('hw-txt-izq').textContent = falloM ? '---' : dif.izq + '%';
-    if ($('hw-txt-der')) $('hw-txt-der').textContent = falloM ? '---' : dif.der + '%';
+    if (cardM) cardM.setAttribute('data-estado', falloM ? 'fallo' : m.bloqueado || sal.motores === 'advertencia' ? 'advertencia' : 'normal');
+    if (falloM) badge('hw-badge-motores', 'FALLO DRIVER', 'peligro');
+    else if (m.bloqueado) badge('hw-badge-motores', 'BLOQUEADO', 'peligro');
+    else if (sal.motores === 'advertencia') badge('hw-badge-motores', 'SOBRECORRIENTE', 'aviso');
+    else badge('hw-badge-motores', m.direccion, m.direccion === 'DETENIDO' ? 'aviso' : 'ok');
+    texto('hw-val-vel', falloM ? '--- m/s' : m.velEfectivaMs.toFixed(2) + ' m/s');
+    clase('hw-val-vel', 'hw-metric-v' + (falloM || m.bloqueado ? ' peligro' : ''));
+    texto('hw-val-pwm', falloM ? '--- %' : m.pwm + ' %');
+    var bi = $('hw-bar-izq'), bd = $('hw-bar-der');
+    if (bi) bi.style.width = m.pwmIzq + '%';
+    if (bd) bd.style.width = m.pwmDer + '%';
+    texto('hw-txt-izq', falloM ? '---' : m.pwmIzq + '%');
+    texto('hw-txt-der', falloM ? '---' : m.pwmDer + '%');
+    texto('hw-lbl-vel', m.velocidadMs.toFixed(2) + ' m/s');
 
-    ['ADELANTE', 'ATRÁS', 'IZQUIERDA', 'DERECHA'].forEach(function (dir) {
-      var el = $('hw-arrow-' + dir);
-      if (el) el.classList.toggle('on', !falloM && estado.direccion === dir && estado.velocidadMs > 0.005);
-    });
-
-    // 4. MPU-6050
-    var stI = estado.salud.mpu6050;
-    var falloI = stI === 'fallo';
+    // ---- 4 · MPU-6050
+    var i = s.mpu6050;
+    var falloI = sal.mpu6050 === 'fallo';
     var cardI = $('hw-card-mpu6050');
-    var badgeI = $('hw-badge-mpu6050');
-    var enAlertaI = !falloI && (estado.eventoMpu !== 'normal' || Math.abs(estado.pitchDeg) > 20 || Math.abs(estado.rollDeg) > 20);
-    var estCardI = falloI ? 'fallo' : (enAlertaI || stI === 'advertencia' ? 'advertencia' : 'normal');
-    if (cardI) cardI.setAttribute('data-estado', estCardI);
-    if (badgeI) {
-      if (falloI) {
-        badgeI.textContent = 'FALLO IMU';
-        badgeI.className = 'hw-badge peligro';
-      } else if (estado.eventoMpu === 'impacto') {
-        badgeI.textContent = 'ALERTA IMPACTO';
-        badgeI.className = 'hw-badge peligro';
-      } else if (estado.eventoMpu === 'inclinacion' || Math.abs(estado.pitchDeg) > 20 || Math.abs(estado.rollDeg) > 20) {
-        badgeI.textContent = 'ALERTA INCLINACIÓN';
-        badgeI.className = 'hw-badge peligro';
-      } else if (estado.eventoMpu === 'atascamiento') {
-        badgeI.textContent = 'ALERTA ATASCAMIENTO';
-        badgeI.className = 'hw-badge aviso';
-      } else if (stI === 'advertencia') {
-        badgeI.textContent = 'DERIVA GYRO';
-        badgeI.className = 'hw-badge aviso';
-      } else {
-        badgeI.textContent = 'ESTABILIDAD OK';
-        badgeI.className = 'hw-badge ok';
-      }
-    }
-    if ($('hw-val-pitch')) $('hw-val-pitch').textContent = falloI ? '--- °' : estado.pitchDeg.toFixed(1) + '°';
-    if ($('hw-val-roll')) $('hw-val-roll').textContent = falloI ? '--- °' : estado.rollDeg.toFixed(1) + '°';
-    if ($('hw-val-acel')) {
-      $('hw-val-acel').textContent = falloI ? '--- g' : estado.acelG.toFixed(2) + ' g';
-      $('hw-val-acel').className = 'hw-metric-v' + (falloI || estado.eventoMpu === 'impacto' ? ' peligro' : '');
-    }
+    if (cardI) cardI.setAttribute('data-estado', falloI || i.alerta === 'impacto' ? 'fallo' : i.alerta || sal.mpu6050 === 'advertencia' ? 'advertencia' : 'normal');
+    if (falloI) badge('hw-badge-mpu6050', 'FALLO IMU', 'peligro');
+    else if (i.alerta === 'impacto') badge('hw-badge-mpu6050', 'IMPACTO', 'peligro');
+    else if (i.alerta === 'inclinacion') badge('hw-badge-mpu6050', 'INCLINACIÓN', s.seguridad.estado === 'PARADA' ? 'peligro' : 'aviso');
+    else if (i.alerta === 'atascamiento') badge('hw-badge-mpu6050', 'ATASCAMIENTO', 'aviso');
+    else if (sal.mpu6050 === 'advertencia') badge('hw-badge-mpu6050', 'DERIVA GYRO', 'aviso');
+    else badge('hw-badge-mpu6050', 'ESTABILIDAD OK', 'ok');
+    texto('hw-val-pitch', falloI ? '--- °' : n1(i.pitchDeg) + '°');
+    texto('hw-val-roll', falloI ? '--- °' : n1(i.rollDeg) + '°');
+    texto('hw-val-acel', falloI ? '--- g' : i.acelG.toFixed(2) + ' g');
+    clase('hw-val-acel', 'hw-metric-v' + (falloI || i.alerta === 'impacto' ? ' peligro' : ''));
+    texto('hw-lbl-pitch', Math.round(i.pitchDeg) + '°');
+    texto('hw-lbl-roll', Math.round(i.rollDeg) + '°');
 
-    // Sincronizar etiquetas de sliders
-    if ($('hw-lbl-dist')) $('hw-lbl-dist').textContent = estado.distanciaCm + ' cm';
-    if ($('hw-lbl-linea')) $('hw-lbl-linea').textContent = (estado.lineaMm >= 0 ? '+' : '') + estado.lineaMm + ' mm';
-    if ($('hw-lbl-vel')) $('hw-lbl-vel').textContent = estado.velocidadMs.toFixed(2) + ' m/s';
-    if ($('hw-lbl-pitch')) $('hw-lbl-pitch').textContent = estado.pitchDeg + '°';
-    if ($('hw-lbl-roll')) $('hw-lbl-roll').textContent = estado.rollDeg + '°';
+    // ---- Seguridad (cabecera + HUD del robot 3D)
+    var seg = s.seguridad.estado;
+    var root = $('hw-inspector-root');
+    if (root) root.setAttribute('data-seguridad', seg.toLowerCase());
+    texto('hw-seguridad-estado', SEG_TXT[seg]);
+    texto('hw-seguridad-motivo', s.seguridad.motivos[0] || 'Todos los sensores en rango');
+    texto('hw-hud-dist', h.zona === 'fallo' ? '---' : Math.round(h.distanciaCm) + ' cm');
+    texto('hw-hud-vel', m.velEfectivaMs.toFixed(2) + ' m/s');
+    texto('hw-hud-linea', t.linea === 'fallo' ? '----' : t.patron);
+    texto('hw-hud-imu', 'P ' + Math.round(i.pitchDeg) + '° · R ' + Math.round(i.rollDeg) + '°');
 
-    // Botones activos de dirección, evento MPU y estado por tarjeta
-    document.querySelectorAll('[data-dir]').forEach(function (b) {
-      b.classList.toggle('activo', b.getAttribute('data-dir') === estado.direccion);
+    // ---- Sincroniza controles (si el cambio vino de otra parte)
+    sincValor('hw-in-dist', Math.round(h.distanciaCm));
+    sincValor('hw-in-linea', Math.round(t.desvioMm));
+    sincValor('hw-in-vel', m.velocidadMs.toFixed(2));
+    sincValor('hw-in-pitch', Math.round(i.pitchDeg));
+    sincValor('hw-in-roll', Math.round(i.rollDeg));
+    todos('[data-dir]').forEach(function (b) {
+      var on = b.getAttribute('data-dir') === m.direccion;
+      b.classList.toggle('activo', on);
+      b.setAttribute('aria-pressed', String(on));
     });
-    document.querySelectorAll('[data-mpu-ev]').forEach(function (b) {
-      b.classList.toggle('activo', b.getAttribute('data-mpu-ev') === estado.eventoMpu && estado.salud.mpu6050 !== 'fallo');
+    todos('[data-mpu-ev]').forEach(function (b) {
+      var on = b.getAttribute('data-mpu-ev') === i.evento && !falloI;
+      b.classList.toggle('activo', on);
+      b.setAttribute('aria-pressed', String(on));
     });
-    document.querySelectorAll('[data-st-card]').forEach(function (b) {
-      var cId = b.getAttribute('data-st-card');
-      var stVal = b.getAttribute('data-st-val');
-      b.classList.toggle('activo', estado.salud[cId] === stVal);
+    todos('[data-st-card]').forEach(function (b) {
+      var on = sal[b.getAttribute('data-st-card')] === b.getAttribute('data-st-val');
+      b.classList.toggle('activo', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    todos('.hw-card').forEach(function (card) {
+      card.classList.toggle('resaltada', card.getAttribute('data-card') === s.seleccion);
     });
 
-    dibujarRadar();
-    dibujarOscilograma();
-    dibujarVelocimetro();
-    dibujarImu3D();
+    dibujarRadar(s);
+    dibujarOsc(s);
+    dibujarVelo(s);
+    dibujarHorizonte(s);
   }
 
-  function aplicarEventoMpu(ev) {
-    estado.salud.mpu6050 = 'normal';
-    estado.eventoMpu = ev;
-    if (ev === 'normal') {
-      estado.pitchDeg = 0;
-      estado.rollDeg = 0;
-      estado.acelG = 1.00;
-    } else if (ev === 'inclinacion') {
-      estado.pitchDeg = 28;
-      estado.rollDeg = -24;
-      estado.acelG = 1.18;
-    } else if (ev === 'impacto') {
-      estado.pitchDeg = 12;
-      estado.rollDeg = 8;
-      estado.acelG = 2.85;
-    } else if (ev === 'atascamiento') {
-      estado.pitchDeg = 4;
-      estado.rollDeg = 2;
-      estado.acelG = 0.08;
-    }
-    if ($('hw-in-pitch')) $('hw-in-pitch').value = String(estado.pitchDeg);
-    if ($('hw-in-roll')) $('hw-in-roll').value = String(estado.rollDeg);
-    actualizarDom();
+  function sincValor(id, v) {
+    var el = $(id);
+    if (el && el !== doc.activeElement && String(el.value) !== String(v)) el.value = String(v);
   }
 
-  function restablecerTodo() {
-    estado.distanciaCm = 42;
-    estado.lineaMm = 0;
-    estado.velocidadMs = 0.41;
-    estado.direccion = 'ADELANTE';
-    estado.pitchDeg = 0;
-    estado.rollDeg = 0;
-    estado.acelG = 1.00;
-    estado.eventoMpu = 'normal';
-    estado.salud = { hcsr04: 'normal', tcrt5000: 'normal', motores: 'normal', mpu6050: 'normal' };
-    if ($('hw-in-dist')) $('hw-in-dist').value = '42';
-    if ($('hw-in-linea')) $('hw-in-linea').value = '0';
-    if ($('hw-in-vel')) $('hw-in-vel').value = '0.41';
-    if ($('hw-in-pitch')) $('hw-in-pitch').value = '0';
-    if ($('hw-in-roll')) $('hw-in-roll').value = '0';
-    actualizarDom();
+  function enSlider(id, fn) {
+    var el = $(id);
+    if (!el) return;
+    el.addEventListener('input', function (e) { fn(Number(e.target.value)); });
   }
 
-  function tickAnimacion() {
-    // Barrido suave del radar (-28° a +28°)
-    estado.radarAngulo += estado.radarDir * 0.03;
-    if (estado.radarAngulo > 0.48) { estado.radarAngulo = 0.48; estado.radarDir = -1; }
-    if (estado.radarAngulo < -0.48) { estado.radarAngulo = -0.48; estado.radarDir = 1; }
-
-    // Oscilograma TCRT5000 en tiempo real
-    var ruido = estado.salud.tcrt5000 === 'advertencia' ? (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 1.4;
-    estado.oscBuffer.push(clamp(estado.lineaMm + ruido, -32, 32));
-    if (estado.oscBuffer.length > 64) estado.oscBuffer.shift();
-
-    dibujarRadar();
-    dibujarOscilograma();
+  function tick() {
+    anim.radar += anim.radarDir * 0.04;
+    if (anim.radar > 0.5) { anim.radar = 0.5; anim.radarDir = -1; }
+    if (anim.radar < -0.5) { anim.radar = -0.5; anim.radarDir = 1; }
+    var s = SimulationState.get();
+    var ruido = s.salud.tcrt5000 === 'advertencia' ? (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 1.2;
+    anim.osc.push(clamp(s.tcrt5000.errorMm + ruido, -32, 32));
+    if (anim.osc.length > 64) anim.osc.shift();
+    if (doc.hidden) return;
+    dibujarRadar(s);
+    dibujarOsc(s);
   }
 
   function iniciar() {
     if (!$('hw-inspector-root')) return;
+    var S = SimulationState;
 
-    // Zonas clicables/hover en el SVG y pills
-    document.querySelectorAll('.hw-zone, .hw-comp-pill').forEach(function (el) {
-      var comp = el.getAttribute('data-comp');
-      el.addEventListener('click', function () { seleccionarComponente(comp); });
-      el.addEventListener('mouseenter', function () { seleccionarComponente(comp); });
-      el.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          seleccionarComponente(comp);
-        }
-      });
+    enSlider('hw-in-dist', function (v) { S.set({hcsr04: {distanciaCm: v}, seleccion: 'hcsr04'}, 'consola'); });
+    enSlider('hw-in-linea', function (v) { S.set({tcrt5000: {desvioMm: v}, seleccion: 'tcrt5000'}, 'consola'); });
+    enSlider('hw-in-vel', function (v) { S.set({motores: {velocidadMs: v}, seleccion: 'motores'}, 'consola'); });
+    enSlider('hw-in-pitch', function (v) { S.set({mpu6050: {pitchDeg: v, evento: 'normal', acelG: 1}, seleccion: 'mpu6050'}, 'consola'); });
+    enSlider('hw-in-roll', function (v) { S.set({mpu6050: {rollDeg: v, evento: 'normal', acelG: 1}, seleccion: 'mpu6050'}, 'consola'); });
+
+    todos('[data-dir]').forEach(function (b) {
+      b.addEventListener('click', function () { S.set({motores: {direccion: b.getAttribute('data-dir')}, seleccion: 'motores'}, 'consola'); });
     });
-
-    // Sliders
-    if ($('hw-in-dist')) {
-      $('hw-in-dist').addEventListener('input', function (e) {
-        estado.distanciaCm = Number(e.target.value);
-        seleccionarComponente('hcsr04');
-        actualizarDom();
-      });
-    }
-    if ($('hw-in-linea')) {
-      $('hw-in-linea').addEventListener('input', function (e) {
-        estado.lineaMm = Number(e.target.value);
-        seleccionarComponente('tcrt5000');
-        actualizarDom();
-      });
-    }
-    if ($('hw-in-vel')) {
-      $('hw-in-vel').addEventListener('input', function (e) {
-        estado.velocidadMs = Number(e.target.value);
-        seleccionarComponente('motores');
-        actualizarDom();
-      });
-    }
-    if ($('hw-in-pitch')) {
-      $('hw-in-pitch').addEventListener('input', function (e) {
-        estado.pitchDeg = Number(e.target.value);
-        if (Math.abs(estado.pitchDeg) <= 20 && Math.abs(estado.rollDeg) <= 20 && estado.eventoMpu === 'inclinacion') {
-          estado.eventoMpu = 'normal';
-        }
-        seleccionarComponente('mpu6050');
-        actualizarDom();
-      });
-    }
-    if ($('hw-in-roll')) {
-      $('hw-in-roll').addEventListener('input', function (e) {
-        estado.rollDeg = Number(e.target.value);
-        if (Math.abs(estado.pitchDeg) <= 20 && Math.abs(estado.rollDeg) <= 20 && estado.eventoMpu === 'inclinacion') {
-          estado.eventoMpu = 'normal';
-        }
-        seleccionarComponente('mpu6050');
-        actualizarDom();
-      });
-    }
-
-    // Botones dirección
-    document.querySelectorAll('[data-dir]').forEach(function (b) {
+    todos('[data-mpu-ev]').forEach(function (b) {
       b.addEventListener('click', function () {
-        estado.direccion = b.getAttribute('data-dir');
-        seleccionarComponente('motores');
-        actualizarDom();
+        S.set({seleccion: 'mpu6050'}, 'consola');
+        S.eventoMpu(b.getAttribute('data-mpu-ev'), 'consola');
       });
     });
-
-    // Botones eventos MPU-6050
-    document.querySelectorAll('[data-mpu-ev]').forEach(function (b) {
+    todos('[data-st-card]').forEach(function (b) {
       b.addEventListener('click', function () {
-        seleccionarComponente('mpu6050');
-        aplicarEventoMpu(b.getAttribute('data-mpu-ev'));
+        var p = {salud: {}, seleccion: b.getAttribute('data-st-card')};
+        p.salud[b.getAttribute('data-st-card')] = b.getAttribute('data-st-val');
+        S.set(p, 'consola');
       });
     });
-
-    // Botones estado normal / advertencia / fallo por tarjeta
-    document.querySelectorAll('[data-st-card]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var cId = b.getAttribute('data-st-card');
-        var stVal = b.getAttribute('data-st-val');
-        estado.salud[cId] = stVal;
-        seleccionarComponente(cId);
-        actualizarDom();
+    todos('.hw-card').forEach(function (card) {
+      card.addEventListener('pointerenter', function () {
+        if (S.get().seleccion !== card.getAttribute('data-card')) S.set({seleccion: card.getAttribute('data-card')}, 'hover');
       });
     });
+    var reset = $('hw-btn-reset');
+    if (reset) reset.addEventListener('click', function () { S.reset('consola'); });
 
-    if ($('hw-btn-reset')) {
-      $('hw-btn-reset').addEventListener('click', restablecerTodo);
-    }
-
-    seleccionarComponente('hcsr04');
-    actualizarDom();
-    window.setInterval(tickAnimacion, 80);
+    S.subscribe(render);
+    render(S.get());
+    (raiz.setInterval || setInterval)(tick, 60);
+    if (raiz.addEventListener) raiz.addEventListener('resize', function () { render(S.get()); });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', iniciar);
-  } else {
-    iniciar();
-  }
-})();
+  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', iniciar);
+  else iniciar();
+})(typeof window !== 'undefined' ? window : globalThis);
