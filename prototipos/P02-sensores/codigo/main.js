@@ -1,7 +1,8 @@
-// Inspector de hardware (P02): lo principal es la inspección de los componentes reales del robot (etiquetas 3D,
-// tira de piezas y ficha de cada una, rayos X). El robot recorre solo una ruta cerrada (Auto) o se maneja a mano con
-// la modalidad del Simulador 1 (P04): W A S D o flechas, Espacio frena, o el D-Pad. La consola de sensores
-// (velocímetro + 4 LEDs de línea) es opcional: empieza oculta y se abre con su botón.
+// Inspector de hardware (P02): el robot recorre el circuito ovalado con obstáculos (Auto) o se maneja a mano con la
+// modalidad del Simulador 1 (P04): W A S D o flechas, Espacio frena, o el D-Pad. Etiquetas 3D, rayos X y la tira
+// de las 7 piezas. A la derecha, el panel oscuro integrado con las 4 consolas interactivas (assets/inspector_hw.js):
+// el circuito publica sus lecturas en window.SimulationState y aplica lo que las consolas inyectan (obstáculo,
+// desvío, consigna, IMU y fallos). Al enfocar una pieza, su consola sube y debajo aparece su ficha técnica.
 import * as THREE from 'three';
 import {SIN_WEBGL, crearAviso, vigilarContexto} from './arranque.js';
 import {crearDemo} from './demo.js';
@@ -16,7 +17,8 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
 const num = (v, d = 2) => v.toFixed(d).replace('.', ',');
 
-const aviso = crearAviso();
+const S = window.SimulationState; // estado central compartido con las consolas
+const aviso = crearAviso(document.getElementById('app'));
 aviso.cargando();
 
 const canvas = $('#lienzo');
@@ -34,7 +36,19 @@ iniciar(mundo);
 
 function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const robot = buildRobot();
-  pose.add(robot.root);
+  // pose (posición y rumbo) → incl (pitch/roll de la MPU-6050 y sacudida de impacto) → robot
+  const incl = new THREE.Group();
+  pose.add(incl);
+  incl.add(robot.root);
+  // obstáculo virtual: aparece cuando la consola HC-SR04 inyecta una distancia
+  const fantasma = new THREE.Group();
+  const matFantasma = new THREE.MeshStandardMaterial({color: '#e8743b', transparent: true, opacity: 0.45, roughness: 0.5, depthWrite: false});
+  const cuerpoF = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.12, 32), matFantasma);
+  cuerpoF.position.y = 0.06;
+  fantasma.add(cuerpoF);
+  fantasma.visible = false;
+  pose.add(fantasma);
+  const ZF = robot.anchors.us_front.z;
   // aro de ubicación: solo se ve en la vista panorámica, donde el robot es pequeño
   const aro = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.26, 48), new THREE.MeshBasicMaterial({color: '#F2603D', transparent: true, opacity: 0.85, depthWrite: false}));
   aro.rotation.x = -Math.PI / 2;
@@ -44,7 +58,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const est = demo.est;
 
   // ---------------------------------------------------------------- estado de la interfaz
-  const ui = {encendido: false, pausa: true, xray: 0, xrayMeta: 0, etiquetas: true, vista: 'inspeccion', sel: null, t: 0};
+  const ui = {encendido: false, pausa: true, xray: 0, xrayMeta: 0, etiquetas: true, vista: 'inspeccion', sel: null, t: 0, pitch: 0, roll: 0, sacudida: 0};
   let rafId = null;
   const anim = {
     ang: {izq: 0, der: 0},
@@ -115,12 +129,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     if (tween.t >= 1) tween = null;
   };
 
-  // en pantallas angostas la ficha sube desde abajo: se corre la vista para que el robot quede arriba, a la vista
   const desplazaVista = () => {
-    const W = canvas.clientWidth;
-    const H = canvas.clientHeight;
-    if (W < 640 && !ficha.hidden) camera.setViewOffset(W, H, 0, Math.round(H * 0.2), W, H);
-    else camera.clearViewOffset();
+    camera.clearViewOffset();
     camera.updateProjectionMatrix();
   };
 
@@ -136,7 +146,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     bPausa.setAttribute('aria-pressed', String(activo));
     $('.tx', bPausa).textContent = activo ? '⏹ Detener' : '⚡ Encender';
     bPausa.classList.toggle('en-pausa', !activo);
-    previo = '';
+    if (!activo) candado = null;
+    publicar(true);
     if (!activo) {
       soltarTodo();
       if (rafId) {
@@ -176,15 +187,21 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const botones = new Set();
   const MAPA = {KeyW: 'arriba', ArrowUp: 'arriba', KeyS: 'abajo', ArrowDown: 'abajo', KeyA: 'izq', ArrowLeft: 'izq', KeyD: 'der', ArrowRight: 'der', Space: 'stop'};
   const activo = (k) => teclas.has(k) || botones.has(k);
+  let candado = null; // dirección fijada desde la consola Velocidad · Dir. (hasta tocar otra tecla o volver a Auto)
   const aplicaEntrada = () => {
-    est.entrada = {
-      f: (activo('arriba') ? 1 : 0) - (activo('abajo') ? 1 : 0),
-      t: (activo('izq') ? 1 : 0) - (activo('der') ? 1 : 0),
-      freno: activo('stop'),
-    };
+    const algo = teclas.size > 0 || botones.size > 0;
+    if (algo) candado = null;
+    est.entrada = candado && !algo
+      ? {...candado}
+      : {
+          f: (activo('arriba') ? 1 : 0) - (activo('abajo') ? 1 : 0),
+          t: (activo('izq') ? 1 : 0) - (activo('der') ? 1 : 0),
+          freno: activo('stop'),
+        };
     $$('[data-dp]').forEach((b) => b.classList.toggle('on', activo(b.dataset.dp)));
   };
   const ponModo = (m) => {
+    if (m === 'auto') candado = null;
     demo.setModo(m);
     document.body.dataset.modo = m;
     $$('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === m)));
@@ -197,15 +214,18 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   };
   $$('[data-modo]').forEach((b) => b.addEventListener('click', () => {
     ponModo(b.dataset.modo);
-    previo = '';
-    refrescaConsola();
+    publicar(true);
   }));
+  // las teclas no se roban cuando se usa un control (sliders de las consolas, botones, enlaces)
+  const enControl = (e) => {
+    const t = e.target;
+    return t && t.closest && Boolean(t.closest('input, select, textarea, button, a, summary, #hw-panel'));
+  };
   addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || enControl(e)) return;
     if (e.code === 'KeyM' && !e.repeat) {
       ponModo(est.modo === 'auto' ? 'manual' : 'auto');
-      previo = '';
-      refrescaConsola();
+      publicar(true);
       return;
     }
     if (!ui.encendido) return;
@@ -220,6 +240,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   });
   addEventListener('keyup', (e) => {
     const k = MAPA[e.code];
+    if (!teclas.has(k)) return;
     if (!k) return;
     e.preventDefault();
     teclas.delete(k);
@@ -267,137 +288,40 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   });
   canvas.addEventListener('pointerdown', () => window.focus());
 
-  // ---------------------------------------------------------------- consola de sensores (opcional)
-  const consola = $('#consola');
-  const bConsola = $('#b-consola');
-  const consolaVinculo = $('#consola-vinculo');
-  const sincronizaVinculoConsola = () => {
-    const f = ui.sel ? FICHAS[ui.sel] : null;
-    const bloque = f && f.consola ? f.consola.bloque : null;
-    $$('[data-bloque]', consola).forEach((el) => {
-      const on = Boolean(bloque && el.dataset.bloque === bloque);
-      el.classList.toggle('vinculado', on);
-    });
-    if (f && f.consola) {
-      consola.style.setProperty('--c-vinc', f.color);
-      consolaVinculo.textContent = `Vínculo: ${f.corto} → ${f.consola.titulo}`;
-      consolaVinculo.hidden = false;
-    } else {
-      consolaVinculo.hidden = true;
-    }
-    const bVinc = $('#b-ver-consola');
-    if (bVinc) {
-      bVinc.textContent = consola.hidden ? '📟 Ver en consola de sensores' : '✨ Resaltado en consola · Ocultar';
-      bVinc.setAttribute('aria-pressed', String(!consola.hidden));
-    }
-  };
-  const ponConsola = (on) => {
-    consola.hidden = !on;
-    bConsola.setAttribute('aria-pressed', String(on));
-    $('#app').classList.toggle('con-consola', on);
-    sincronizaVinculoConsola();
-    if (on) {
-      $('#app').style.setProperty('--ancho-consola', `${consola.offsetWidth}px`);
-      previo = '';
-      refrescaConsola();
-    }
-  };
-  bConsola.addEventListener('click', () => ponConsola(consola.hidden));
-
-  // ---------------------------------------------------------------- consola de sensores (estilo del radar P03)
-  const VEL_MAX = 0.46; // misma escala que el velocímetro del radar (máx. del Simulador 1)
-  const ARCO = 94.25;
-  const velArco = $('#velo-arco');
-  const velAguja = $('#velo-aguja');
-  const velVal = $('#velo-val');
-  const velCaja = $('#velocimetro');
-  const leds = $$('.c-leds i');
-  const cModo = $('#c-modo');
-  const lineaLeds = $('#linea-leds');
-  const cDistF = $('#c-dist-f');
-  const cDistR = $('#c-dist-r');
-  let previo = '';
-  const refrescaConsola = () => {
-    if (consola.hidden) return;
-    const v = ui.encendido ? Math.abs(est.v) : 0;
-    const r = Math.max(0, Math.min(1, v / VEL_MAX));
-    const zF = demo.zonaFrente();
-    const zR = demo.zonaAtras();
-    const color = !ui.encendido ? '#64748b' : est.bloqueado ? '#ef4444' : zF === 'precaucion' ? '#f59e0b' : '#22c55e';
-    velArco.setAttribute('stroke-dashoffset', (ARCO * (1 - r)).toFixed(2));
-    velArco.style.stroke = color;
-    velAguja.setAttribute('transform', `rotate(${(-90 + r * 180).toFixed(1)} 40 40)`);
-    const txt = `${ui.encendido && est.v < -0.005 ? '−' : ''}${num(v)}`;
-    const dfTxt = fmtDist(est.frente);
-    const drTxt = fmtDist(est.atras);
-    const clave = `${txt}|${est.sens.join('')}|${est.modo}|${est.bloqueado}|${ui.encendido}|${color}|${dfTxt}|${drTxt}`;
-    if (clave === previo) return;
-    previo = clave;
-    velVal.innerHTML = `${txt}<small>m/s</small>`;
-    velVal.style.color = color;
-    velCaja.style.borderColor = color === '#22c55e' ? '' : color;
-    velCaja.setAttribute('aria-label', `Velocímetro: ${txt} metros por segundo`);
-    leds.forEach((l, i) => l.classList.toggle('on', !!est.sens[i]));
-    lineaLeds.setAttribute('aria-label', `Sensores de línea S1 a S4: ${est.sens.join(', ')}`);
-    cModo.textContent = !ui.encendido ? 'APAGADO' : est.bloqueado ? '■ < 20 cm' : est.modo === 'manual' ? 'MANUAL' : 'AUTO';
-    cModo.className = 'c-modo' + (!ui.encendido ? ' apagado' : est.bloqueado ? ' bloq' : est.modo === 'manual' ? ' manual' : '');
-    if (cDistF) {
-      cDistF.textContent = dfTxt;
-      cDistF.dataset.zona = zF;
-    }
-    if (cDistR) {
-      cDistR.textContent = drTxt;
-      cDistR.dataset.zona = zR;
-    }
-  };
-
-  // ---------------------------------------------------------------- tira de componentes y ficha
-  const ficha = $('#ficha');
+  // ---------------------------------------------------------------- tira de componentes y ficha técnica en el panel
   const tira = $('#tira');
   tira.innerHTML = ORDEN.map((id) => {
     const f = FICHAS[id];
     const extra = id === 'tcrt' ? '<span class="sq" aria-hidden="true"></span>'.repeat(4) : '';
     return `<button class="chip" data-comp="${id}" style="--c:${f.color}" aria-pressed="false"><b>${esc(f.corto)}</b><span class="res">${esc(f.resumen || '')}</span><span class="v" data-v="${id}">${extra}</span></button>`;
   }).join('');
-  const fCuerpo = $('#f-cuerpo');
-  const abrirFicha = (id) => {
-    ui.sel = id;
+  const hwFicha = $('#hw-ficha');
+  // el bloque compacto de datos técnicos del proyecto va dentro del panel oscuro, justo debajo de su consola
+  const abrirFicha = (id, desdePanel = false) => {
+    ui.sel = id || null;
     if (id) $('#pista-tocar').hidden = true;
     $$('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.comp === id)));
     $$('.et').forEach((e) => e.classList.toggle('act', e.dataset.comp === id));
-    if (!id) {
-      ficha.hidden = true;
-      sincronizaVinculoConsola();
-      desplazaVista();
-      solicitarCuadro();
-      return;
+    if (hwFicha) {
+      if (id) {
+        const f = FICHAS[id];
+        const [cls, txt] = f.estado;
+        hwFicha.style.setProperty('--c', f.color);
+        hwFicha.innerHTML = `
+          <div class="hw-ficha-head"><b>${esc(f.nombre)}</b><span class="hw-ficha-estado ${cls}">${esc(txt)}</span></div>
+          <p class="hw-ficha-rol">${esc(f.rol)}</p>
+          <h3>Datos técnicos del proyecto</h3>
+          <dl class="hw-ficha-datos">${f.datos.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+          <h3>En vivo (circuito)</h3>
+          <dl class="hw-ficha-datos vivo" id="f-vivo"></dl>
+          <p class="hw-ficha-nota">${esc(f.nota)}</p>`;
+        prevFichaHtml = '';
+        refrescaFicha();
+      } else hwFicha.innerHTML = '';
     }
-    const f = FICHAS[id];
-    ficha.style.setProperty('--c', f.color);
-    $('#f-titulo').textContent = f.nombre;
-    const est2 = f.estado;
-    const vinc = f.consola
-      ? `<div class="ficha-vinculo" id="ficha-vinculo"><strong>📟 ${esc(f.consola.titulo)}</strong><p>${esc(f.consola.desc)}</p><button type="button" class="btn-vinc" id="b-ver-consola" aria-pressed="${String(!consola.hidden)}">${consola.hidden ? '📟 Ver en consola de sensores' : '✨ Resaltado en consola · Ocultar'}</button></div>`
-      : '';
-    fCuerpo.innerHTML = `
-      <span class="chip-estado ${est2[0]}">${esc(est2[1])}</span>
-      <p class="rol">${esc(f.rol)}</p>
-      ${vinc}
-      <h3>En vivo</h3><dl class="vivo" id="f-vivo"></dl>
-      <h3>Datos del proyecto</h3>
-      <dl class="datos">${f.datos.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
-      <p class="nota">${esc(f.nota)}</p>`;
-    const bVinc = $('#b-ver-consola');
-    if (bVinc) bVinc.addEventListener('click', () => ponConsola(consola.hidden));
-    prevFichaHtml = '';
-    refrescaFicha();
-    ficha.hidden = false;
-    sincronizaVinculoConsola();
-    desplazaVista();
-    fCuerpo.scrollTop = 0;
+    if (!desdePanel && S && S.get().foco !== ui.sel) S.set({foco: ui.sel, seleccion: ui.sel ? S.CONSOLA_DE[ui.sel] : null}, 'circuito-ui');
     solicitarCuadro();
   };
-  $('#f-cerrar').addEventListener('click', () => abrirFicha(null));
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && ui.sel) abrirFicha(null);
   });
@@ -544,17 +468,17 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     const estrecho = W < 640;
     const v = vista();
     centro.set(0, 0.06, 0.0);
-    pose.localToWorld(centro).project(camera);
+    incl.localToWorld(centro).project(camera);
     const cx = (centro.x * 0.5 + 0.5) * W;
     const cy = (-centro.y * 0.5 + 0.5) * H;
     const top = estrecho ? 108 : 58;
     const bot = H - (estrecho ? 86 : 64);
-    const dcha = ficha.hidden || estrecho ? W : W - 346;
+    const dcha = W;
     const lista = [];
     for (const e of etq) {
       const A = robot.anchors[e.id];
       proj.copy(A);
-      pose.localToWorld(proj);
+      incl.localToWorld(proj);
       const lejos = proj.distanceTo(camera.position);
       proj.project(camera);
       if (proj.z > 1 || lejos > 2.2) {
@@ -617,6 +541,114 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     }
   };
 
+  // ---------------------------------------------------------------- sincronización bidireccional con SimulationState
+  // circuito → consolas: lecturas en vivo (≈ 20 Hz en marcha, al instante con el robot apagado)
+  let acPub = 0;
+  let vPrev = 0;
+  let aLong = 0;
+  const direccionDe = () => {
+    if (!ui.encendido || (Math.abs(est.v) < 0.02 && Math.abs(est.w) < 0.3)) return 'DETENIDO';
+    if (Math.abs(est.w) > 1.2 && Math.abs(est.v) < 0.15) return est.w > 0 ? 'IZQUIERDA' : 'DERECHA';
+    return est.v >= 0 ? 'ADELANTE' : 'ATRÁS';
+  };
+  function publicar(forzar, dt = 0) {
+    if (!S) return;
+    acPub += dt;
+    if (!forzar && ui.encendido && acPub < 0.05) return;
+    if (!forzar && !ui.encendido) return;
+    if (acPub > 0) aLong = aLong * 0.6 + 0.4 * ((est.v - vPrev) / Math.max(acPub, 1e-3));
+    vPrev = est.v;
+    acPub = 0;
+    const g = 9.81;
+    const aLat = est.v * est.w;
+    const vib = ui.encendido && Math.abs(est.v) > 0.02 ? 0.25 * Math.sin(ui.t * 37) : 0;
+    S.publicarCircuito({
+      encendido: ui.encendido,
+      modo: est.modo,
+      distanciaCm: est.frente * 100,
+      atrasCm: est.atras * 100,
+      canales: est.sens,
+      desvioMm: -est.eLat * 1000, // + la cinta queda a la derecha de la regleta
+      velEfectivaMs: ui.encendido ? est.v : 0,
+      pwmIzq: (est.pwm.izq || 0) * 100,
+      pwmDer: (est.pwm.der || 0) * 100,
+      direccion: direccionDe(),
+      bloqueado: est.bloqueado,
+      pitchDeg: Math.max(-6, Math.min(6, (aLong / g) * 57.3 * 0.35)) + vib,
+      rollDeg: Math.max(-6, Math.min(6, (aLat / g) * 57.3 * 0.35)),
+      acelG: Math.hypot(1, aLong / g, aLat / g),
+    });
+  }
+  // consolas → circuito: lo inyectado se aplica a la física de la demo y el 3D reacciona al instante
+  let desvioAplicado = 0;
+  let eventoPrev = 'normal';
+  const aplicarInyecciones = (s) => {
+    const iny = est.iny;
+    iny.frente = s.inyeccion.hcsr04 ? s.hcsr04.distanciaCm / 100 : null;
+    iny.sinEcoFrente = s.salud.hcsr04 === 'fallo';
+    iny.sinLinea = s.salud.tcrt5000 === 'fallo';
+    iny.vConsigna = s.inyeccion.motores ? s.motores.velocidadMs : null;
+    iny.paro = s.seguridad.paroForzado ? s.seguridad.motivos[0] || 'parada' : null;
+    iny.paroAtras = s.seguridad.permiteAtras;
+    iny.atasco = s.inyeccion.mpu6050 && s.mpu6050.evento === 'atascamiento';
+    const desvio = s.inyeccion.tcrt5000 ? s.tcrt5000.desvioMm / 1000 : 0;
+    // en Auto el control lleva al robot al desvío pedido; en Manual o apagado se corre de lado al instante
+    if (!ui.encendido || est.modo === 'manual') demo.desplazarLateral(desvio - desvioAplicado);
+    desvioAplicado = desvio;
+    iny.desvio = desvio;
+    if (s.mpu6050.evento === 'impacto' && eventoPrev !== 'impacto') ui.sacudida = 1;
+    eventoPrev = s.mpu6050.evento;
+    demo.medir();
+  };
+  const ejecutarOrden = (tipo, valor) => {
+    if (tipo !== 'direccion') return;
+    const MAPA_DIR = {ADELANTE: {f: 1, t: 0}, 'ATRÁS': {f: -1, t: 0}, IZQUIERDA: {f: 0, t: 1}, DERECHA: {f: 0, t: -1}, DETENIDO: {f: 0, t: 0, freno: true}};
+    const o = MAPA_DIR[valor];
+    if (!o) return;
+    if (!ui.encendido && valor !== 'DETENIDO') ponEncendido(true);
+    if (est.modo !== 'manual') ponModo('manual');
+    teclas.clear();
+    botones.clear();
+    candado = {freno: false, ...o};
+    aplicaEntrada();
+    publicar(true);
+  };
+  function conectarEstado() {
+    if (!S) return;
+    S.alComando(ejecutarOrden);
+    S.subscribe((s, origen) => {
+      if (origen === 'circuito') return;
+      aplicarInyecciones(s);
+      if ((s.foco || null) !== ui.sel) abrirFicha(s.foco || null, true);
+      publicar(true);
+      solicitarCuadro();
+    });
+    aplicarInyecciones(S.get());
+    publicar(true);
+  }
+  // el robot 3D refleja la IMU (pitch/roll), el impacto y el obstáculo inyectado
+  const DEG = Math.PI / 180;
+  const aplicaPose = (dt) => {
+    const s = S ? S.get() : null;
+    const p = s ? s.mpu6050.pitchDeg * DEG : 0;
+    const r = s ? s.mpu6050.rollDeg * DEG : 0;
+    const k = 1 - Math.exp(-dt * 10);
+    ui.pitch += (p - ui.pitch) * k;
+    ui.roll += (r - ui.roll) * k;
+    ui.sacudida = Math.max(0, ui.sacudida - dt * 1.4);
+    const sx = ui.sacudida * 0.012 * Math.sin(ui.t * 70 + performance.now() / 15);
+    incl.rotation.set(-ui.pitch, 0, ui.roll + sx * 4);
+    incl.position.set(sx, Math.max(Math.sin(Math.abs(ui.pitch)) * 0.06, Math.sin(Math.abs(ui.roll)) * 0.04), 0);
+    const iny = s && s.inyeccion.hcsr04 && s.salud.hcsr04 !== 'fallo';
+    fantasma.visible = Boolean(iny);
+    if (iny) fantasma.position.set(0, 0, ZF + s.hcsr04.distanciaCm / 100 + 0.045);
+  };
+  const poseEnTransicion = () => {
+    const s = S ? S.get() : null;
+    if (!s) return false;
+    return ui.sacudida > 0 || Math.abs(s.mpu6050.pitchDeg * DEG - ui.pitch) > 0.002 || Math.abs(s.mpu6050.rollDeg * DEG - ui.roll) > 0.002;
+  };
+
   // ---------------------------------------------------------------- bucle (pausa rAF al estar detenido; inspección bajo demanda)
   let ultimo = performance.now();
   let acRefresco = 0;
@@ -639,6 +671,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     if (aro.visible) aro.scale.setScalar(ui.encendido ? 1 + 0.12 * Math.sin(ui.t * 4) : 1);
     pose.position.set(est.x, 0, est.z);
     pose.rotation.y = est.th;
+    aplicaPose(pasoVisual);
     robot.update({
       ang: anim.ang,
       arm: anim.arm,
@@ -666,8 +699,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       movPend = null;
     }
     renderer.render(scene, camera);
-    refrescaConsola();
     if (ui.etiquetas) colocaEtiquetas();
+    publicar(false, dt);
     if (ui.encendido) {
       acRefresco += dt;
       if (acRefresco > 0.12) {
@@ -685,7 +718,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     const dt = Math.min(0.25, Math.max(0, (ahora - ultimo) / 1000));
     ultimo = ahora;
     renderizarCuadro(dt);
-    const transicionActiva = Boolean(tween) || Math.abs(ui.xrayMeta - ui.xray) > 0.002;
+    const transicionActiva = Boolean(tween) || Math.abs(ui.xrayMeta - ui.xray) > 0.002 || poseEnTransicion();
     if (ui.encendido || transicionActiva) {
       rafId = requestAnimationFrame(bucle);
     }
@@ -706,20 +739,14 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     desplazaVista();
     solicitarCuadro();
   }).observe(canvas);
-  // la consola y el D-Pad se apoyan sobre la tira de componentes
+  // el D-Pad y la pista se apoyan sobre la tira de componentes
   const app = $('#app');
-  const medir = () => {
-    app.style.setProperty('--alto-tira', `${tira.offsetHeight}px`);
-    app.style.setProperty('--ancho-consola', `${$('#consola').offsetWidth}px`);
-  };
-  new ResizeObserver(medir).observe(tira);
-  new ResizeObserver(medir).observe($('#consola'));
+  const medirTira = () => app.style.setProperty('--alto-tira', `${tira.offsetHeight}px`);
+  new ResizeObserver(medirTira).observe(tira);
   resize();
   irA('inspeccion', true);
   ponEtiquetas(true); // la inspección es lo principal: etiquetas 3D encendidas en todos los tamaños
-  ponConsola(false); // la consola de sensores es opcional: empieza oculta
-  // en pantallas anchas se abre de entrada la ficha de la regleta de sensores
-  if (canvas.clientWidth >= 900) abrirFicha('tcrt');
+  conectarEstado();
   thPrev = est.th;
   irA('inspeccion', true);
   ponEncendido(false);
@@ -735,7 +762,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ponPausa,
     ponEtiquetas,
     ponModo,
-    ponConsola,
+    estado: S,
     manual: MANUAL,
     vmax: VMAX,
     xray: (on) => {

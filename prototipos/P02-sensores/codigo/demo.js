@@ -44,6 +44,17 @@ export function crearDemo({encendido = false} = {}) {
     cmd: {f: 0, t: 0},
     pwm: {izq: 0, der: 0},
     bloqueado: false, // frente a < 20 cm: el firmware no deja avanzar ni girar (solo retroceder)
+    // entradas inyectadas desde las consolas interactivas (SimulationState). Por defecto no cambian nada.
+    iny: {
+      frente: null, // distancia frontal forzada (m) o null para la lectura real del circuito
+      sinEcoFrente: false, // HC-SR04 en fallo: no hay eco
+      sinLinea: false, // TCRT5000 en fallo: la regleta lee 0000
+      desvio: 0, // posición deseada de la cinta respecto al centro de la regleta (m, + a la derecha)
+      vConsigna: null, // consigna de velocidad (m/s) o null para la velocidad nominal
+      paro: null, // motivo de parada de seguridad impuesta por las consolas (impacto, fallo…)
+      paroAtras: false, // con la parada, ¿se permite retroceder? (solo por obstáculo, como el firmware)
+      atasco: false, // las ruedas giran pero el robot no avanza
+    },
   };
 
   const encender = () => {
@@ -73,8 +84,9 @@ export function crearDemo({encendido = false} = {}) {
     est.cmd.f += (E.f - est.cmd.f) * a;
     est.cmd.t += (E.t - est.cmd.t) * a;
     if (E.freno) est.cmd.f = est.cmd.t = 0;
-    let izq = lim1(est.cmd.f * MANUAL.avance - est.cmd.t * MANUAL.giro);
-    let der = lim1(est.cmd.f * MANUAL.avance + est.cmd.t * MANUAL.giro);
+    const avance = est.iny.vConsigna == null ? MANUAL.avance : Math.min(1, est.iny.vConsigna / VMAX);
+    let izq = lim1(est.cmd.f * avance - est.cmd.t * MANUAL.giro);
+    let der = lim1(est.cmd.f * avance + est.cmd.t * MANUAL.giro);
     // regla del firmware: con el frente a < 20 cm solo se permite retroceder
     est.bloqueado = est.frente < ZONAS.critica && (izq > 0 || der > 0);
     if (est.bloqueado) izq = der = 0;
@@ -93,8 +105,9 @@ export function crearDemo({encendido = false} = {}) {
     // punto de mira, con un pequeño vaivén lateral para que los sensores no lean siempre igual
     const m = ruta.en(c.s + LOOK);
     const vaiven = 0.007 * Math.sin(est.t * 5.4) + 0.004 * Math.sin(est.t * 2.1);
-    const tx = m.x - m.tz * vaiven;
-    const tz = m.z + m.tx * vaiven;
+    const dv = est.iny.desvio || 0; // desvío pedido desde la consola: el robot sigue la cinta corrido
+    const tx = m.x - m.tz * (vaiven - dv);
+    const tz = m.z + m.tx * (vaiven - dv);
     const dx = tx - est.x;
     const dz = tz - est.z;
     const lx = dx * Math.cos(est.th) - dz * Math.sin(est.th); // a la izquierda del robot
@@ -106,14 +119,16 @@ export function crearDemo({encendido = false} = {}) {
     const cs = ruta.cercano(sx, sz, c.i);
     const pj = ruta.en(cs.s);
     const eLat = (pj.x - sx) * Math.cos(est.th) - (pj.z - sz) * Math.sin(est.th); // + si la cinta queda a la izquierda
-    const dE = (eLat - est.eLat) / Math.max(dt, 1e-4);
+    const eCtl = eLat + dv;
+    const dE = (eCtl - (est.eLat + dv)) / Math.max(dt, 1e-4);
     est.eLat = eLat;
     const kRuta = Math.abs(ruta.curvatura(c.i));
     // reducción gradual de velocidad ante un obstáculo al frente (20–50 cm), como en el modo demo de la app;
     // en el firmware real solo avisa y, por debajo de 20 cm, detiene el avance
     const cerca = Math.max(0, Math.min(1, (ZONAS.precaucion - est.frente) / (ZONAS.precaucion - ZONAS.critica)));
-    const v = (V_NOM - 0.08 * Math.min(1, kRuta / 3)) * (1 - 0.55 * cerca);
-    const w = Math.max(-5, Math.min(5, v * kap + KP * eLat + KD * dE));
+    const vBase = est.iny.vConsigna == null ? V_NOM : est.iny.vConsigna;
+    const v = vBase * (1 - 0.2 * Math.min(1, kRuta / 3)) * (1 - 0.55 * cerca);
+    const w = Math.max(-5, Math.min(5, v * kap + KP * eCtl + KD * dE));
     let obj;
     if (est.modo === 'manual') obj = objetivoManual(dt);
     else {
@@ -121,19 +136,54 @@ export function crearDemo({encendido = false} = {}) {
       est.bloqueado = false;
       est.pwm = {izq: dutyPara(obj.izq) * Math.sign(obj.izq), der: dutyPara(obj.der) * Math.sign(obj.der)};
     }
+    // parada de seguridad impuesta por las consolas: solo deja retroceder (a mano) si el motivo es el obstáculo
+    if (est.iny.paro) {
+      const atras = est.iny.paroAtras && est.modo === 'manual' && obj.izq <= 0 && obj.der <= 0 && (obj.izq < 0 || obj.der < 0);
+      if (!atras) {
+        obj = {izq: 0, der: 0};
+        est.pwm = {izq: 0, der: 0};
+        est.bloqueado = true;
+      }
+    }
     const a = 1 - Math.exp(-dt / TAU);
     est.vIzq += (obj.izq - est.vIzq) * a;
     est.vDer += (obj.der - est.vDer) * a;
     const cin = cinematica(est.vIzq, est.vDer);
     est.v = cin.v;
     est.w = cin.w;
-    est.th += cin.w * dt;
-    est.x = Math.max(-LIMITES.x, Math.min(LIMITES.x, est.x + Math.sin(est.th) * cin.v * dt));
-    est.z = Math.max(-LIMITES.z, Math.min(LIMITES.z, est.z + Math.cos(est.th) * cin.v * dt));
-    est.sens = lineaSensores(ruta, est.x, est.z, est.th, est.hint);
-    est.frente = ultrasonido(est.x, est.z, est.th, 'frente', obstaculos);
-    est.atras = ultrasonido(est.x, est.z, est.th, 'atras', obstaculos);
+    if (est.iny.atasco) {
+      // atascamiento: las ruedas patinan, el chasis no se mueve
+      est.v = 0;
+      est.w = 0;
+    } else {
+      est.th += cin.w * dt;
+      est.x = Math.max(-LIMITES.x, Math.min(LIMITES.x, est.x + Math.sin(est.th) * cin.v * dt));
+      est.z = Math.max(-LIMITES.z, Math.min(LIMITES.z, est.z + Math.cos(est.th) * cin.v * dt));
+    }
+    medir();
     return est;
+  };
+
+  // lecturas de los sensores en la posición actual (también con el robot apagado), con las inyecciones de las consolas
+  const medir = () => {
+    est.sens = est.iny.sinLinea ? [0, 0, 0, 0] : lineaSensores(ruta, est.x, est.z, est.th, est.hint);
+    est.frente = est.iny.sinEcoFrente ? Infinity : est.iny.frente != null ? est.iny.frente : ultrasonido(est.x, est.z, est.th, 'frente', obstaculos);
+    est.atras = ultrasonido(est.x, est.z, est.th, 'atras', obstaculos);
+    if (!est.encendido) {
+      const sx = est.x + Math.sin(est.th) * GEO.tcrtZ;
+      const sz = est.z + Math.cos(est.th) * GEO.tcrtZ;
+      const cs = ruta.cercano(sx, sz, est.hint, ruta.N >> 1);
+      const pj = ruta.en(cs.s);
+      est.eLat = (pj.x - sx) * Math.cos(est.th) - (pj.z - sz) * Math.sin(est.th);
+    }
+    return est;
+  };
+
+  // corre el robot de lado (m, + a la izquierda): lo usa la consola TCRT5000 en manual o con el robot apagado
+  const desplazarLateral = (d) => {
+    est.x = Math.max(-LIMITES.x, Math.min(LIMITES.x, est.x + Math.cos(est.th) * d));
+    est.z = Math.max(-LIMITES.z, Math.min(LIMITES.z, est.z - Math.sin(est.th) * d));
+    medir();
   };
 
   // lo que se ve de los motores (para las fichas y la animación)
@@ -155,7 +205,7 @@ export function crearDemo({encendido = false} = {}) {
     };
   };
 
-  return {ruta, obstaculos, est, paso, motores, setModo, encender, detener, alternarEncendido, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
+  return {ruta, obstaculos, est, paso, medir, desplazarLateral, motores, setModo, encender, detener, alternarEncendido, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
 }
 
 export {GEO};

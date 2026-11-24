@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/style.css">
 <link rel="stylesheet" href="../../assets/css/inspector_hw.css">
+<link rel="stylesheet" href="inspector3d.css">
 </head>
 <body data-pagina="prototipos" data-base="../../">
 <header id="menu"></header>
@@ -20,180 +21,202 @@
       Prototipos
     </a>
     <p class="ceja">P02 · Inspector de hardware</p>
+    <h1>El robot en el circuito, <em>con sus sensores en vivo</em></h1>
   </div>
 
-  <section class="hw-inspector" id="inspector-hardware" aria-labelledby="t-inspector">
-    <div class="hw-shell" id="hw-inspector-root" data-seguridad="nominal">
-      <header class="hw-top">
-        <div class="hw-top-tit">
-          <h1 id="t-inspector">Mira el robot <em>reaccionar</em> a sus sensores</h1>
-          <span class="hw-sim-badge" id="hw-sim-badge" role="note"><i aria-hidden="true"></i>SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS</span>
-        </div>
-        <div class="hw-top-acc">
-          <div class="hw-seguridad" id="hw-seguridad" role="status" aria-live="polite">
-            <span class="hw-seguridad-k">Seguridad</span>
-            <b id="hw-seguridad-estado">NOMINAL</b>
-            <span id="hw-seguridad-motivo">Todos los sensores en rango</span>
-          </div>
-          <button type="button" class="hw-btn-reset" id="hw-btn-reset">Restablecer nominal</button>
-        </div>
-      </header>
-
-      <div class="hw-layout">
-        <!-- Columna 3D (55 %) -->
-        <div class="hw-stage" id="hw-stage">
-          <canvas id="hw-robot3d" tabindex="0" role="img" aria-label="Robot 3D en simulación local: reacciona a la distancia, la línea, la velocidad y la inclinación de las consolas. Arrastra para girar la cámara y toca una pieza para resaltar su consola."></canvas>
-          <div class="hw-hud" aria-hidden="true">
-            <span>HC-SR04 <b id="hw-hud-dist">60 cm</b></span>
-            <span>TCRT <b id="hw-hud-linea">0110</b></span>
-            <span>v <b id="hw-hud-vel">0.00 m/s</b></span>
-            <span>IMU <b id="hw-hud-imu">P 0° · R 0°</b></span>
-          </div>
-          <p class="hw-stage-pista">Arrastra para girar · toca una pieza</p>
-          <p class="hw-3d-fallback" id="hw-3d-fallback" hidden>Cargando el robot 3D…</p>
-          <noscript><p class="hw-3d-fallback">Activa JavaScript para ver el robot 3D.</p></noscript>
-        </div>
-
-        <!-- Columna consolas 2×2 (45 %) -->
-        <div class="hw-consolas" aria-label="Consolas interactivas de sensores">
-          <!-- 1 · HC-SR04 -->
-          <article class="hw-card" id="hw-card-hcsr04" data-card="hcsr04" data-estado="normal" aria-labelledby="hw-tit-hcsr04">
-            <div class="hw-card-head">
-              <h2 class="hw-card-title" id="hw-tit-hcsr04">HC-SR04 · Dist.</h2>
-              <span class="hw-badge ok" id="hw-badge-hcsr04">DESPEJADO</span>
-            </div>
-            <canvas class="hw-cv hw-cv-radar" id="hw-canvas-radar" width="260" height="96" aria-hidden="true"></canvas>
-            <div class="hw-metrics-row">
-              <div class="hw-metric"><span class="hw-metric-k">Distancia</span><span class="hw-metric-v" id="hw-val-dist">60 cm</span></div>
-              <div class="hw-metric"><span class="hw-metric-k">Zona</span><span class="hw-metric-v" id="hw-val-zona">LIBRE</span></div>
-            </div>
-            <label class="hw-ctrl" for="hw-in-dist">
-              <span class="hw-ctrl-lbl"><span>Obstáculo frontal</span><span class="hw-ctrl-val" id="hw-lbl-dist">60 cm</span></span>
-              <input id="hw-in-dist" type="range" min="5" max="80" step="1" value="60">
-            </label>
-            <div class="hw-seg" role="group" aria-label="Salud HC-SR04">
-              <button type="button" class="hw-st-btn" data-st-card="hcsr04" data-st-val="normal">OK</button>
-              <button type="button" class="hw-st-btn aviso" data-st-card="hcsr04" data-st-val="advertencia">Aviso</button>
-              <button type="button" class="hw-st-btn fallo" data-st-card="hcsr04" data-st-val="fallo">Fallo</button>
-            </div>
-          </article>
-
-          <!-- 2 · TCRT5000 (4 canales) -->
-          <article class="hw-card" id="hw-card-tcrt5000" data-card="tcrt5000" data-estado="normal" aria-labelledby="hw-tit-tcrt5000">
-            <div class="hw-card-head">
-              <h2 class="hw-card-title" id="hw-tit-tcrt5000">TCRT5000 · Línea</h2>
-              <span class="hw-badge ok" id="hw-badge-tcrt5000">LÍNEA OK</span>
-            </div>
-            <div class="hw-tcrt-array" role="img" aria-label="Regleta de 4 sensores ópticos S1 a S4">
-              <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s1"></span><span>S1</span></div>
-              <div class="hw-tcrt-ch"><span class="hw-tcrt-led on" id="hw-tcrt-s2"></span><span>S2</span></div>
-              <div class="hw-tcrt-ch"><span class="hw-tcrt-led on" id="hw-tcrt-s3"></span><span>S3</span></div>
-              <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s4"></span><span>S4</span></div>
-            </div>
-            <div class="hw-pid-track" aria-hidden="true"><div class="hw-pid-center"></div><div class="hw-pid-marker" id="hw-pid-marker" style="left:50%"></div></div>
-            <canvas class="hw-cv hw-cv-osc" id="hw-canvas-osc" width="260" height="40" aria-hidden="true"></canvas>
-            <div class="hw-metrics-row">
-              <div class="hw-metric"><span class="hw-metric-k">Error</span><span class="hw-metric-v" id="hw-val-linea">+0.0 mm</span></div>
-              <div class="hw-metric"><span class="hw-metric-k">S1–S4</span><span class="hw-metric-v" id="hw-val-patron">0110</span></div>
-            </div>
-            <label class="hw-ctrl" for="hw-in-linea">
-              <span class="hw-ctrl-lbl"><span>Desvío de línea</span><span class="hw-ctrl-val" id="hw-lbl-linea">+0 mm</span></span>
-              <input id="hw-in-linea" type="range" min="-30" max="30" step="1" value="0">
-            </label>
-            <div class="hw-seg" role="group" aria-label="Salud TCRT5000">
-              <button type="button" class="hw-st-btn" data-st-card="tcrt5000" data-st-val="normal">OK</button>
-              <button type="button" class="hw-st-btn aviso" data-st-card="tcrt5000" data-st-val="advertencia">Aviso</button>
-              <button type="button" class="hw-st-btn fallo" data-st-card="tcrt5000" data-st-val="fallo">Fallo</button>
-            </div>
-          </article>
-
-          <!-- 3 · Velocidad y dirección -->
-          <article class="hw-card" id="hw-card-motores" data-card="motores" data-estado="normal" aria-labelledby="hw-tit-motores">
-            <div class="hw-card-head">
-              <h2 class="hw-card-title" id="hw-tit-motores">Velocidad · Dirección</h2>
-              <span class="hw-badge ok" id="hw-badge-motores">ADELANTE</span>
-            </div>
-            <div class="hw-motor-top">
-              <canvas class="hw-cv hw-cv-vel" id="hw-canvas-vel" width="150" height="80" aria-hidden="true"></canvas>
-              <div class="hw-diff-bars">
-                <div class="hw-diff-row"><span>IZQ</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-izq"></div></div><span id="hw-txt-izq">0%</span></div>
-                <div class="hw-diff-row"><span>DER</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-der"></div></div><span id="hw-txt-der">0%</span></div>
-              </div>
-            </div>
-            <div class="hw-metrics-row">
-              <div class="hw-metric"><span class="hw-metric-k">Vel.</span><span class="hw-metric-v" id="hw-val-vel">0.00 m/s</span></div>
-              <div class="hw-metric"><span class="hw-metric-k">PWM</span><span class="hw-metric-v" id="hw-val-pwm">0 %</span></div>
-            </div>
-            <label class="hw-ctrl" for="hw-in-vel">
-              <span class="hw-ctrl-lbl"><span>Consigna (máx. 0.46)</span><span class="hw-ctrl-val" id="hw-lbl-vel">0.30 m/s</span></span>
-              <input id="hw-in-vel" type="range" min="0" max="0.46" step="0.01" value="0.30">
-            </label>
-            <div class="hw-dirs" role="group" aria-label="Dirección">
-              <button type="button" class="hw-mini-btn" data-dir="IZQUIERDA" aria-label="Izquierda">◀</button>
-              <button type="button" class="hw-mini-btn" data-dir="ADELANTE" aria-label="Adelante">▲</button>
-              <button type="button" class="hw-mini-btn" data-dir="DETENIDO" aria-label="Detenido">■</button>
-              <button type="button" class="hw-mini-btn" data-dir="ATRÁS" aria-label="Atrás">▼</button>
-              <button type="button" class="hw-mini-btn" data-dir="DERECHA" aria-label="Derecha">▶</button>
-            </div>
-            <div class="hw-seg" role="group" aria-label="Salud motores">
-              <button type="button" class="hw-st-btn" data-st-card="motores" data-st-val="normal">OK</button>
-              <button type="button" class="hw-st-btn aviso" data-st-card="motores" data-st-val="advertencia">Aviso</button>
-              <button type="button" class="hw-st-btn fallo" data-st-card="motores" data-st-val="fallo">Fallo</button>
-            </div>
-          </article>
-
-          <!-- 4 · MPU-6050 -->
-          <article class="hw-card" id="hw-card-mpu6050" data-card="mpu6050" data-estado="normal" aria-labelledby="hw-tit-mpu6050">
-            <div class="hw-card-head">
-              <h2 class="hw-card-title" id="hw-tit-mpu6050">MPU-6050 · IMU</h2>
-              <span class="hw-badge ok" id="hw-badge-mpu6050">ESTABILIDAD OK</span>
-            </div>
-            <div class="hw-imu-top">
-              <canvas class="hw-cv hw-cv-imu" id="hw-canvas-imu" width="80" height="80" aria-hidden="true"></canvas>
-              <div class="hw-metrics-col">
-                <div class="hw-metric"><span class="hw-metric-k">Pitch</span><span class="hw-metric-v" id="hw-val-pitch">+0.0°</span></div>
-                <div class="hw-metric"><span class="hw-metric-k">Roll</span><span class="hw-metric-v" id="hw-val-roll">+0.0°</span></div>
-                <div class="hw-metric"><span class="hw-metric-k">Acel.</span><span class="hw-metric-v" id="hw-val-acel">1.00 g</span></div>
-              </div>
-            </div>
-            <div class="hw-ctrl-2">
-              <label class="hw-ctrl" for="hw-in-pitch">
-                <span class="hw-ctrl-lbl"><span>Pitch</span><span class="hw-ctrl-val" id="hw-lbl-pitch">0°</span></span>
-                <input id="hw-in-pitch" type="range" min="-45" max="45" step="1" value="0">
-              </label>
-              <label class="hw-ctrl" for="hw-in-roll">
-                <span class="hw-ctrl-lbl"><span>Roll</span><span class="hw-ctrl-val" id="hw-lbl-roll">0°</span></span>
-                <input id="hw-in-roll" type="range" min="-45" max="45" step="1" value="0">
-              </label>
-            </div>
-            <div class="hw-seg hw-seg-4" role="group" aria-label="Eventos MPU-6050">
-              <button type="button" class="hw-mini-btn" data-mpu-ev="normal">Normal</button>
-              <button type="button" class="hw-mini-btn aviso" data-mpu-ev="inclinacion">Incl.</button>
-              <button type="button" class="hw-mini-btn peligro" data-mpu-ev="impacto">Impacto</button>
-              <button type="button" class="hw-mini-btn aviso" data-mpu-ev="atascamiento">Atasco</button>
-            </div>
-            <div class="hw-seg" role="group" aria-label="Salud MPU-6050">
-              <button type="button" class="hw-st-btn" data-st-card="mpu6050" data-st-val="normal">OK</button>
-              <button type="button" class="hw-st-btn aviso" data-st-card="mpu6050" data-st-val="advertencia">Aviso</button>
-              <button type="button" class="hw-st-btn fallo" data-st-card="mpu6050" data-st-val="fallo">Fallo</button>
-            </div>
-          </article>
-        </div>
-      </div>
+  <!-- Generado por codigo/construir.mjs desde codigo/app.html: no editar a mano entre los marcadores -->
+<!--APP:inicio-->
+<section class="p02-sim" id="hw-inspector-root" data-seguridad="nominal" aria-label="Inspector de hardware: circuito 3D con consolas interactivas">
+  <header class="sim-top">
+    <span class="hw-sim-badge" id="hw-sim-badge" role="note"><i aria-hidden="true"></i>SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS</span>
+    <div class="hw-seguridad" id="hw-seguridad" role="status" aria-live="polite">
+      <span class="hw-seguridad-k">Seguridad</span>
+      <b id="hw-seguridad-estado">NOMINAL</b>
+      <span id="hw-seguridad-motivo">Todos los sensores en rango</span>
     </div>
-  </section>
+    <span class="hw-fuente" id="hw-fuente">CIRCUITO · APAGADO</span>
+    <button type="button" class="hw-btn-reset" id="hw-btn-reset">Restablecer nominal</button>
+  </header>
+
+  <div class="app" id="app">
+    <canvas id="lienzo" tabindex="0" aria-label="Inspector 3D del robot en el circuito ovalado: toca una pieza para enfocar su consola; se maneja con W A S D, las flechas o el D-Pad" role="img"></canvas>
+    <svg id="guias" aria-hidden="true"></svg>
+    <div id="etiquetas"></div>
+
+    <div class="barra" role="toolbar" aria-label="Controles">
+      <button class="btn" id="b-xray" type="button" aria-pressed="false"><span aria-hidden="true">🩻</span><span class="largo"> Rayos X</span></button>
+      <button class="btn" id="b-etiq" type="button" aria-pressed="true" aria-label="Etiquetas"><span aria-hidden="true">🏷️</span><span class="largo"> Etiquetas</span></button>
+      <button class="btn" id="b-vista" type="button" aria-label="Cambiar la vista de la cámara"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Inspección</span></button>
+      <div class="grupo" role="group" aria-label="Modo de manejo">
+        <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
+        <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
+      </div>
+      <button class="btn pri en-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
+    </div>
+    <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para enfocar su consola</p>
+
+    <div class="dpad" id="dpad" role="group" aria-label="Manejo: avanzar, girar, frenar y retroceder">
+      <button type="button" class="dp" data-dp="arriba" aria-label="Avanzar" style="grid-area:u">▲</button>
+      <button type="button" class="dp" data-dp="izq" aria-label="Girar a la izquierda" style="grid-area:l">◄</button>
+      <button type="button" class="dp stop" data-dp="stop" aria-label="Frenar" style="grid-area:s">■</button>
+      <button type="button" class="dp" data-dp="der" aria-label="Girar a la derecha" style="grid-area:r">►</button>
+      <button type="button" class="dp" data-dp="abajo" aria-label="Retroceder" style="grid-area:d">▼</button>
+    </div>
+
+    <nav class="tira" id="tira" aria-label="Componentes del robot (toca uno para enfocar su consola y su ficha técnica)"></nav>
+  </div>
+
+  <aside class="hw-panel" id="hw-panel" aria-label="Consolas interactivas y ficha técnica">
+    <div class="hw-panel-head">
+      <span class="hw-panel-tit" id="hw-panel-titulo">Vista general · 4 consolas en vivo</span>
+      <button type="button" class="hw-foco-cerrar" id="hw-foco-cerrar" hidden>× Vista general</button>
+    </div>
+    <div class="hw-consolas" id="hw-consolas">
+      <!-- 1 · HC-SR04 -->
+      <article class="hw-card" id="hw-card-hcsr04" data-card="hcsr04" data-estado="normal" aria-labelledby="hw-tit-hcsr04">
+        <div class="hw-card-head">
+          <button type="button" class="hw-card-title" id="hw-tit-hcsr04" data-foco="us_front">HC-SR04 · Dist.</button>
+          <span class="hw-badge ok" id="hw-badge-hcsr04">DESPEJADO</span>
+        </div>
+        <canvas class="hw-cv hw-cv-radar" id="hw-canvas-radar" width="260" height="92" aria-hidden="true"></canvas>
+        <div class="hw-metrics-row">
+          <div class="hw-metric"><span class="hw-metric-k">Frente</span><span class="hw-metric-v" id="hw-val-dist">—</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">Atrás</span><span class="hw-metric-v" id="hw-val-atras">—</span></div>
+        </div>
+        <label class="hw-ctrl" for="hw-in-dist">
+          <span class="hw-ctrl-lbl"><span>Inyectar obstáculo <small id="hw-val-zona">LIBRE</small></span><span class="hw-ctrl-val" id="hw-lbl-dist">60 cm</span></span>
+          <input id="hw-in-dist" type="range" min="5" max="80" step="1" value="60">
+        </label>
+        <div class="hw-seg hw-seg-4" role="group" aria-label="Salud HC-SR04">
+          <button type="button" class="hw-vivo" id="hw-vivo-hcsr04" data-vivo="hcsr04">● Vivo</button>
+          <button type="button" class="hw-st-btn" data-st-card="hcsr04" data-st-val="normal">OK</button>
+          <button type="button" class="hw-st-btn aviso" data-st-card="hcsr04" data-st-val="advertencia">Aviso</button>
+          <button type="button" class="hw-st-btn fallo" data-st-card="hcsr04" data-st-val="fallo">Fallo</button>
+        </div>
+      </article>
+
+      <!-- 2 · TCRT5000 (4 canales) -->
+      <article class="hw-card" id="hw-card-tcrt5000" data-card="tcrt5000" data-estado="normal" aria-labelledby="hw-tit-tcrt5000">
+        <div class="hw-card-head">
+          <button type="button" class="hw-card-title" id="hw-tit-tcrt5000" data-foco="tcrt">TCRT5000 · Línea</button>
+          <span class="hw-badge ok" id="hw-badge-tcrt5000">LÍNEA OK</span>
+        </div>
+        <div class="hw-tcrt-array" role="img" aria-label="Regleta de 4 sensores ópticos S1 a S4">
+          <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s1"></span><span>S1</span></div>
+          <div class="hw-tcrt-ch"><span class="hw-tcrt-led on" id="hw-tcrt-s2"></span><span>S2</span></div>
+          <div class="hw-tcrt-ch"><span class="hw-tcrt-led on" id="hw-tcrt-s3"></span><span>S3</span></div>
+          <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s4"></span><span>S4</span></div>
+        </div>
+        <div class="hw-pid-track" aria-hidden="true"><div class="hw-pid-center"></div><div class="hw-pid-marker" id="hw-pid-marker" style="left:50%"></div></div>
+        <canvas class="hw-cv hw-cv-osc" id="hw-canvas-osc" width="260" height="34" aria-hidden="true"></canvas>
+        <div class="hw-metrics-row">
+          <div class="hw-metric"><span class="hw-metric-k">Error</span><span class="hw-metric-v" id="hw-val-linea">+0.0 mm</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">S1–S4</span><span class="hw-metric-v" id="hw-val-patron">0110</span></div>
+        </div>
+        <label class="hw-ctrl" for="hw-in-linea">
+          <span class="hw-ctrl-lbl"><span>Desvío de línea</span><span class="hw-ctrl-val" id="hw-lbl-linea">+0 mm</span></span>
+          <input id="hw-in-linea" type="range" min="-30" max="30" step="1" value="0">
+        </label>
+        <div class="hw-seg hw-seg-4" role="group" aria-label="Salud TCRT5000">
+          <button type="button" class="hw-vivo" id="hw-vivo-tcrt5000" data-vivo="tcrt5000">● Vivo</button>
+          <button type="button" class="hw-st-btn" data-st-card="tcrt5000" data-st-val="normal">OK</button>
+          <button type="button" class="hw-st-btn aviso" data-st-card="tcrt5000" data-st-val="advertencia">Aviso</button>
+          <button type="button" class="hw-st-btn fallo" data-st-card="tcrt5000" data-st-val="fallo">Fallo</button>
+        </div>
+      </article>
+
+      <!-- 3 · Velocidad y dirección -->
+      <article class="hw-card" id="hw-card-motores" data-card="motores" data-estado="normal" aria-labelledby="hw-tit-motores">
+        <div class="hw-card-head">
+          <button type="button" class="hw-card-title" id="hw-tit-motores" data-foco="traccion">Velocidad · Dir.</button>
+          <span class="hw-badge ok" id="hw-badge-motores">DETENIDO</span>
+        </div>
+        <div class="hw-motor-top">
+          <canvas class="hw-cv hw-cv-vel" id="hw-canvas-vel" width="150" height="76" aria-hidden="true"></canvas>
+          <div class="hw-diff-bars">
+            <div class="hw-diff-row"><span>IZQ</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-izq"></div></div><span id="hw-txt-izq">0%</span></div>
+            <div class="hw-diff-row"><span>DER</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-der"></div></div><span id="hw-txt-der">0%</span></div>
+          </div>
+        </div>
+        <div class="hw-metrics-row">
+          <div class="hw-metric"><span class="hw-metric-k">Vel.</span><span class="hw-metric-v" id="hw-val-vel">0.00 m/s</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">PWM</span><span class="hw-metric-v" id="hw-val-pwm">0 %</span></div>
+        </div>
+        <label class="hw-ctrl" for="hw-in-vel">
+          <span class="hw-ctrl-lbl"><span>Consigna (máx. 0.46)</span><span class="hw-ctrl-val" id="hw-lbl-vel">0.40 m/s</span></span>
+          <input id="hw-in-vel" type="range" min="0" max="0.46" step="0.01" value="0.40">
+        </label>
+        <div class="hw-dirs" role="group" aria-label="Dirección (toma el mando en Manual)">
+          <button type="button" class="hw-mini-btn" data-dir="IZQUIERDA" aria-label="Izquierda">◀</button>
+          <button type="button" class="hw-mini-btn" data-dir="ADELANTE" aria-label="Adelante">▲</button>
+          <button type="button" class="hw-mini-btn" data-dir="DETENIDO" aria-label="Detenido">■</button>
+          <button type="button" class="hw-mini-btn" data-dir="ATRÁS" aria-label="Atrás">▼</button>
+          <button type="button" class="hw-mini-btn" data-dir="DERECHA" aria-label="Derecha">▶</button>
+        </div>
+        <div class="hw-seg hw-seg-4" role="group" aria-label="Salud motores">
+          <button type="button" class="hw-vivo" id="hw-vivo-motores" data-vivo="motores">● Vivo</button>
+          <button type="button" class="hw-st-btn" data-st-card="motores" data-st-val="normal">OK</button>
+          <button type="button" class="hw-st-btn aviso" data-st-card="motores" data-st-val="advertencia">Aviso</button>
+          <button type="button" class="hw-st-btn fallo" data-st-card="motores" data-st-val="fallo">Fallo</button>
+        </div>
+      </article>
+
+      <!-- 4 · MPU-6050 -->
+      <article class="hw-card" id="hw-card-mpu6050" data-card="mpu6050" data-estado="normal" aria-labelledby="hw-tit-mpu6050">
+        <div class="hw-card-head">
+          <button type="button" class="hw-card-title" id="hw-tit-mpu6050" data-foco="mpu">MPU-6050 · IMU</button>
+          <span class="hw-badge ok" id="hw-badge-mpu6050">ESTABILIDAD OK</span>
+        </div>
+        <div class="hw-imu-top">
+          <canvas class="hw-cv hw-cv-imu" id="hw-canvas-imu" width="76" height="76" aria-hidden="true"></canvas>
+          <div class="hw-metrics-col">
+            <div class="hw-metric"><span class="hw-metric-k">Pitch</span><span class="hw-metric-v" id="hw-val-pitch">+0.0°</span></div>
+            <div class="hw-metric"><span class="hw-metric-k">Roll</span><span class="hw-metric-v" id="hw-val-roll">+0.0°</span></div>
+            <div class="hw-metric"><span class="hw-metric-k">Acel.</span><span class="hw-metric-v" id="hw-val-acel">1.00 g</span></div>
+          </div>
+        </div>
+        <div class="hw-ctrl-2">
+          <label class="hw-ctrl" for="hw-in-pitch">
+            <span class="hw-ctrl-lbl"><span>Pitch</span><span class="hw-ctrl-val" id="hw-lbl-pitch">0°</span></span>
+            <input id="hw-in-pitch" type="range" min="-45" max="45" step="1" value="0">
+          </label>
+          <label class="hw-ctrl" for="hw-in-roll">
+            <span class="hw-ctrl-lbl"><span>Roll</span><span class="hw-ctrl-val" id="hw-lbl-roll">0°</span></span>
+            <input id="hw-in-roll" type="range" min="-45" max="45" step="1" value="0">
+          </label>
+        </div>
+        <div class="hw-seg hw-seg-4" role="group" aria-label="Eventos MPU-6050">
+          <button type="button" class="hw-mini-btn" data-mpu-ev="normal">Normal</button>
+          <button type="button" class="hw-mini-btn aviso" data-mpu-ev="inclinacion">Incl.</button>
+          <button type="button" class="hw-mini-btn peligro" data-mpu-ev="impacto">Impacto</button>
+          <button type="button" class="hw-mini-btn aviso" data-mpu-ev="atascamiento">Atasco</button>
+        </div>
+        <div class="hw-seg hw-seg-4" role="group" aria-label="Salud MPU-6050">
+          <button type="button" class="hw-vivo" id="hw-vivo-mpu6050" data-vivo="mpu6050">● Vivo</button>
+          <button type="button" class="hw-st-btn" data-st-card="mpu6050" data-st-val="normal">OK</button>
+          <button type="button" class="hw-st-btn aviso" data-st-card="mpu6050" data-st-val="advertencia">Aviso</button>
+          <button type="button" class="hw-st-btn fallo" data-st-card="mpu6050" data-st-val="fallo">Fallo</button>
+        </div>
+      </article>
+
+      <!-- Ficha técnica compacta del componente enfocado (la llena el simulador; va justo debajo de su consola) -->
+      <section class="hw-ficha" id="hw-ficha" aria-live="polite" hidden></section>
+    </div>
+  </aside>
+</section>
+<!--APP:fin-->
 
   <details class="curiosos">
     <summary>Para los curiosos</summary>
     <ul>
-      <li><b>Un solo estado:</b> el robot 3D y las 4 consolas leen y escriben en <code>SimulationState</code>; con menos de 20 cm al frente, impacto o inclinación de más de 30° pasa a <b>PARADA</b> y solo deja retroceder si el motivo es el obstáculo, como el firmware.</li>
+      <li><b>Un solo estado:</b> el circuito 3D y las 4 consolas leen y escriben en <code>SimulationState</code>. En marcha, las consolas muestran lo que miden los sensores en el circuito (● Vivo); al mover un slider o tocar Impacto, Inclinar o Fallo, el valor queda inyectado (◆ Iny.) y el robot reacciona en el circuito. Con un obstáculo inyectado a menos de 20 cm, un impacto, una inclinación de más de 30° o un sensor en fallo pasa a <b>PARADA</b>; solo deja retroceder si el motivo es el obstáculo, como el firmware.</li>
       <li><b>Manejo:</b> el mismo del Simulador 1 (<a href="../P04-simulador-1-esp32/">P04</a>): PWM 0,8 al avanzar (0,46 m/s) y 0,45 de diferencia al girar.</li>
       <li><b>Sensores:</b> velocímetro en la escala del radar (<a href="../P03-radar-ultrasonico/">P03</a>, hasta 0,46 m/s) y los 4 TCRT5000 (S1…S4, 18 mm entre sí, ADC1 GPIO 36, 39, 34 y 35).</li>
       <li><b>Piezas:</b> ESP32, L298N con 2× JGA25-371 Speed 200 y encoders (11 PPR × 1:21,3), 2× HC-SR04P (frente y atrás, TRIG atrás en GPIO 15), MPU-6050 y batería 3S.</li>
       <li>Todo es simulación (SIL) con datos sintéticos; las mediciones con el hardware real van en la <a href="README.md">ficha HIL</a> [PENDIENTE DE MEDICIÓN FÍSICA].</li>
     </ul>
     <div class="acciones">
-      <a href="simulador.html" class="btn btn-secundario">Recorrido de la ruta completa ↗</a>
+      <a href="simulador.html" class="btn btn-secundario">Pantalla completa ↗</a>
       <a href="codigo-esp32/traccion_encoders/traccion_encoders.ino" download class="btn btn-principal">Descargar traccion_encoders.ino</a>
       <a href="README.md" class="btn btn-secundario">Ficha HIL (.md)</a>
     </div>

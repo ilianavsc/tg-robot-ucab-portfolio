@@ -1,6 +1,6 @@
 # P02 · Inspector de hardware — Registro de mediciones físicas (HIL)
 
-> **Simulador (SIL):** [`index.html`](index.html): robot manejable con consola de sensores (velocímetro + 4 TCRT5000).
+> **Simulador (SIL):** [`index.html`](index.html): robot en el circuito ovalado (Auto/Manual) con panel integrado de 4 consolas interactivas (HC-SR04, TCRT5000 ×4, velocidad/dirección hasta 0,46 m/s y MPU-6050) y la ficha técnica de la pieza enfocada. Se regenera con `codigo/construir.mjs`.
 
 > **Estado:** plantilla vacía, lista para diciembre (llegada del hardware: 15–28 dic 2026).
 > **Ficha técnica (pines, umbrales, calibración):** [`docs/sensores.md`](../../docs/sensores.md)

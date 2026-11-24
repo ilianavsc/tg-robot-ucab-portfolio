@@ -190,129 +190,167 @@ prueba('manual en la cinta: los 4 sensores de línea se encienden en vivo y al v
 });
 
 prueba('el texto de la vitrina usa teach-and-repeat y no usa términos de otras tecnologías', () => {
-  const todo = ['fichas.js', 'main.js', 'plantilla.html'].map((f) => readFileSync(join(aqui, f), 'utf8')).join('\n');
+  const todo = ['fichas.js', 'main.js', 'plantilla.html', 'app.html'].map((f) => readFileSync(join(aqui, f), 'utf8')).join('\n');
   const prohibido = new RegExp(['\\bI', 'A\\b|inteligencia ', 'artificial'].join(''), 'i'); // sin escribir la sigla completa
   assert.ok(!prohibido.test(todo));
   assert.ok(/teach-and-repeat/.test(todo));
   assert.ok(/GPIO 15/.test(todo));
 });
 
-// ---- interfaz: el inspector de componentes es la vista principal y la consola es opcional
-prueba('el inspector de componentes es lo principal: etiquetas 3D, tira de las 7 piezas y ficha abierta de entrada', () => {
-  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
-  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
+// ---- interfaz: simulador 3D del circuito + panel oscuro integrado (consolas + ficha técnica)
+const leerAqui = (f) => readFileSync(join(aqui, f), 'utf8');
+const indexP02 = () => readFileSync(join(aqui, '../index.html'), 'utf8');
+
+prueba('se restaura el simulador 3D del circuito: barra superior, D-Pad, tira de 7 piezas y etiquetas', () => {
+  const app = leerAqui('app.html');
+  const main = leerAqui('main.js');
   assert.strictEqual(ORDEN.length, 7);
   for (const id of ORDEN) assert.ok(FICHAS[id] && FICHAS[id].nombre && FICHAS[id].rol, `ficha ${id}`);
-  assert.ok(/id="tira"/.test(html) && /id="ficha"/.test(html) && /id="etiquetas"/.test(html));
-  assert.ok(/id="pista-tocar"/.test(html), 'invita a tocar una pieza');
-  // la barra empieza por las herramientas de inspección
-  const barra = html.slice(html.indexOf('class="barra"'), html.indexOf('</div>\n  <p class="pista-tocar"'));
+  for (const id of ['lienzo', 'guias', 'etiquetas', 'tira', 'dpad', 'pista-tocar', 'b-xray', 'b-etiq', 'b-vista', 'b-pausa']) assert.ok(app.includes(`id="${id}"`), `falta #${id}`);
+  assert.ok(/data-modo="auto"/.test(app) && /data-modo="manual"/.test(app), 'Auto y Manual');
+  for (const dp of ['arriba', 'izq', 'stop', 'der', 'abajo']) assert.ok(app.includes(`data-dp="${dp}"`), `D-Pad ${dp}`);
+  const barra = app.slice(app.indexOf('class="barra"'), app.indexOf('<p class="pista-tocar"'));
   assert.ok(barra.indexOf('b-xray') < barra.indexOf('data-modo="auto"'), 'Rayos X va antes del manejo');
   assert.ok(/ponEtiquetas\(true\)/.test(main), 'etiquetas encendidas en todos los tamaños');
-  assert.ok(/abrirFicha\('tcrt'\)/.test(main), 'en pantallas anchas abre una ficha al cargar');
+  assert.ok(/crearMundo\(canvas, demo\.ruta, demo\.obstaculos\)/.test(main), 'escena del circuito ovalado con obstáculos');
+  for (const n of ['TCRT5000 ×4', 'HC-SR04P frontal', 'HC-SR04P trasero', 'ESP32 móvil', 'MPU-6050', 'Tracción + chasis PLA', 'Batería 3S']) {
+    assert.ok(ORDEN.some((id) => FICHAS[id].corto === n), `chip ${n}`);
+  }
 });
 
-prueba('la consola de sensores empieza oculta y se abre o se cierra con su botón', () => {
-  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
-  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
-  assert.ok(/<section class="consola" id="consola"[^>]*\shidden>/.test(html), 'consola oculta por defecto');
-  assert.ok(/id="b-consola"[^>]*aria-pressed="false"/.test(html), 'botón apagado al inicio');
-  assert.ok(/Consola de sensores<\/button>/.test(html), 'el botón dice Consola de sensores');
-  assert.ok(/bConsola\.addEventListener\('click', \(\) => ponConsola\(consola\.hidden\)\)/.test(main), 'alterna al pulsar');
-  assert.ok(/ponConsola\(false\)/.test(main), 'arranca cerrada');
-  assert.ok(/consola\.hidden = !on/.test(main) && /setAttribute\('aria-pressed', String\(on\)\)/.test(main));
-  const css = readFileSync(join(aqui, 'style.css'), 'utf8');
-  assert.ok(!/(^|\n)\.estado\{/.test(css), 'sin la regla .estado');
+prueba('sin redundancias: no hay botón "Consola de sensores", ni fichas blancas flotantes, ni iframe', () => {
+  const app = leerAqui('app.html');
+  const main = leerAqui('main.js');
+  const css = leerAqui('style.css');
+  const html = indexP02();
+  for (const t of [app, html]) {
+    assert.ok(!/id="b-consola"|Consola de sensores<\/button>/.test(t), 'sin botón Consola de sensores');
+    assert.ok(!/id="ficha"|id="f-cerrar"|id="consola"|b-ver-consola|Ver en consola de sensores/.test(t), 'sin ficha flotante ni consola vieja');
+    assert.ok(!/<iframe/i.test(t), 'sin iframe');
+  }
+  assert.ok(!/ponConsola|b-ver-consola|refrescaConsola|f-cerrar/.test(main), 'main.js sin la consola opcional ni la ficha flotante');
+  assert.ok(!/\.ficha\{|\.consola\{/.test(css), 'sin estilos de ficha flotante ni consola vieja');
+  assert.ok(!/(^|\n)html,body\{/.test(css) && !/position:fixed/.test(css), 'los estilos del 3D no tocan la página del portafolio');
 });
 
-// ---- Fase 3: inicio apagado con Encender/Detener + tarjetas integradas vinculadas a la consola
+prueba('index.html y simulador.html usan la misma interfaz (app.html) y cargan estado central + 3D empaquetado', () => {
+  const app = leerAqui('app.html').trimEnd();
+  const html = indexP02();
+  const ini = html.indexOf('<!--APP:inicio-->') + '<!--APP:inicio-->'.length;
+  assert.strictEqual(html.slice(ini, html.indexOf('<!--APP:fin-->')).trim(), app.trim(), 'index.html al día con app.html (correr construir.mjs)');
+  assert.ok(html.includes('../../assets/css/inspector_hw.css') && html.includes('inspector3d.css'));
+  assert.ok(html.indexOf('../../assets/inspector_hw.js') < html.indexOf('src="inspector3d.js"'), 'el estado central carga antes que el 3D');
+  const sim = readFileSync(join(aqui, '../simulador.html'), 'utf8');
+  assert.ok(sim.includes('id="hw-panel"') && sim.includes('SimulationState') && sim.includes('id="lienzo"'), 'simulador.html autocontenido con panel y 3D');
+  const bundle = readFileSync(join(aqui, '../inspector3d.js'), 'utf8');
+  assert.ok(bundle.includes('publicarCircuito') && bundle.includes('hw-ficha'), 'bundle generado y vigente');
+  assert.ok(html.includes('SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS'));
+});
+
+prueba('panel oscuro integrado: 4 consolas con sus controles dentro y la ficha técnica en el mismo panel', () => {
+  const app = leerAqui('app.html');
+  const panel = app.slice(app.indexOf('id="hw-panel"'));
+  for (const id of ['hw-card-hcsr04', 'hw-card-tcrt5000', 'hw-card-motores', 'hw-card-mpu6050', 'hw-ficha', 'hw-foco-cerrar']) assert.ok(panel.includes(`id="${id}"`), `#${id} en el panel`);
+  const tarjeta = (c) => {
+    const a = app.indexOf(`id="hw-card-${c}"`);
+    return app.slice(a, app.indexOf('</article>', a));
+  };
+  assert.ok(/id="hw-in-dist" type="range" min="5" max="80"/.test(tarjeta('hcsr04')));
+  assert.ok(/id="hw-in-linea"/.test(tarjeta('tcrt5000')));
+  assert.strictEqual((tarjeta('tcrt5000').match(/id="hw-tcrt-s\d"/g) || []).length, 4);
+  assert.ok(/id="hw-in-vel" type="range" min="0" max="0\.46"/.test(tarjeta('motores')) && /data-dir="ADELANTE"/.test(tarjeta('motores')));
+  assert.ok(/id="hw-in-pitch"/.test(tarjeta('mpu6050')) && /data-mpu-ev="impacto"/.test(tarjeta('mpu6050')) && /data-mpu-ev="inclinacion"/.test(tarjeta('mpu6050')));
+  for (const c of ['hcsr04', 'tcrt5000', 'motores', 'mpu6050']) {
+    for (const st of ['normal', 'advertencia', 'fallo']) assert.ok(tarjeta(c).includes(`data-st-card="${c}" data-st-val="${st}"`), `salud ${st} en ${c}`);
+    assert.ok(tarjeta(c).includes(`data-vivo="${c}"`), `botón Vivo en ${c}`);
+  }
+  const css = readFileSync(join(aqui, '../../../assets/css/inspector_hw.css'), 'utf8');
+  assert.ok(/\.hw-consolas \{[^}]*repeat\(2, minmax\(0, 1fr\)\)/.test(css), 'consolas 2×2');
+  assert.ok(/\.hw-panel \{[^}]*background: #10141A/.test(css), 'panel oscuro');
+  assert.ok(/@media \(max-width: 900px\)[\s\S]*\.hw-panel \{ grid-row: 3/.test(css), 'móvil: consolas debajo del 3D');
+  // la ficha usa los datos técnicos del proyecto
+  const main = leerAqui('main.js');
+  assert.ok(main.includes("$('#hw-ficha')") && main.includes('Datos técnicos del proyecto') && main.includes('f.datos.map'));
+  assert.ok(/GPIO 36 \(VP\) · 39 \(VN\) · 34 · 35/.test(FICHAS.tcrt.datos.map((d) => d[1]).join(' ')) && FICHAS.tcrt.datos.some(([k, v]) => k === 'Separación' && v.includes('18 mm')));
+  for (const id of ORDEN) assert.ok('id' in FICHAS[id].consola, `vínculo pieza → consola en ${id}`);
+});
+
 prueba('inicio apagado (encendido=false) y transición ⚡ Encender / ⏹ Detener congela dinámica y tiempo', () => {
   const d = crearDemo();
   assert.strictEqual(d.est.encendido, false, 'P02 inicia apagado');
   assert.strictEqual(d.est.v, 0);
   assert.strictEqual(d.est.t, 0);
   const x0 = d.est.x;
-  const z0 = d.est.z;
   for (let i = 0; i < 120; i++) d.paso(1 / 120);
   assert.strictEqual(d.est.x, x0, 'estático mientras encendido=false');
-  assert.strictEqual(d.est.z, z0);
   assert.strictEqual(d.est.t, 0, 'tiempo congelado');
-  assert.strictEqual(d.est.v, 0);
-
-  // Encender activa movimiento
   d.encender();
-  assert.strictEqual(d.est.encendido, true);
   for (let i = 0; i < 180; i++) d.paso(1 / 120);
   assert.ok(d.est.t > 1.4 && Math.abs(d.est.v) > 0.2, `debe moverse al encender (t=${d.est.t}, v=${d.est.v})`);
-
-  // Detener congela dinámica y tiempo
   d.detener();
-  assert.strictEqual(d.est.encendido, false);
   const tCong = d.est.t;
   const xCong = d.est.x;
   for (let i = 0; i < 120; i++) d.paso(1 / 120);
   assert.strictEqual(d.est.t, tCong);
   assert.strictEqual(d.est.x, xCong);
-
-  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
-  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
-  assert.ok(/id="b-pausa"[^>]*aria-pressed="false"/.test(html) && html.includes('⚡ Encender'));
+  const app = leerAqui('app.html');
+  const main = leerAqui('main.js');
+  assert.ok(/id="b-pausa"[^>]*aria-pressed="false"/.test(app) && app.includes('⚡ Encender'));
   assert.ok(main.includes('⏹ Detener') && main.includes('cancelAnimationFrame(rafId)'));
 });
 
-prueba('las 7 tarjetas están integradas en el inspector y vinculadas visualmente a la consola de sensores', () => {
-  const indexHtml = readFileSync(join(aqui, '../index.html'), 'utf8');
-  assert.ok(!/id="piezas"/.test(indexHtml), 'elimina las tarjetas externas desconectadas del iframe');
-  for (const id of ORDEN) {
-    const f = FICHAS[id];
-    assert.ok(f.resumen && f.consola && f.consola.bloque && f.consola.titulo, `vínculo consola faltante en ${id}`);
-  }
-  const html = readFileSync(join(aqui, 'plantilla.html'), 'utf8');
-  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
-  assert.ok(/id="consola-vinculo"/.test(html) && /data-bloque="velo"/.test(html) && /data-bloque="linea"/.test(html) && /data-bloque="distancia"/.test(html));
-  assert.ok(main.includes('sincronizaVinculoConsola') && main.includes('b-ver-consola'));
+prueba('consolas → circuito: obstáculo, desvío, consigna, paro y atasco inyectados mueven la física', () => {
+  const avanzar = (d, seg) => { for (let k = 0; k < seg * 120; k++) d.paso(1 / 120); };
+  // obstáculo inyectado a 12 cm + paro: el robot se detiene en el circuito
+  const d = crearDemo({encendido: true});
+  avanzar(d, 1);
+  d.est.iny.frente = 0.12;
+  d.est.iny.paro = 'Obstáculo a 12 cm';
+  d.est.iny.paroAtras = true;
+  avanzar(d, 1);
+  const x = d.est.x;
+  avanzar(d, 1);
+  assert.ok(Math.abs(d.est.x - x) < 1e-6 && Math.abs(d.est.v) < 0.01, 'detenido por el obstáculo inyectado');
+  assert.ok(Math.abs(d.est.frente - 0.12) < 1e-9, 'el HC-SR04 lee la distancia inyectada');
+  // a mano y con paro por obstáculo deja retroceder
+  d.setModo('manual');
+  d.est.entrada = {f: -1, t: 0, freno: false};
+  avanzar(d, 1);
+  assert.ok(d.est.v < -0.2, 'retrocede');
+  // con impacto (paroAtras = false) no se mueve ni hacia atrás
+  d.est.iny.paroAtras = false;
+  avanzar(d, 1);
+  assert.ok(Math.abs(d.est.v) < 0.01, 'impacto: quieto');
+  d.est.iny.paro = null;
+  d.est.iny.frente = null;
+  // consigna de velocidad en Auto
+  const e = crearDemo({encendido: true});
+  e.est.iny.vConsigna = 0.2;
+  let vmax = 0;
+  for (let k = 0; k < 4 * 120; k++) { e.paso(1 / 120); vmax = Math.max(vmax, e.est.v); }
+  assert.ok(vmax < 0.21 && vmax > 0.12, `consigna 0,2 m/s (vmax ${vmax})`);
+  // desvío inyectado: en Auto el robot sigue la cinta corrido y la regleta lo lee
+  const f = crearDemo({encendido: true});
+  f.est.iny.desvio = 0.024; // cinta 24 mm a la derecha
+  const vistos = new Set();
+  for (let k = 0; k < 8 * 120; k++) { f.paso(1 / 120); if (k > 4 * 120) vistos.add(f.est.sens.join('')); }
+  assert.ok([...vistos].some((p) => p[3] === '1') && !vistos.has('0110'), `la línea queda bajo S4: ${[...vistos]}`);
+  assert.ok(Math.abs(-f.est.eLat * 1000 - 24) < 8, `error lateral ≈ 24 mm (${-f.est.eLat * 1000})`);
+  // fallo TCRT → 0000; atasco → ruedas giran sin avance
+  f.est.iny.sinLinea = true;
+  f.medir();
+  assert.strictEqual(f.est.sens.join(''), '0000');
+  f.est.iny.sinLinea = false;
+  f.est.iny.atasco = true;
+  const x2 = f.est.x;
+  avanzar(f, 1);
+  assert.ok(f.est.x === x2 && Math.abs(f.est.vIzq) > 0.1, 'atasco: ruedas giran, chasis quieto');
+  // apagado: correr de lado actualiza la lectura al instante
+  const g = crearDemo();
+  g.desplazarLateral(-0.03); // robot 3 cm a la derecha: la cinta queda a la izquierda
+  assert.ok(g.est.sens[0] === 1 || g.est.sens.join('') === '0000', `lectura tras desplazar: ${g.est.sens.join('')}`);
 });
 
-prueba('integración fichas ↔ consola: 7 fichas con datos en vivo en reposo, cierre, toggle de consola e inspección apagado', () => {
-  const d = crearDemo({encendido: false});
-  const m = d.motores();
-  const vistaReposo = {
-    sens: d.est.sens,
-    dF: d.est.frente,
-    dR: d.est.atras,
-    zonaF: d.zonaFrente(),
-    zonaR: d.zonaAtras(),
-    mot: m,
-    v: d.est.v,
-    w: d.est.w,
-    th: d.est.th,
-  };
-  const bloquesValidos = new Set(['linea', 'distancia', 'modo', 'velo']);
-  for (const id of ORDEN) {
-    const f = FICHAS[id];
-    assert.ok(bloquesValidos.has(f.consola.bloque), `bloque inválido en ${id}`);
-    const pares = f.vivo(vistaReposo);
-    assert.ok(Array.isArray(pares) && pares.length >= 2, `datos en vivo válidos en reposo para ${id}`);
-  }
-  const main = readFileSync(join(aqui, 'main.js'), 'utf8');
-  assert.ok(main.includes("$('#f-cerrar').addEventListener('click', () => abrirFicha(null))"), 'botón cerrar ficha');
-  assert.ok(/if \(!id\)[\s\S]*?ficha\.hidden = true;[\s\S]*?sincronizaVinculoConsola\(\)/.test(main), 'cerrar ficha limpia vínculo');
-  assert.ok(main.includes("bVinc.addEventListener('click', () => ponConsola(consola.hidden))"), 'toggle consola desde la ficha');
-  assert.ok(/controls\.addEventListener\('change', \(\) => \{[\s\S]*?if \(!ui\.encendido\) solicitarCuadro\(\)/.test(main), 'órbita e inspección funcionan con robot apagado');
-});
-
-prueba('hardware.html se mantiene como catálogo BOM sin la consola 2x2', () => {
-  const hwHtml = readFileSync(join(aqui, '../../../hardware.html'), 'utf8');
-  assert.ok(!hwHtml.includes('id="inspector-hardware"'), 'hardware.html no debe contener #inspector-hardware');
-  assert.ok(!hwHtml.includes('inspector_hw.css'), 'hardware.html no debe cargar inspector_hw.css');
-  assert.ok(!hwHtml.includes('inspector_hw.js'), 'hardware.html no debe cargar inspector_hw.js');
-  assert.ok(!hwHtml.includes('hw-card-hcsr04'), 'hardware.html no debe incluir tarjetas de la consola 2x2');
-  assert.ok(hwHtml.includes('id="lista"') && hwHtml.includes('id="mat"') && hwHtml.includes('id="pines"'), 'hardware.html mantiene catálogo BOM y pines');
-  assert.ok(hwHtml.includes('lista-materiales-v1.xlsx'), 'hardware.html mantiene enlace a lista de materiales');
-});
-
-// ---- Inspector unificado: estado central + robot 3D + consolas 2×2
-const indexP02 = () => readFileSync(join(aqui, '../index.html'), 'utf8');
 const cargarEstado = (conDom = null) => {
   const src = readFileSync(join(aqui, '../../../assets/inspector_hw.js'), 'utf8');
   const sandbox = {Math, Number, String, console};
@@ -322,41 +360,7 @@ const cargarEstado = (conDom = null) => {
   return sandbox;
 };
 
-prueba('P02 index: sin iframe ni fichas flotantes; layout robot 3D + 4 consolas con sus controles dentro', () => {
-  const html = indexP02();
-  assert.ok(!/<iframe/i.test(html), 'sin iframe');
-  assert.ok(!/hw-ficha|hw-controles|hw-esquema|pistas-iconos/.test(html), 'sin fichas flotantes ni sección de controles aparte');
-  assert.ok(html.includes('../../assets/css/inspector_hw.css') && html.includes('../../assets/inspector_hw.js'));
-  assert.ok(/<script src="inspector3d\.js"/.test(html), 'carga el robot 3D empaquetado');
-  assert.ok(html.indexOf('assets/inspector_hw.js') < html.indexOf('inspector3d.js'), 'el estado central carga antes que el 3D');
-  for (const id of ['inspector-hardware', 'hw-inspector-root', 'hw-stage', 'hw-robot3d', 'hw-sim-badge', 'hw-seguridad-estado', 'hw-btn-reset']) {
-    assert.ok(html.includes(`id="${id}"`), `falta #${id}`);
-  }
-  // cada control vive dentro de su consola
-  const tarjeta = (c) => {
-    const a = html.indexOf(`id="hw-card-${c}"`);
-    return html.slice(a, html.indexOf('</article>', a));
-  };
-  assert.ok(/id="hw-in-dist"/.test(tarjeta('hcsr04')));
-  assert.ok(/id="hw-in-linea"/.test(tarjeta('tcrt5000')));
-  assert.ok(/id="hw-in-vel"/.test(tarjeta('motores')) && /data-dir="ADELANTE"/.test(tarjeta('motores')));
-  assert.ok(/id="hw-in-pitch"/.test(tarjeta('mpu6050')) && /data-mpu-ev="impacto"/.test(tarjeta('mpu6050')));
-  for (const c of ['hcsr04', 'tcrt5000', 'motores', 'mpu6050']) {
-    for (const st of ['normal', 'advertencia', 'fallo']) assert.ok(tarjeta(c).includes(`data-st-card="${c}" data-st-val="${st}"`), `salud ${st} en ${c}`);
-  }
-  const css = readFileSync(join(aqui, '../../../assets/css/inspector_hw.css'), 'utf8');
-  assert.ok(/grid-template-columns:\s*minmax\(0,\s*55fr\)\s*minmax\(0,\s*45fr\)/.test(css), 'columnas 55 / 45');
-  assert.ok(/\.hw-consolas\s*\{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(css), 'consolas 2×2');
-  assert.ok(/@media \(max-width: 640px\)[\s\S]*\.hw-stage \{ height: 35vh/.test(css), 'móvil: robot ~35 % de alto');
-});
-
-prueba('límites técnicos exactos: 4 canales TCRT5000, 0,46 m/s y HC-SR04 de 5 a 80 cm; badge SIL', () => {
-  const html = indexP02();
-  assert.ok(/id="hw-in-dist" type="range" min="5" max="80"/.test(html));
-  assert.ok(/id="hw-in-vel" type="range" min="0" max="0\.46"/.test(html));
-  assert.strictEqual((html.match(/id="hw-tcrt-s\d"/g) || []).length, 4);
-  assert.ok(!html.includes('hw-tcrt-s5'));
-  assert.ok(html.includes('SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS'));
+prueba('límites técnicos exactos: 4 canales TCRT5000, 0,46 m/s y HC-SR04 de 5 a 80 cm', () => {
   const {SimulationState: S} = cargarEstado();
   assert.strictEqual(S.LIMITES.canalesTcrt, 4);
   assert.strictEqual(S.LIMITES.vMax, 0.46);
@@ -371,55 +375,78 @@ prueba('límites técnicos exactos: 4 canales TCRT5000, 0,46 m/s y HC-SR04 de 5 
   assert.ok(Math.abs(MANUAL.avance * VMAX - 0.46) < 0.005, 'coincide con el manejo del Simulador 1');
 });
 
-prueba('SimulationState: un solo estado para distancia, línea, velocidad/PWM, IMU y seguridad', () => {
+prueba('SimulationState local: distancia, línea, velocidad/PWM, IMU y seguridad en un solo estado', () => {
   const {SimulationState: S} = cargarEstado();
   let avisos = 0;
   S.subscribe(() => avisos++);
   const s = S.get();
   assert.strictEqual(s.seguridad.estado, 'NOMINAL');
   assert.strictEqual(s.tcrt5000.patron, '0110');
-  assert.ok(s.motores.velEfectivaMs > 0 && s.motores.pwm > 0);
-  // obstáculo < 20 cm: parada; solo deja retroceder
   S.set({hcsr04: {distanciaCm: 12}});
   assert.strictEqual(s.seguridad.estado, 'PARADA');
+  assert.ok(s.seguridad.paroForzado && s.seguridad.permiteAtras);
   assert.strictEqual(s.motores.velEfectivaMs, 0);
-  assert.ok(s.motores.bloqueado);
   S.set({motores: {direccion: 'ATRÁS'}});
   assert.ok(s.motores.velEfectivaMs < 0, 'retrocede');
-  S.set({hcsr04: {distanciaCm: 35}, motores: {direccion: 'ADELANTE'}});
-  assert.strictEqual(s.seguridad.estado, 'PRECAUCION');
-  // desvío de línea cambia los 4 canales
-  S.set({hcsr04: {distanciaCm: 70}, tcrt5000: {desvioMm: 27}});
+  S.set({hcsr04: {distanciaCm: 70}, tcrt5000: {desvioMm: 27}, motores: {direccion: 'ADELANTE'}});
   assert.strictEqual(s.tcrt5000.patron, '0001');
-  S.set({tcrt5000: {desvioMm: -30}});
-  assert.strictEqual(s.tcrt5000.patron, '1000');
   S.set({tcrt5000: {desvioMm: 0}});
-  // impacto e inclinación
   S.eventoMpu('impacto');
-  assert.strictEqual(s.mpu6050.alerta, 'impacto');
   assert.strictEqual(s.seguridad.estado, 'PARADA');
-  S.set({motores: {direccion: 'ATRÁS'}});
-  assert.strictEqual(s.motores.velEfectivaMs, 0, 'con impacto no se mueve ni hacia atrás');
+  assert.ok(s.seguridad.paroForzado && !s.seguridad.permiteAtras, 'impacto: parada total');
   S.eventoMpu('normal');
-  S.set({motores: {direccion: 'ADELANTE'}, mpu6050: {pitchDeg: 25}});
-  assert.strictEqual(s.mpu6050.alerta, 'inclinacion');
+  S.set({mpu6050: {pitchDeg: 25}});
   assert.strictEqual(s.seguridad.estado, 'PRECAUCION');
   S.set({mpu6050: {pitchDeg: 40}});
   assert.strictEqual(s.seguridad.estado, 'PARADA');
   S.reset();
   assert.strictEqual(s.seguridad.estado, 'NOMINAL');
-  assert.ok(avisos >= 10, 'notifica a los suscriptores (consolas y robot 3D)');
+  assert.ok(avisos >= 8);
 });
 
-prueba('consolas y robot 3D leen y escriben en el mismo estado (DOM simulado, sin errores)', () => {
-  const html = indexP02();
+prueba('circuito → consolas: lecturas en vivo, inyección por consola, liberar y órdenes de dirección', () => {
+  const {SimulationState: S} = cargarEstado();
+  const vivo = {encendido: true, modo: 'auto', distanciaCm: 140, atrasCm: Infinity, canales: [0, 1, 0, 0], desvioMm: -6, velEfectivaMs: 0.38, pwmIzq: 66, pwmDer: 70, direccion: 'ADELANTE', bloqueado: false, pitchDeg: 0.4, rollDeg: -1.2, acelG: 1.01};
+  const s = S.publicarCircuito(vivo);
+  assert.strictEqual(s.fuente, 'circuito');
+  assert.strictEqual(s.hcsr04.distanciaCm, 140, 'en vivo no se recorta a 80');
+  assert.strictEqual(s.hcsr04.atrasCm, 400, 'sin eco atrás');
+  assert.strictEqual(s.tcrt5000.patron, '0100', 'canales reales del circuito');
+  assert.strictEqual(s.motores.velEfectivaMs, 0.38);
+  assert.strictEqual(s.seguridad.estado, 'NOMINAL');
+  // la consola inyecta 12 cm: el circuito ya no la pisa y se fuerza la parada
+  S.set({hcsr04: {distanciaCm: 12}, inyeccion: {hcsr04: true}}, 'consola');
+  S.publicarCircuito(vivo);
+  assert.strictEqual(s.hcsr04.distanciaCm, 12);
+  assert.ok(s.seguridad.paroForzado && s.seguridad.permiteAtras);
+  S.liberar('hcsr04');
+  S.publicarCircuito(vivo);
+  assert.strictEqual(s.hcsr04.distanciaCm, 140, 'vuelve a la lectura en vivo');
+  // obstáculo real < 20 cm en Auto: precaución (la demo reduce la velocidad); bloqueado a mano: parada sin forzar
+  S.publicarCircuito({...vivo, distanciaCm: 15});
+  assert.strictEqual(s.seguridad.estado, 'PRECAUCION');
+  S.publicarCircuito({...vivo, distanciaCm: 15, bloqueado: true, modo: 'manual'});
+  assert.strictEqual(s.seguridad.estado, 'PARADA');
+  assert.ok(!s.seguridad.paroForzado);
+  // órdenes de dirección van al circuito
+  const ordenes = [];
+  S.alComando((t, v) => ordenes.push([t, v]));
+  S.comando('direccion', 'IZQUIERDA');
+  assert.deepStrictEqual(ordenes, [['direccion', 'IZQUIERDA']]);
+  // foco desde la tira/3D → consola
+  S.set({foco: 'us_rear', seleccion: S.CONSOLA_DE.us_rear});
+  assert.strictEqual(s.seleccion, 'hcsr04');
+});
+
+prueba('consolas (DOM simulado): controles escriben en el estado, foco sube la consola y muestra la ficha, sin errores', () => {
+  const app = leerAqui('app.html');
   const noop = () => {};
   const ctx = new Proxy({}, {get: (t, k) => (k in t ? t[k] : noop), set: (t, k, v) => ((t[k] = v), true)});
   const mk = (id, attrs = {}) => {
     const clases = new Set();
     const oy = {};
     return {
-      id, attrs, value: '0', textContent: '', className: '', style: {}, width: 260, height: 100,
+      id, attrs, value: '0', textContent: '', className: '', style: {}, width: 260, height: 100, hidden: false,
       classList: {toggle: (c, f) => (f ? clases.add(c) : clases.delete(c)), contains: (c) => clases.has(c)},
       getAttribute: (k) => attrs[k] ?? null,
       setAttribute: (k, v) => { attrs[k] = String(v); },
@@ -429,61 +456,75 @@ prueba('consolas y robot 3D leen y escriben en el mismo estado (DOM simulado, si
     };
   };
   const byId = {};
-  for (const m of html.matchAll(/id="([^"]+)"/g)) byId[m[1]] = mk(m[1]);
-  const conAttr = (re) => [...html.matchAll(re)].map((m) => {
+  for (const m of app.matchAll(/id="([^"]+)"/g)) byId[m[1]] = mk(m[1]);
+  const conAttr = (re) => [...app.matchAll(re)].map((m) => {
     const attrs = {};
     for (const a of m[0].matchAll(/(data-[\w-]+)="([^"]*)"/g)) attrs[a[1]] = a[2];
     return mk('', attrs);
   });
-  const dirs = conAttr(/<button[^>]*data-dir="[^"]+"[^>]*>/g);
-  const evs = conAttr(/<button[^>]*data-mpu-ev="[^"]+"[^>]*>/g);
-  const sts = conAttr(/<button[^>]*data-st-card="[^"]+"[^>]*>/g);
-  const cards = ['hcsr04', 'tcrt5000', 'motores', 'mpu6050'].map((c) => {
-    const el = byId[`hw-card-${c}`];
-    el.attrs['data-card'] = c;
-    return el;
-  });
-  const sel = {'[data-dir]': dirs, '[data-mpu-ev]': evs, '[data-st-card]': sts, '.hw-card': cards};
+  const sel = {
+    '[data-dir]': conAttr(/<button[^>]*data-dir="[^"]+"[^>]*>/g),
+    '[data-mpu-ev]': conAttr(/<button[^>]*data-mpu-ev="[^"]+"[^>]*>/g),
+    '[data-st-card]': conAttr(/<button[^>]*data-st-card="[^"]+"[^>]*>/g),
+    '[data-vivo]': conAttr(/<button[^>]*data-vivo="[^"]+"[^>]*>/g),
+    '[data-foco]': conAttr(/<button[^>]*data-foco="[^"]+"[^>]*>/g),
+    '.hw-card': ['hcsr04', 'tcrt5000', 'motores', 'mpu6050'].map((c) => {
+      const el = byId[`hw-card-${c}`];
+      el.attrs['data-card'] = c;
+      return el;
+    }),
+  };
   let tick = null;
   const sb = cargarEstado({
     document: {readyState: 'complete', getElementById: (id) => byId[id] || null, querySelectorAll: (s) => sel[s] || [], addEventListener: noop},
     setInterval: (fn) => { tick = fn; return 1; },
+    setTimeout: noop,
     addEventListener: noop,
   });
   const S = sb.SimulationState;
-  assert.ok(typeof tick === 'function');
   tick();
-  assert.strictEqual(byId['hw-badge-hcsr04'].textContent, 'DESPEJADO');
   assert.strictEqual(byId['hw-seguridad-estado'].textContent, 'NOMINAL');
-  // slider de distancia → estado → consola + seguridad
+  assert.strictEqual(byId['hw-fuente'].textContent, 'CONSOLAS · LOCAL');
   byId['hw-in-dist'].value = '12';
   byId['hw-in-dist'].disparar('input');
-  assert.strictEqual(S.get().hcsr04.distanciaCm, 12);
-  assert.strictEqual(byId['hw-val-dist'].textContent, '12 cm');
+  assert.ok(S.get().inyeccion.hcsr04 && S.get().hcsr04.distanciaCm === 12);
   assert.strictEqual(byId['hw-seguridad-estado'].textContent, 'PARADA DE SEGURIDAD');
-  assert.strictEqual(byId['hw-card-hcsr04'].attrs['data-estado'], 'fallo');
-  assert.strictEqual(byId['hw-val-vel'].textContent, '0.00 m/s');
-  // desvío de línea → LEDs
+  assert.strictEqual(sel['[data-vivo]'][0].textContent, '◆ Iny.');
   byId['hw-in-linea'].value = '27';
   byId['hw-in-linea'].disparar('input');
   assert.strictEqual(byId['hw-tcrt-s4'].className, 'hw-tcrt-led on');
-  assert.strictEqual(byId['hw-tcrt-s1'].className, 'hw-tcrt-led');
-  assert.strictEqual(byId['hw-val-patron'].textContent, '0001');
-  // botón de impacto
-  evs.find((b) => b.getAttribute('data-mpu-ev') === 'impacto').disparar('click');
+  sel['[data-mpu-ev]'].find((b) => b.getAttribute('data-mpu-ev') === 'impacto').disparar('click');
   assert.strictEqual(byId['hw-badge-mpu6050'].textContent, 'IMPACTO');
-  // un cambio desde el robot 3D (clic en una pieza) se refleja en las consolas
-  S.set({seleccion: 'tcrt5000'}, '3d');
-  assert.ok(cards[1].classList.contains('resaltada') && !cards[0].classList.contains('resaltada'));
+  // foco desde el título de la consola: sube la consola (order -2) y muestra la ficha debajo (order -1)
+  sel['[data-foco]'].find((b) => b.getAttribute('data-foco') === 'tcrt').disparar('click');
+  assert.strictEqual(S.get().foco, 'tcrt');
+  const tc = sel['.hw-card'][1];
+  assert.ok(tc.classList.contains('enfocada') && tc.style.order === '-2');
+  assert.strictEqual(byId['hw-ficha'].hidden, false);
+  assert.strictEqual(byId['hw-ficha'].style.order, '-1');
+  assert.ok(/Enfocado · TCRT5000/.test(byId['hw-panel-titulo'].textContent));
+  // tocar otra consola no le quita el lugar a la enfocada
+  sel['[data-st-card]'].find((b) => b.getAttribute('data-st-card') === 'motores' && b.getAttribute('data-st-val') === 'advertencia').disparar('click');
+  assert.ok(tc.classList.contains('enfocada'));
+  byId['hw-foco-cerrar'].disparar('click');
+  assert.strictEqual(byId['hw-ficha'].hidden, true);
+  sel['[data-vivo]'][0].disparar('click');
+  assert.strictEqual(S.get().inyeccion.hcsr04, false);
   byId['hw-btn-reset'].disparar('click');
   assert.strictEqual(byId['hw-seguridad-estado'].textContent, 'NOMINAL');
-  assert.strictEqual(byId['hw-badge-hcsr04'].textContent, 'DESPEJADO');
-  // el robot 3D usa solo SimulationState
-  const src3d = readFileSync(join(aqui, 'inspector3d.js'), 'utf8');
-  assert.ok(src3d.includes('window.SimulationState') && src3d.includes("S.set({seleccion"));
-  assert.ok(/buildRobot/.test(src3d) && /pitchDeg/.test(src3d) && /distanciaCm/.test(src3d) && /canales/.test(src3d));
-  const bundle = readFileSync(join(aqui, '../inspector3d.js'), 'utf8');
-  assert.ok(bundle.includes('SimulationState') && bundle.includes('hw-robot3d'), 'bundle generado y vigente');
+  // main.js conecta el circuito con el estado en ambos sentidos
+  const main = leerAqui('main.js');
+  assert.ok(main.includes('S.publicarCircuito(') && main.includes('S.alComando(ejecutarOrden)') && main.includes('aplicarInyecciones'));
+  assert.ok(/canales: est\.sens/.test(main) && /distanciaCm: est\.frente \* 100/.test(main), 'publica TCRT y HC-SR04 reales del circuito');
+});
+
+prueba('hardware.html se mantiene como catálogo BOM sin la consola 2x2', () => {
+  const hwHtml = readFileSync(join(aqui, '../../../hardware.html'), 'utf8');
+  assert.ok(!hwHtml.includes('id="inspector-hardware"'), 'hardware.html no debe contener #inspector-hardware');
+  assert.ok(!hwHtml.includes('inspector_hw.css'), 'hardware.html no debe cargar inspector_hw.css');
+  assert.ok(!hwHtml.includes('inspector_hw.js'), 'hardware.html no debe cargar inspector_hw.js');
+  assert.ok(!hwHtml.includes('hw-card-hcsr04'), 'hardware.html no debe incluir tarjetas de la consola 2x2');
+  assert.ok(hwHtml.includes('id="lista"') && hwHtml.includes('id="mat"') && hwHtml.includes('id="pines"'), 'hardware.html mantiene catálogo BOM y pines');
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

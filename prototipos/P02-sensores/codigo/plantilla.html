@@ -7,67 +7,19 @@
 <style>
 /*CSS*/
 </style>
+<style>
+/* pantalla completa: el circuito 3D y el panel de consolas ocupan toda la ventana */
+html,body{margin:0;background:#dfe8e5;color:#14213D;font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
+.p02-sim{height:100vh;height:100svh;border:0;border-radius:0;box-shadow:none}
+@media (max-width:900px){.p02-sim{height:auto}}
+</style>
 </head>
-<body data-modo="auto" data-encendido="0">
-<div class="app" id="app">
-  <canvas id="lienzo" tabindex="0" aria-label="Inspector 3D de los componentes del robot: toca una pieza para ver su ficha; se maneja con W A S D, las flechas o el D-Pad" role="img"></canvas>
-  <svg id="guias" aria-hidden="true"></svg>
-  <div id="etiquetas"></div>
-
-  <div class="barra" role="toolbar" aria-label="Controles">
-    <button class="btn" id="b-xray" type="button" aria-pressed="false"><span aria-hidden="true">🩻</span><span class="largo"> Rayos X</span></button>
-    <button class="btn" id="b-etiq" type="button" aria-pressed="true" aria-label="Etiquetas"><span aria-hidden="true">🏷️</span><span class="largo"> Etiquetas</span></button>
-    <button class="btn" id="b-vista" type="button" aria-label="Cambiar la vista de la cámara"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Inspección</span></button>
-    <div class="grupo" role="group" aria-label="Modo de manejo">
-      <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
-      <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
-    </div>
-    <button class="btn pri en-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
-    <button class="btn" id="b-consola" type="button" aria-pressed="false" aria-controls="consola"><span aria-hidden="true">📟</span> Consola de sensores</button>
-  </div>
-  <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para ver su ficha</p>
-
-  <section class="consola" id="consola" aria-label="Consola de sensores en vivo" hidden>
-    <div class="c-vinculo" id="consola-vinculo" aria-live="polite" hidden></div>
-    <div class="c-bloques">
-      <div class="c-velo" id="velocimetro" data-bloque="velo" role="img" aria-label="Velocímetro">
-        <svg viewBox="0 0 80 46" aria-hidden="true">
-          <path class="c-velo-pista" d="M 10 40 A 30 30 0 0 1 70 40"/>
-          <path id="velo-arco" class="c-velo-arco" d="M 10 40 A 30 30 0 0 1 70 40" stroke-dasharray="94.25" stroke-dashoffset="94.25"/>
-          <line id="velo-aguja" class="c-velo-aguja" x1="40" y1="40" x2="40" y2="15" transform="rotate(-90 40 40)"/>
-          <circle class="c-velo-pivote" cx="40" cy="40" r="3"/>
-        </svg>
-        <b class="c-velo-val" id="velo-val">0,00<small>m/s</small></b>
-      </div>
-      <div class="c-linea" role="img" id="linea-leds" data-bloque="linea" aria-label="Sensores de línea">
-        <div class="c-leds" aria-hidden="true"><i data-s="0"></i><i data-s="1"></i><i data-s="2"></i><i data-s="3"></i></div>
-        <div class="c-leds-et" aria-hidden="true"><span>S1</span><span>S2</span><span>S3</span><span>S4</span></div>
-        <span class="c-modo" id="c-modo" data-bloque="modo">APAGADO</span>
-      </div>
-      <div class="c-dist" id="c-dist" data-bloque="distancia" role="group" aria-label="Distancias HC-SR04P">
-        <span class="c-dist-tit">HC-SR04P</span>
-        <div class="c-dist-fila"><span>Frente</span><b id="c-dist-f">—</b></div>
-        <div class="c-dist-fila"><span>Atrás</span><b id="c-dist-r">—</b></div>
-      </div>
-    </div>
-  </section>
-
-  <div class="dpad" id="dpad" role="group" aria-label="Manejo: avanzar, girar, frenar y retroceder">
-    <button type="button" class="dp" data-dp="arriba" aria-label="Avanzar" style="grid-area:u">▲</button>
-    <button type="button" class="dp" data-dp="izq" aria-label="Girar a la izquierda" style="grid-area:l">◄</button>
-    <button type="button" class="dp stop" data-dp="stop" aria-label="Frenar" style="grid-area:s">■</button>
-    <button type="button" class="dp" data-dp="der" aria-label="Girar a la derecha" style="grid-area:r">►</button>
-    <button type="button" class="dp" data-dp="abajo" aria-label="Retroceder" style="grid-area:d">▼</button>
-  </div>
-
-  <aside class="ficha" id="ficha" role="dialog" aria-labelledby="f-titulo" hidden>
-    <header><h2 id="f-titulo"></h2><button class="cerrar" id="f-cerrar" type="button" aria-label="Cerrar la ficha">×</button></header>
-    <div class="cuerpo" id="f-cuerpo"></div>
-  </aside>
-
-  <nav class="tira" id="tira" aria-label="Componentes del robot (toca uno para ver su ficha)"></nav>
-</div>
-<script type="module">
+<body>
+<!--APP-->
+<script>
+/*ESTADO*/
+</script>
+<script>
 /*JS*/
 </script>
 </body>

@@ -1,0 +1,77 @@
+/* Generado por codigo/construir.mjs desde codigo/style.css */
+/* Inspector de hardware P02 · estilos del simulador 3D del circuito (barra, etiquetas, D-Pad y tira de piezas).
+   Todo va bajo .p02-sim para convivir con la página del portafolio. El panel de consolas y el layout van en
+   assets/css/inspector_hw.css. Las fuentes van aparte (fuentes.css) y se unen al construir simulador.html. */
+.p02-sim{--tinta:#14213D;--coral:#F2603D;--verde:#0F9D84;--ambar:#E8B90C;--violeta:#6B4EE6;--papel:#ffffff;--vidrio:rgba(20,33,61,.88);--sombra:0 4px 0 rgba(20,33,61,.35)}
+.p02-sim *,.p02-sim *::before,.p02-sim *::after{box-sizing:border-box}
+.p02-sim .app{position:relative;overflow:hidden;min-width:0;min-height:0;background:#dfe8e5;color:var(--tinta);font-family:'Atkinson Hyperlegible',system-ui,sans-serif;-webkit-tap-highlight-color:transparent;container:app / inline-size}
+.p02-sim #lienzo{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+.p02-sim #guias{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden}
+.p02-sim #guias line{stroke-width:1.6;stroke-linecap:round;opacity:.75}
+.p02-sim #etiquetas{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.p02-sim .app :where(button){font:inherit;color:inherit;cursor:pointer}
+.p02-sim .app button:focus-visible,.p02-sim .app [tabindex]:focus-visible{outline:3px solid #FFD23F;outline-offset:2px}
+
+/* etiquetas 3D */
+.p02-sim .et{position:absolute;left:0;top:0;pointer-events:auto;border:0;border-left:4px solid var(--c);border-radius:8px;background:rgba(255,255,255,.94);color:var(--tinta);font-size:12.5px;line-height:1.2;font-weight:700;padding:5px 9px;max-width:230px;text-align:left;white-space:normal;box-shadow:0 2px 6px rgba(20,33,61,.28);will-change:transform}
+.p02-sim .et.act{background:#FFD23F}
+.p02-sim .et:hover{background:#fff7d1}
+
+/* barra de controles */
+.p02-sim .barra{position:absolute;left:10px;top:10px;right:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;pointer-events:none}
+.p02-sim .barra>*{pointer-events:auto}
+.p02-sim .btn{width:auto;font-family:inherit;line-height:1.2;min-height:44px;min-width:44px;padding:8px 14px;border-radius:12px;border:2px solid var(--tinta);background:var(--vidrio);color:#fff;font-weight:700;font-size:14.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:var(--sombra)}
+.p02-sim .btn:hover{background:#1c2d52}
+.p02-sim .btn[aria-pressed="true"]:not(.pri){background:var(--verde);border-color:var(--tinta)}
+.p02-sim .btn.pri{background:#0b7a66;color:#fff}
+.p02-sim .btn.pri:hover{background:#096655}
+.p02-sim .btn.pri[aria-pressed="true"]{background:#dc2626;border-color:var(--tinta)}
+.p02-sim .btn.pri[aria-pressed="true"]:hover{background:#b91c1c}
+.p02-sim .est-dot{width:9px;height:9px;border-radius:50%;background:#fde047;border:1.5px solid rgba(20,33,61,.5);flex:none}
+.p02-sim .btn.pri[aria-pressed="true"] .est-dot{background:#4ade80;box-shadow:0 0 8px #4ade80}
+.p02-sim .grupo{display:inline-flex;border-radius:12px;box-shadow:var(--sombra)}
+.p02-sim .grupo .btn{border-radius:0;box-shadow:none;margin-left:-2px}
+.p02-sim .grupo .btn:first-child{border-radius:12px 0 0 12px;margin-left:0}
+.p02-sim .grupo .btn:last-child{border-radius:0 12px 12px 0}
+.p02-sim .grupo .btn[aria-pressed="true"]{background:var(--violeta)}
+
+/* aviso de inspección: se va al enfocar la primera pieza */
+.p02-sim .pista-tocar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--alto-tira,64px) + 18px);margin:0;padding:8px 14px;border-radius:999px;background:#FFD23F;border:2px solid var(--tinta);font-weight:700;font-size:14px;box-shadow:var(--sombra);pointer-events:none;white-space:nowrap;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis}
+.p02-sim .pista-tocar[hidden]{display:none}
+
+/* D-Pad: la misma modalidad del Simulador 1 (P04) */
+.p02-sim .dpad{position:absolute;left:10px;bottom:calc(var(--alto-tira,64px) + 18px);display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);grid-template-areas:". u ." "l s r" ". d .";gap:4px;touch-action:none;user-select:none;-webkit-user-select:none}
+.p02-sim .dp{border-radius:12px;border:2px solid var(--tinta);background:rgba(20,33,61,.82);color:#fff;font-weight:700;font-size:18px;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.p02-sim .dp.on{background:var(--verde)}
+.p02-sim .dp.stop{background:rgba(242,96,61,.92);font-size:15px}
+.p02-sim .dp.stop.on{background:#c23a1b}
+
+/* tira de componentes */
+.p02-sim .tira{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:8px;flex-wrap:wrap}
+.p02-sim .chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:48px;padding:6px 10px;border-radius:12px;border:2px solid var(--tinta);border-left:6px solid var(--c);background:rgba(255,255,255,.95);color:var(--tinta);text-align:left;box-shadow:var(--sombra)}
+.p02-sim .chip b{font-size:13px;line-height:1.15}
+.p02-sim .chip .res{font-size:11px;line-height:1.2;color:#475569;max-width:170px}
+.p02-sim .chip .v{font:600 12px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;color:#33415f;display:flex;gap:3px;align-items:center;min-height:15px;white-space:nowrap}
+.p02-sim .chip[aria-pressed="true"]{background:#FFD23F}
+.p02-sim .chip .sq{width:14px;height:14px;border-radius:3px;border:2px solid var(--tinta);background:#fff}
+.p02-sim .chip .sq.on{background:#0F9D84}
+.p02-sim .chip .v[data-zona="critica"]{color:#c23a1b}
+.p02-sim .chip .v[data-zona="precaucion"]{color:#8a6a00}
+.p02-sim .chip .v[data-zona="libre"]{color:#0b7a66}
+
+/* columna del 3D mediana: la tira va en una sola fila con scroll propio y sin resúmenes */
+@container app (max-width: 900px){
+  .p02-sim .tira{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .p02-sim .chip{flex:none}
+  .p02-sim .chip .res{display:none}
+}
+/* columna del 3D angosta (teléfono) */
+@container app (max-width: 640px){
+  .p02-sim .barra{gap:6px}
+  .p02-sim .btn{min-height:44px;padding:6px 10px;font-size:13.5px}
+  .p02-sim .btn .largo{display:none}
+  .p02-sim .pista-tocar{font-size:12.5px;padding:6px 11px;bottom:calc(var(--alto-tira,64px) + 158px)}
+  .p02-sim .dpad{left:auto;right:10px;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}
+  .p02-sim .et{font-size:11px;padding:4px 7px;max-width:150px}
+}
+@media (prefers-reduced-motion:reduce){.p02-sim *,.p02-sim *::before,.p02-sim *::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}

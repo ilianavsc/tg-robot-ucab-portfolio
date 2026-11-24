@@ -3,8 +3,13 @@
    --------------------------------------------------------------------------
    SimulationState es la única fuente de verdad de la simulación local (SIL):
    distancia HC-SR04, 4 canales TCRT5000, velocidad/PWM, pitch/roll/alertas
-   MPU-6050 y estado de seguridad. Las consolas (este archivo) y el robot 3D
-   (prototipos/P02-sensores/inspector3d.js) leen y escriben solo aquí.
+   MPU-6050 y estado de seguridad.
+
+   · El simulador 3D del circuito (prototipos/P02-sensores/inspector3d.js)
+     publica sus lecturas en vivo con publicarCircuito() y lee de aquí lo que
+     las consolas inyectan (obstáculo, desvío, consigna, IMU, fallos).
+   · Las consolas (este archivo) escriben con set()/comando()/liberar().
+   Sin el circuito (pruebas en Node) el estado funciona solo, en modo local.
    Todos los datos son sintéticos: no hay telemetría MQTT real.
    ========================================================================== */
 (function (raiz) {
@@ -14,13 +19,15 @@
   var LIMITES = {
     distMinCm: 5, // slider HC-SR04
     distMaxCm: 80,
+    sinEcoCm: 400, // alcance del HC-SR04P: más allá no hay eco
     paradaCm: 20, // < 20 cm: parada (firmware)
     precaucionCm: 50, // 20–50 cm: precaución
     canalesTcrt: 4, // regleta de 4 TCRT5000 (S1…S4)
-    tcrtPosMm: [-27, -9, 9, 27], // S1..S4, 18 mm entre sí
+    tcrtPosMm: [-27, -9, 9, 27], // S1..S4 (izquierda → derecha), 18 mm entre sí
     tcrtUmbralMm: 12, // medio ancho de la cinta (9,5 mm) + huella del sensor
     desvioMaxMm: 30,
     vMax: 0.46, // m/s: PWM 0,8 × 0,57 m/s (Speed 200 + L298N)
+    vNominal: 0.4, // m/s: velocidad de crucero del circuito
     vPwm100: 0.57, // m/s al 100 % de PWM
     giroDif: 0.45, // diferencia de PWM al girar (manejo del Simulador 1)
     inclinacionDeg: 20, // alerta de inclinación
@@ -36,6 +43,11 @@
     atascamiento: {pitchDeg: 3, rollDeg: 1, acelG: 0.08}
   };
   var SALUDES = ['normal', 'advertencia', 'fallo'];
+  var CONSOLAS = ['hcsr04', 'tcrt5000', 'motores', 'mpu6050'];
+  // pieza del robot (tira / 3D) → consola que la representa
+  var CONSOLA_DE = {tcrt: 'tcrt5000', us_front: 'hcsr04', us_rear: 'hcsr04', mpu: 'mpu6050', traccion: 'motores', esp32: null, bateria: null};
+  var PIEZA_DE = {hcsr04: 'us_front', tcrt5000: 'tcrt', motores: 'traccion', mpu6050: 'mpu'};
+  var NOMBRES = {tcrt: 'TCRT5000 ×4', us_front: 'HC-SR04P frontal', us_rear: 'HC-SR04P trasero', esp32: 'ESP32 móvil', mpu: 'MPU-6050', traccion: 'Tracción + chasis PLA', bateria: 'Batería 3S'};
 
   function clamp(v, lo, hi) {
     v = Number(v);
@@ -45,13 +57,17 @@
 
   function nominal() {
     return {
-      hcsr04: {distanciaCm: 60, zona: 'libre'},
+      hcsr04: {distanciaCm: 60, atrasCm: null, zona: 'libre'},
       tcrt5000: {desvioMm: 0, canales: [0, 1, 1, 0], patron: '0110', errorMm: 0, linea: 'centrada'},
-      motores: {velocidadMs: 0.3, direccion: 'ADELANTE', velEfectivaMs: 0, pwmIzq: 0, pwmDer: 0, pwm: 0, bloqueado: false},
+      motores: {velocidadMs: LIMITES.vNominal, direccion: 'ADELANTE', velEfectivaMs: 0, pwmIzq: 0, pwmDer: 0, pwm: 0, bloqueado: false},
       mpu6050: {pitchDeg: 0, rollDeg: 0, acelG: 1.0, evento: 'normal', alerta: null},
       salud: {hcsr04: 'normal', tcrt5000: 'normal', motores: 'normal', mpu6050: 'normal'},
-      seguridad: {estado: 'NOMINAL', motivos: []},
-      seleccion: null,
+      inyeccion: {hcsr04: false, tcrt5000: false, motores: false, mpu6050: false},
+      seguridad: {estado: 'NOMINAL', motivos: [], paroForzado: false, permiteAtras: false},
+      fuente: 'local', // 'local' (solo consolas) | 'circuito' (lecturas del simulador 3D)
+      circuito: null, // {encendido, modo} cuando el circuito publica
+      seleccion: null, // consola resaltada
+      foco: null, // pieza enfocada (tira / 3D): muestra su ficha técnica en el panel
       origen: 'SIL',
       version: 0
     };
@@ -71,70 +87,80 @@
   }
 
   function derivar(s) {
-    var h = s.hcsr04, t = s.tcrt5000, m = s.motores, i = s.mpu6050, sal = s.salud;
+    var h = s.hcsr04, t = s.tcrt5000, m = s.motores, i = s.mpu6050, sal = s.salud, iny = s.inyeccion;
+    var circuito = s.fuente === 'circuito';
     var motivos = [];
+    var forzados = []; // causas que imponen la parada al circuito
     var parada = false;
     var precaucion = false;
+    var forzar = function (causa, texto) { parada = true; forzados.push(causa); motivos.push(texto); };
 
     // HC-SR04
     h.zona = sal.hcsr04 === 'fallo' ? 'fallo' : zonaDe(h.distanciaCm);
-    if (h.zona === 'fallo') { parada = true; motivos.push('HC-SR04 sin eco (fail-safe)'); }
-    else if (h.zona === 'critica') { parada = true; motivos.push('Obstáculo a ' + Math.round(h.distanciaCm) + ' cm (< 20 cm)'); }
-    else if (h.zona === 'precaucion') { precaucion = true; motivos.push('Obstáculo en zona de precaución'); }
+    if (h.zona === 'fallo') forzar('sin-eco', 'HC-SR04 sin eco (fail-safe)');
+    else if (h.zona === 'critica') {
+      if (!circuito || iny.hcsr04) forzar('obstaculo', 'Obstáculo a ' + Math.round(h.distanciaCm) + ' cm (< 20 cm)');
+      else if (m.bloqueado) { parada = true; motivos.push('Obstáculo < 20 cm: solo deja retroceder'); }
+      else { precaucion = true; motivos.push('Obstáculo < 20 cm junto a la ruta: Auto reduce la velocidad'); }
+    } else if (h.zona === 'precaucion') { precaucion = true; motivos.push('Obstáculo en zona de precaución (20–50 cm)'); }
 
     // TCRT5000 (4 canales)
     if (sal.tcrt5000 === 'fallo') {
       t.canales = [0, 0, 0, 0];
       t.linea = 'fallo';
-      precaucion = true;
-      motivos.push('TCRT5000 sin señal óptica');
+      forzar('sin-linea', 'TCRT5000 sin señal óptica');
     } else {
-      t.canales = canalesTcrt(t.desvioMm);
+      if (!circuito) {
+        t.canales = canalesTcrt(t.desvioMm);
+        t.errorMm = t.desvioMm;
+      }
       var activos = t.canales.reduce(function (a, b) { return a + b; }, 0);
-      t.linea = activos === 0 ? 'perdida' : Math.abs(t.desvioMm) > 18 ? 'deriva' : 'centrada';
+      t.linea = activos === 0 ? 'perdida' : Math.abs(t.errorMm) > 18 ? 'deriva' : 'centrada';
       if (t.linea === 'perdida') { precaucion = true; motivos.push('Línea perdida (0000)'); }
       else if (t.linea === 'deriva') { precaucion = true; motivos.push('Deriva lateral alta'); }
     }
     t.patron = t.canales.join('');
-    t.errorMm = sal.tcrt5000 === 'fallo' ? 0 : t.desvioMm;
+    if (sal.tcrt5000 === 'fallo') t.errorMm = 0;
 
     // MPU-6050
     var inc = Math.max(Math.abs(i.pitchDeg), Math.abs(i.rollDeg));
     i.alerta = null;
-    if (sal.mpu6050 === 'fallo') { parada = true; i.alerta = 'fallo'; motivos.push('MPU-6050 sin respuesta I2C'); }
-    else if (i.evento === 'impacto' || i.acelG > 2) { parada = true; i.alerta = 'impacto'; motivos.push('Impacto detectado (' + i.acelG.toFixed(2) + ' g)'); }
-    else if (inc > LIMITES.vuelcoDeg) { parada = true; i.alerta = 'inclinacion'; motivos.push('Inclinación peligrosa > 30°'); }
+    if (sal.mpu6050 === 'fallo') { i.alerta = 'fallo'; forzar('imu', 'MPU-6050 sin respuesta I2C'); }
+    else if (i.evento === 'impacto' || i.acelG > 2) { i.alerta = 'impacto'; forzar('impacto', 'Impacto detectado (' + i.acelG.toFixed(2) + ' g)'); }
+    else if (inc > LIMITES.vuelcoDeg) { i.alerta = 'inclinacion'; forzar('vuelco', 'Inclinación peligrosa > 30°'); }
     else if (inc > LIMITES.inclinacionDeg || i.evento === 'inclinacion') { precaucion = true; i.alerta = 'inclinacion'; motivos.push('Inclinación > 20°'); }
     else if (i.evento === 'atascamiento') { precaucion = true; i.alerta = 'atascamiento'; motivos.push('Atascamiento: ruedas sin avance'); }
 
-    if (sal.motores === 'fallo') { parada = true; motivos.push('Driver L298N en fallo'); }
-    ['hcsr04', 'tcrt5000', 'motores', 'mpu6050'].forEach(function (k) {
+    if (sal.motores === 'fallo') forzar('driver', 'Driver L298N en fallo');
+    CONSOLAS.forEach(function (k) {
       if (sal[k] === 'advertencia') { precaucion = true; motivos.push('Aviso en ' + k.toUpperCase()); }
     });
 
     s.seguridad.estado = parada ? 'PARADA' : precaucion ? 'PRECAUCION' : 'NOMINAL';
     s.seguridad.motivos = motivos;
+    s.seguridad.paroForzado = forzados.length > 0;
+    s.seguridad.permiteAtras = forzados.length > 0 && forzados.every(function (c) { return c === 'obstaculo'; });
 
-    // Motores: la parada solo deja retroceder si el único motivo es el obstáculo frontal (como el firmware)
-    var soloObstaculo = parada && h.zona === 'critica' && i.alerta !== 'impacto' && i.alerta !== 'fallo' &&
-      !(Math.max(Math.abs(i.pitchDeg), Math.abs(i.rollDeg)) > LIMITES.vuelcoDeg) && sal.motores !== 'fallo' && sal.mpu6050 !== 'fallo';
-    var v = m.direccion === 'DETENIDO' ? 0 : m.velocidadMs;
-    m.bloqueado = false;
-    if (parada && v > 0 && !(soloObstaculo && m.direccion === 'ATRÁS')) { v = 0; m.bloqueado = true; }
-    if (i.alerta === 'atascamiento') v = 0; // las ruedas giran pero el robot no avanza
-    var base = m.direccion === 'DETENIDO' || m.bloqueado ? 0 : Math.round((m.velocidadMs / LIMITES.vPwm100) * 100);
-    var izq = base, der = base;
-    if (m.direccion === 'IZQUIERDA') izq = Math.round(base * (1 - LIMITES.giroDif));
-    if (m.direccion === 'DERECHA') der = Math.round(base * (1 - LIMITES.giroDif));
-    m.pwmIzq = izq;
-    m.pwmDer = der;
-    m.pwm = base;
-    m.velEfectivaMs = v === 0 ? 0 : m.direccion === 'ATRÁS' ? -v : v;
+    // Motores: en el circuito vienen de la física; en local se calculan de la consigna
+    if (!circuito) {
+      var v = m.direccion === 'DETENIDO' ? 0 : m.velocidadMs;
+      m.bloqueado = false;
+      if (s.seguridad.paroForzado && v > 0 && !(s.seguridad.permiteAtras && m.direccion === 'ATRÁS')) { v = 0; m.bloqueado = true; }
+      if (i.alerta === 'atascamiento') v = 0; // las ruedas giran pero el robot no avanza
+      var base = m.direccion === 'DETENIDO' || m.bloqueado ? 0 : Math.round((m.velocidadMs / LIMITES.vPwm100) * 100);
+      var izq = base, der = base;
+      if (m.direccion === 'IZQUIERDA') izq = Math.round(base * (1 - LIMITES.giroDif));
+      if (m.direccion === 'DERECHA') der = Math.round(base * (1 - LIMITES.giroDif));
+      m.pwmIzq = izq;
+      m.pwmDer = der;
+      m.pwm = base;
+      m.velEfectivaMs = v === 0 ? 0 : m.direccion === 'ATRÁS' ? -v : v;
+    }
     return s;
   }
 
   function normalizar(s) {
-    s.hcsr04.distanciaCm = clamp(s.hcsr04.distanciaCm, LIMITES.distMinCm, LIMITES.distMaxCm);
+    if (s.fuente !== 'circuito' || s.inyeccion.hcsr04) s.hcsr04.distanciaCm = clamp(s.hcsr04.distanciaCm, LIMITES.distMinCm, LIMITES.distMaxCm);
     s.tcrt5000.desvioMm = clamp(s.tcrt5000.desvioMm, -LIMITES.desvioMaxMm, LIMITES.desvioMaxMm);
     s.motores.velocidadMs = Math.round(clamp(s.motores.velocidadMs, 0, LIMITES.vMax) * 100) / 100;
     if (DIRECCIONES.indexOf(s.motores.direccion) === -1) s.motores.direccion = 'DETENIDO';
@@ -149,7 +175,8 @@
   function crearEstado() {
     var estado = derivar(nominal());
     var oyentes = [];
-    var SECCIONES = ['hcsr04', 'tcrt5000', 'motores', 'mpu6050', 'salud'];
+    var ordenes = [];
+    var SECCIONES = ['hcsr04', 'tcrt5000', 'motores', 'mpu6050', 'salud', 'inyeccion'];
 
     function emitir(origen) {
       estado.version++;
@@ -157,17 +184,23 @@
         try { fn(estado, origen); } catch (e) { if (raiz.console) raiz.console.error(e); }
       });
     }
+    function aplicar(patch) {
+      SECCIONES.forEach(function (sec) {
+        if (patch[sec]) for (var k in patch[sec]) estado[sec][k] = patch[sec][k];
+      });
+      if ('seleccion' in patch) estado.seleccion = patch.seleccion;
+      if ('foco' in patch) estado.foco = patch.foco;
+    }
 
-    return {
+    var api = {
       LIMITES: LIMITES,
+      CONSOLA_DE: CONSOLA_DE,
+      PIEZA_DE: PIEZA_DE,
+      NOMBRES: NOMBRES,
       get: function () { return estado; },
-      // set({hcsr04: {distanciaCm: 12}}, 'consola'): mezcla por sección, normaliza y recalcula lo derivado
+      // set({hcsr04: {distanciaCm: 12}, inyeccion: {hcsr04: true}}, 'consola'): mezcla por sección y recalcula
       set: function (patch, origen) {
-        patch = patch || {};
-        SECCIONES.forEach(function (sec) {
-          if (patch[sec]) for (var k in patch[sec]) estado[sec][k] = patch[sec][k];
-        });
-        if ('seleccion' in patch) estado.seleccion = patch.seleccion;
+        aplicar(patch || {});
         normalizar(estado);
         derivar(estado);
         emitir(origen || 'api');
@@ -175,13 +208,63 @@
       },
       eventoMpu: function (ev, origen) {
         var e = EVENTOS_MPU[ev] || EVENTOS_MPU.normal;
-        return this.set({mpu6050: {evento: EVENTOS_MPU[ev] ? ev : 'normal', pitchDeg: e.pitchDeg, rollDeg: e.rollDeg, acelG: e.acelG}, salud: {mpu6050: 'normal'}}, origen);
+        return api.set({
+          mpu6050: {evento: EVENTOS_MPU[ev] ? ev : 'normal', pitchDeg: e.pitchDeg, rollDeg: e.rollDeg, acelG: e.acelG},
+          salud: {mpu6050: 'normal'},
+          inyeccion: {mpu6050: ev !== 'normal' || estado.fuente !== 'circuito'}
+        }, origen);
+      },
+      // vuelve una consola a la lectura en vivo del circuito
+      liberar: function (sec, origen) {
+        var p = {inyeccion: {}};
+        p.inyeccion[sec] = false;
+        if (sec === 'tcrt5000') p.tcrt5000 = {desvioMm: 0};
+        if (sec === 'motores') p.motores = {velocidadMs: LIMITES.vNominal};
+        if (sec === 'mpu6050') p.mpu6050 = {evento: 'normal', pitchDeg: 0, rollDeg: 0, acelG: 1};
+        return api.set(p, origen || 'consola');
+      },
+      // órdenes que no son lecturas (p. ej. dirección): las ejecuta el circuito; sin circuito se aplican al estado
+      comando: function (tipo, valor, origen) {
+        if (ordenes.length) ordenes.slice().forEach(function (fn) { fn(tipo, valor, origen || 'consola'); });
+        else if (tipo === 'direccion') api.set({motores: {direccion: valor}}, origen || 'consola');
+      },
+      alComando: function (fn) {
+        ordenes.push(fn);
+        return function () { ordenes = ordenes.filter(function (f) { return f !== fn; }); };
+      },
+      // el simulador del circuito publica aquí sus lecturas; las consolas inyectadas conservan su valor
+      publicarCircuito: function (l) {
+        estado.fuente = 'circuito';
+        estado.circuito = {encendido: !!l.encendido, modo: l.modo || 'auto'};
+        var iny = estado.inyeccion;
+        var h = estado.hcsr04, t = estado.tcrt5000, m = estado.motores, i = estado.mpu6050;
+        if (!iny.hcsr04) h.distanciaCm = isFinite(l.distanciaCm) ? Math.min(l.distanciaCm, LIMITES.sinEcoCm) : LIMITES.sinEcoCm;
+        h.atrasCm = isFinite(l.atrasCm) ? Math.min(l.atrasCm, LIMITES.sinEcoCm) : LIMITES.sinEcoCm;
+        if (l.canales) t.canales = l.canales.slice(0, LIMITES.canalesTcrt);
+        t.errorMm = clamp(l.desvioMm, -99, 99);
+        if (!iny.tcrt5000) t.desvioMm = clamp(l.desvioMm, -LIMITES.desvioMaxMm, LIMITES.desvioMaxMm);
+        m.velEfectivaMs = Math.abs(l.velEfectivaMs) < 0.005 ? 0 : l.velEfectivaMs;
+        m.pwmIzq = Math.round(l.pwmIzq);
+        m.pwmDer = Math.round(l.pwmDer);
+        m.pwm = Math.round(Math.max(Math.abs(l.pwmIzq), Math.abs(l.pwmDer)));
+        if (DIRECCIONES.indexOf(l.direccion) !== -1) m.direccion = l.direccion;
+        m.bloqueado = !!l.bloqueado;
+        if (!iny.mpu6050) {
+          i.pitchDeg = l.pitchDeg || 0;
+          i.rollDeg = l.rollDeg || 0;
+          i.acelG = l.acelG || 1;
+          i.evento = 'normal';
+        }
+        derivar(estado);
+        emitir('circuito');
+        return estado;
       },
       reset: function (origen) {
-        var sel = estado.seleccion;
+        var conservar = {seleccion: estado.seleccion, foco: estado.foco, fuente: estado.fuente, circuito: estado.circuito};
         var n = derivar(nominal());
         for (var k in n) if (k !== 'version') estado[k] = n[k];
-        estado.seleccion = sel;
+        for (var c in conservar) estado[c] = conservar[c];
+        derivar(estado);
         emitir(origen || 'reset');
         return estado;
       },
@@ -190,6 +273,7 @@
         return function () { oyentes = oyentes.filter(function (f) { return f !== fn; }); };
       }
     };
+    return api;
   }
 
   var SimulationState = crearEstado();
@@ -201,9 +285,13 @@
 
   function $(id) { return doc.getElementById(id); }
   function todos(sel) { return Array.prototype.slice.call(doc.querySelectorAll(sel)); }
-  function texto(id, t) { var el = $(id); if (el) el.textContent = t; }
-  function clase(id, c) { var el = $(id); if (el) el.className = c; }
+  function texto(id, t) { var el = $(id); if (el && el.textContent !== t) el.textContent = t; }
+  function clase(id, c) { var el = $(id); if (el && el.className !== c) el.className = c; }
   function n1(v) { return (v >= 0 ? '+' : '') + v.toFixed(1); }
+  function fmtCm(cm) {
+    if (cm >= LIMITES.sinEcoCm) return 'sin eco';
+    return cm < 100 ? Math.round(cm) + ' cm' : (cm / 100).toFixed(2) + ' m';
+  }
 
   var anim = {radar: 0, radarDir: 1, osc: []};
   for (var q = 0; q < 64; q++) anim.osc.push(0);
@@ -268,11 +356,18 @@
     ctx.strokeStyle = col;
     ctx.lineWidth = 2;
     ctx.stroke();
-    var r = (d / LIMITES.distMaxCm) * maxR;
-    ctx.beginPath();
-    ctx.arc(cx, cy - r, 5, 0, Math.PI * 2);
-    ctx.fillStyle = col;
-    ctx.fill();
+    if (d <= LIMITES.distMaxCm) {
+      var r = (d / LIMITES.distMaxCm) * maxR;
+      ctx.beginPath();
+      ctx.arc(cx, cy - r, 5, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.fill();
+    } else {
+      ctx.fillStyle = COL.tenue;
+      ctx.textAlign = 'center';
+      ctx.fillText('> 80 cm', cx, cy - maxR - 2 + 10);
+      ctx.textAlign = 'left';
+    }
   }
 
   function dibujarOsc(s) {
@@ -354,9 +449,9 @@
     var cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 4;
     if (s.salud.mpu6050 === 'fallo') {
       ctx.fillStyle = '#F87171';
-      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('I2C SIN RESPUESTA', cx, cy + 4);
+      ctx.fillText('I2C ✕', cx, cy + 4);
       ctx.textAlign = 'left';
       return;
     }
@@ -405,19 +500,21 @@
 
   function render(s) {
     var sal = s.salud;
+    var circuito = s.fuente === 'circuito';
     // ---- 1 · HC-SR04
     var h = s.hcsr04;
     var cardH = $('hw-card-hcsr04');
-    if (cardH) cardH.setAttribute('data-estado', h.zona === 'fallo' ? 'fallo' : h.zona === 'critica' ? 'fallo' : h.zona === 'precaucion' || sal.hcsr04 === 'advertencia' ? 'advertencia' : 'normal');
+    if (cardH) cardH.setAttribute('data-estado', h.zona === 'fallo' || h.zona === 'critica' ? 'fallo' : h.zona === 'precaucion' || sal.hcsr04 === 'advertencia' ? 'advertencia' : 'normal');
     if (h.zona === 'fallo') badge('hw-badge-hcsr04', 'FALLO SENSOR', 'peligro');
-    else if (h.zona === 'critica') badge('hw-badge-hcsr04', 'PARADA', 'peligro');
+    else if (h.zona === 'critica') badge('hw-badge-hcsr04', s.seguridad.estado === 'PARADA' ? 'PARADA' : '< 20 cm', 'peligro');
     else if (h.zona === 'precaucion') badge('hw-badge-hcsr04', 'PRECAUCIÓN', 'aviso');
     else if (sal.hcsr04 === 'advertencia') badge('hw-badge-hcsr04', 'ECO RUIDOSO', 'aviso');
     else badge('hw-badge-hcsr04', 'DESPEJADO', 'ok');
-    texto('hw-val-dist', h.zona === 'fallo' ? '--- cm' : Math.round(h.distanciaCm) + ' cm');
+    texto('hw-val-dist', h.zona === 'fallo' ? '---' : fmtCm(h.distanciaCm));
     clase('hw-val-dist', 'hw-metric-v' + (h.zona === 'fallo' || h.zona === 'critica' ? ' peligro' : h.zona === 'precaucion' ? ' aviso' : ''));
+    texto('hw-val-atras', h.atrasCm == null ? '—' : fmtCm(h.atrasCm));
     texto('hw-val-zona', {fallo: 'FALLO', critica: 'PARADA', precaucion: 'PRECAUCIÓN', libre: 'LIBRE'}[h.zona]);
-    texto('hw-lbl-dist', Math.round(h.distanciaCm) + ' cm');
+    texto('hw-lbl-dist', h.zona === 'fallo' ? '---' : fmtCm(h.distanciaCm));
 
     // ---- 2 · TCRT5000
     var t = s.tcrt5000;
@@ -434,9 +531,9 @@
     var mk = $('hw-pid-marker');
     if (mk) {
       mk.style.display = t.linea === 'fallo' ? 'none' : 'block';
-      mk.style.left = 50 + (t.desvioMm / LIMITES.desvioMaxMm) * 44 + '%';
+      mk.style.left = 50 + (clamp(t.errorMm, -LIMITES.desvioMaxMm, LIMITES.desvioMaxMm) / LIMITES.desvioMaxMm) * 44 + '%';
     }
-    texto('hw-val-linea', t.linea === 'fallo' ? '--- mm' : n1(t.errorMm) + ' mm');
+    texto('hw-val-linea', t.linea === 'fallo' ? '--- mm' : Math.abs(t.errorMm) >= 99 ? 'fuera' : n1(t.errorMm) + ' mm');
     clase('hw-val-linea', 'hw-metric-v' + (t.linea === 'fallo' || t.linea === 'perdida' ? ' peligro' : t.linea === 'deriva' ? ' aviso' : ''));
     texto('hw-val-patron', t.linea === 'fallo' ? '----' : t.patron);
     texto('hw-lbl-linea', (t.desvioMm >= 0 ? '+' : '') + Math.round(t.desvioMm) + ' mm');
@@ -446,16 +543,18 @@
     var falloM = sal.motores === 'fallo';
     var cardM = $('hw-card-motores');
     if (cardM) cardM.setAttribute('data-estado', falloM ? 'fallo' : m.bloqueado || sal.motores === 'advertencia' ? 'advertencia' : 'normal');
+    var parado = circuito && s.circuito && !s.circuito.encendido;
     if (falloM) badge('hw-badge-motores', 'FALLO DRIVER', 'peligro');
     else if (m.bloqueado) badge('hw-badge-motores', 'BLOQUEADO', 'peligro');
     else if (sal.motores === 'advertencia') badge('hw-badge-motores', 'SOBRECORRIENTE', 'aviso');
+    else if (parado) badge('hw-badge-motores', 'APAGADO', 'aviso');
     else badge('hw-badge-motores', m.direccion, m.direccion === 'DETENIDO' ? 'aviso' : 'ok');
     texto('hw-val-vel', falloM ? '--- m/s' : m.velEfectivaMs.toFixed(2) + ' m/s');
     clase('hw-val-vel', 'hw-metric-v' + (falloM || m.bloqueado ? ' peligro' : ''));
     texto('hw-val-pwm', falloM ? '--- %' : m.pwm + ' %');
     var bi = $('hw-bar-izq'), bd = $('hw-bar-der');
-    if (bi) bi.style.width = m.pwmIzq + '%';
-    if (bd) bd.style.width = m.pwmDer + '%';
+    if (bi) bi.style.width = Math.min(100, Math.abs(m.pwmIzq)) + '%';
+    if (bd) bd.style.width = Math.min(100, Math.abs(m.pwmDer)) + '%';
     texto('hw-txt-izq', falloM ? '---' : m.pwmIzq + '%');
     texto('hw-txt-der', falloM ? '---' : m.pwmDer + '%');
     texto('hw-lbl-vel', m.velocidadMs.toFixed(2) + ' m/s');
@@ -478,25 +577,33 @@
     texto('hw-lbl-pitch', Math.round(i.pitchDeg) + '°');
     texto('hw-lbl-roll', Math.round(i.rollDeg) + '°');
 
-    // ---- Seguridad (cabecera + HUD del robot 3D)
+    // ---- Seguridad, fuente de datos y botones "Vivo"
     var seg = s.seguridad.estado;
     var root = $('hw-inspector-root');
-    if (root) root.setAttribute('data-seguridad', seg.toLowerCase());
+    if (root) {
+      root.setAttribute('data-seguridad', seg.toLowerCase());
+      root.setAttribute('data-foco', s.foco || '');
+    }
     texto('hw-seguridad-estado', SEG_TXT[seg]);
     texto('hw-seguridad-motivo', s.seguridad.motivos[0] || 'Todos los sensores en rango');
-    texto('hw-hud-dist', h.zona === 'fallo' ? '---' : Math.round(h.distanciaCm) + ' cm');
-    texto('hw-hud-vel', m.velEfectivaMs.toFixed(2) + ' m/s');
-    texto('hw-hud-linea', t.linea === 'fallo' ? '----' : t.patron);
-    texto('hw-hud-imu', 'P ' + Math.round(i.pitchDeg) + '° · R ' + Math.round(i.rollDeg) + '°');
+    texto('hw-fuente', !circuito ? 'CONSOLAS · LOCAL' : 'CIRCUITO · ' + (s.circuito.modo === 'manual' ? 'MANUAL' : 'AUTO') + ' · ' + (s.circuito.encendido ? 'EN MARCHA' : 'APAGADO'));
+    todos('[data-vivo]').forEach(function (b) {
+      var iny = !!s.inyeccion[b.getAttribute('data-vivo')];
+      var txt = iny ? '◆ Iny.' : '● Vivo';
+      if (b.textContent !== txt) b.textContent = txt;
+      b.classList.toggle('iny', iny);
+      b.setAttribute('aria-pressed', String(!iny));
+      b.setAttribute('title', iny ? 'Valor inyectado desde la consola: toca para volver a la lectura del circuito' : 'Lectura en vivo del circuito');
+    });
 
     // ---- Sincroniza controles (si el cambio vino de otra parte)
-    sincValor('hw-in-dist', Math.round(h.distanciaCm));
+    sincValor('hw-in-dist', Math.round(clamp(h.distanciaCm, LIMITES.distMinCm, LIMITES.distMaxCm)));
     sincValor('hw-in-linea', Math.round(t.desvioMm));
     sincValor('hw-in-vel', m.velocidadMs.toFixed(2));
     sincValor('hw-in-pitch', Math.round(i.pitchDeg));
     sincValor('hw-in-roll', Math.round(i.rollDeg));
     todos('[data-dir]').forEach(function (b) {
-      var on = b.getAttribute('data-dir') === m.direccion;
+      var on = b.getAttribute('data-dir') === m.direccion && !parado;
       b.classList.toggle('activo', on);
       b.setAttribute('aria-pressed', String(on));
     });
@@ -510,9 +617,24 @@
       b.classList.toggle('activo', on);
       b.setAttribute('aria-pressed', String(on));
     });
+
+    // ---- Foco: la consola de la pieza enfocada sube al inicio y su ficha técnica va justo debajo
+    var consolaFoco = s.foco ? CONSOLA_DE[s.foco] : null;
     todos('.hw-card').forEach(function (card) {
-      card.classList.toggle('resaltada', card.getAttribute('data-card') === s.seleccion);
+      var id = card.getAttribute('data-card');
+      var enfocada = !!consolaFoco && id === consolaFoco;
+      card.classList.toggle('resaltada', id === s.seleccion || enfocada);
+      card.classList.toggle('enfocada', enfocada);
+      card.style.order = enfocada ? '-2' : '0';
     });
+    var ficha = $('hw-ficha');
+    if (ficha) {
+      ficha.hidden = !s.foco;
+      ficha.style.order = '-1';
+    }
+    var cerrar = $('hw-foco-cerrar');
+    if (cerrar) cerrar.hidden = !s.foco;
+    texto('hw-panel-titulo', s.foco ? 'Enfocado · ' + (NOMBRES[s.foco] || s.foco) : 'Vista general · 4 consolas en vivo');
 
     dibujarRadar(s);
     dibujarOsc(s);
@@ -536,7 +658,7 @@
     if (anim.radar > 0.5) { anim.radar = 0.5; anim.radarDir = -1; }
     if (anim.radar < -0.5) { anim.radar = -0.5; anim.radarDir = 1; }
     var s = SimulationState.get();
-    var ruido = s.salud.tcrt5000 === 'advertencia' ? (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 1.2;
+    var ruido = s.salud.tcrt5000 === 'advertencia' ? (Math.random() - 0.5) * 6 : s.fuente === 'circuito' ? 0 : (Math.random() - 0.5) * 1.2;
     anim.osc.push(clamp(s.tcrt5000.errorMm + ruido, -32, 32));
     if (anim.osc.length > 64) anim.osc.shift();
     if (doc.hidden) return;
@@ -548,14 +670,17 @@
     if (!$('hw-inspector-root')) return;
     var S = SimulationState;
 
-    enSlider('hw-in-dist', function (v) { S.set({hcsr04: {distanciaCm: v}, seleccion: 'hcsr04'}, 'consola'); });
-    enSlider('hw-in-linea', function (v) { S.set({tcrt5000: {desvioMm: v}, seleccion: 'tcrt5000'}, 'consola'); });
-    enSlider('hw-in-vel', function (v) { S.set({motores: {velocidadMs: v}, seleccion: 'motores'}, 'consola'); });
-    enSlider('hw-in-pitch', function (v) { S.set({mpu6050: {pitchDeg: v, evento: 'normal', acelG: 1}, seleccion: 'mpu6050'}, 'consola'); });
-    enSlider('hw-in-roll', function (v) { S.set({mpu6050: {rollDeg: v, evento: 'normal', acelG: 1}, seleccion: 'mpu6050'}, 'consola'); });
+    enSlider('hw-in-dist', function (v) { S.set({hcsr04: {distanciaCm: v}, inyeccion: {hcsr04: true}, seleccion: 'hcsr04'}, 'consola'); });
+    enSlider('hw-in-linea', function (v) { S.set({tcrt5000: {desvioMm: v}, inyeccion: {tcrt5000: true}, seleccion: 'tcrt5000'}, 'consola'); });
+    enSlider('hw-in-vel', function (v) { S.set({motores: {velocidadMs: v}, inyeccion: {motores: true}, seleccion: 'motores'}, 'consola'); });
+    enSlider('hw-in-pitch', function (v) { S.set({mpu6050: {pitchDeg: v, evento: 'normal', acelG: 1}, inyeccion: {mpu6050: true}, seleccion: 'mpu6050'}, 'consola'); });
+    enSlider('hw-in-roll', function (v) { S.set({mpu6050: {rollDeg: v, evento: 'normal', acelG: 1}, inyeccion: {mpu6050: true}, seleccion: 'mpu6050'}, 'consola'); });
 
     todos('[data-dir]').forEach(function (b) {
-      b.addEventListener('click', function () { S.set({motores: {direccion: b.getAttribute('data-dir')}, seleccion: 'motores'}, 'consola'); });
+      b.addEventListener('click', function () {
+        S.set({seleccion: 'motores'}, 'consola');
+        S.comando('direccion', b.getAttribute('data-dir'));
+      });
     });
     todos('[data-mpu-ev]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -570,15 +695,40 @@
         S.set(p, 'consola');
       });
     });
-    todos('.hw-card').forEach(function (card) {
-      card.addEventListener('pointerenter', function () {
-        if (S.get().seleccion !== card.getAttribute('data-card')) S.set({seleccion: card.getAttribute('data-card')}, 'hover');
+    todos('[data-vivo]').forEach(function (b) {
+      b.addEventListener('click', function () { S.liberar(b.getAttribute('data-vivo'), 'consola'); });
+    });
+    // el título de cada consola enfoca su pieza (y su ficha técnica); otro toque vuelve a la vista general
+    todos('[data-foco]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var pieza = b.getAttribute('data-foco');
+        var mismo = S.get().foco === pieza;
+        S.set({foco: mismo ? null : pieza, seleccion: mismo ? null : CONSOLA_DE[pieza]}, 'consola');
       });
     });
+    var cerrar = $('hw-foco-cerrar');
+    if (cerrar) cerrar.addEventListener('click', function () { S.set({foco: null, seleccion: null}, 'consola'); });
     var reset = $('hw-btn-reset');
     if (reset) reset.addEventListener('click', function () { S.reset('consola'); });
 
-    S.subscribe(render);
+    // lecturas del circuito a ~60 Hz: la consola se repinta como mucho cada 80 ms
+    var ultimo = 0;
+    var pendiente = false;
+    var ahora = function () { return raiz.performance && raiz.performance.now ? raiz.performance.now() : Date.now(); };
+    S.subscribe(function (s, origen) {
+      if (origen === 'circuito') {
+        var t = ahora();
+        if (t - ultimo < 80) {
+          if (!pendiente && raiz.setTimeout) {
+            pendiente = true;
+            raiz.setTimeout(function () { pendiente = false; ultimo = ahora(); render(S.get()); }, 90);
+          }
+          return;
+        }
+        ultimo = t;
+      }
+      render(s);
+    });
     render(S.get());
     (raiz.setInterval || setInterval)(tick, 60);
     if (raiz.addEventListener) raiz.addEventListener('resize', function () { render(S.get()); });
