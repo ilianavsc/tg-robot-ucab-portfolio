@@ -294,7 +294,7 @@
     }
     ctx.restore();
     etiqueta(ctx, 'Vista de detalle · regleta ' + e.tcrt5000.patron, dx0 + 8, dy0 + 16, COL.tinta, COL.claro);
-    if (e.ruta.sub) etiqueta(ctx, (e.ruta.sub === 'girando' ? 'Giro manual ' : 'Giro en base ') + Math.round(e.ruta.giro * 180) + '°', dx0 + dw - 8, dy0 + 16, COL.violeta, COL.blanco, 'der');
+    if (e.ruta.sub) etiqueta(ctx, (e.ruta.sub === 'girando' ? 'Giro manual ' : 'Giro en base (supuesto) ') + Math.round(e.ruta.giro * 180) + '°', dx0 + dw - 8, dy0 + 16, COL.violeta, COL.blanco, 'der');
   }
 
   // ---------------------------------------------------------------- consolas (canvas)
@@ -393,23 +393,22 @@
   var fmtDist = function (m) { return !isFinite(m) ? 'sin eco' : m < 1 ? Math.round(m * 100) + ' cm' : m.toFixed(2) + ' m'; };
   var ultimoLog = '';
 
+  // Un solo estado (SimulationState) y una sola función de pintado: lo común siempre;
+  // cada pestaña solo cuando se ve (la oculta se pinta completa al abrirla).
   function renderPanel(e) {
+    var verOp = !$('rl-pane-op').hidden;
+    var verSen = !$('rl-pane-sen').hidden;
     var est = e.ruta.estado;
     var sim = $('rl-sim');
     sim.setAttribute('data-estado', est);
     sim.setAttribute('data-seguridad', e.seguridad.estado.toLowerCase());
-    txt('rl-estado-chip', e.ruta.sub === 'girando' ? 'ESPERA_REPOSICION · girando' : e.ruta.sub === 'alineando' ? 'EN_BASE · alineando' : est);
+    txt('rl-estado-chip', e.ruta.sub === 'girando' ? 'ESPERA_REPOSICION · girando' : e.ruta.sub === 'alineando' ? 'EN_BASE · giro automático (supuesto)' : est);
     txt('rl-seg-estado', e.seguridad.estado === 'PRECAUCION' ? 'PRECAUCIÓN' : e.seguridad.estado);
     txt('rl-seg-motivo', e.seguridad.motivo);
     // alarma visual
     $('rl-alarma').hidden = !(e.alarma.activa && !e.ruta.sub);
-    // máquina de estados
-    todos('[data-fsm]').forEach(function (li) { li.classList.toggle('activo', li.getAttribute('data-fsm') === est); });
-    txt('rl-ciclo', String(e.ruta.ciclo));
-    txt('rl-pos', e.robot.x.toFixed(2) + ' m');
-    txt('rl-vel', e.motores.v.toFixed(2) + ' m/s');
-    txt('rl-rumbo', Math.round(e.mpu6050.yawDeg) + '°');
-    // botones habilitados según el estado
+    if (verOp) renderOperacion(e, est);
+    // botones (también el de la alarma, que está sobre la escena)
     todos('[data-accion="iniciar"]').forEach(function (b) { b.disabled = !(est === 'EN_BASE' && !e.ruta.sub); });
     todos('[data-accion="girar"]').forEach(function (b) { b.disabled = !(est === 'ESPERA_REPOSICION' && !e.ruta.sub); });
     todos('[data-accion="obstaculo"]').forEach(function (b) {
@@ -418,6 +417,22 @@
       if (b.textContent !== t) b.textContent = t;
     });
     $('rl-quitar').disabled = !e.obstaculo;
+    if (verSen) renderConsola(e, est);
+    // ---- sonido
+    var mute = $('rl-mute');
+    mute.setAttribute('aria-pressed', String(e.alarma.silenciada));
+    var mt = e.alarma.silenciada ? '🔕' : '🔔';
+    if (mute.firstElementChild.textContent !== mt) mute.firstElementChild.textContent = mt;
+    txt('rl-mute-tx', e.alarma.silenciada ? 'Silenciado' : 'Sonido');
+  }
+
+  // Pestaña Operación: máquina de estados, datos y registro
+  function renderOperacion(e, est) {
+    todos('[data-fsm]').forEach(function (li) { li.classList.toggle('activo', li.getAttribute('data-fsm') === est); });
+    txt('rl-ciclo', String(e.ruta.ciclo));
+    txt('rl-pos', e.robot.x.toFixed(2) + ' m');
+    txt('rl-vel', e.motores.v.toFixed(2) + ' m/s');
+    txt('rl-rumbo', Math.round(e.mpu6050.yawDeg) + '°');
     // registro
     var clave = e.eventos.length + '|' + (e.eventos[0] ? e.eventos[0].t + e.eventos[0].texto : '');
     if (clave !== ultimoLog) {
@@ -427,6 +442,10 @@
         return '<li class="' + ev.tipo + '"><time>' + t + ' s</time><span>' + ev.texto.replace(/[&<>]/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]; }) + '</span></li>';
       }).join('');
     }
+  }
+
+  // Pestaña Consola de sensores: las 4 consolas leen el mismo estado
+  function renderConsola(e, est) {
     // ---- TCRT5000
     var tc = e.tcrt5000;
     for (var i = 0; i < 4; i++) cls('rl-s' + (i + 1), tc.canales[i] ? 'on' : '');
@@ -477,12 +496,9 @@
     cls('rl-b-imu', 'rl-badge-s ' + bI[1]);
     $('rl-card-imu').setAttribute('data-estado', bI[1] === 'ok' ? 'normal' : bI[1]);
     todos('[data-imu]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-imu') === mp.evento)); });
-    // ---- sonido
-    var mute = $('rl-mute');
-    mute.setAttribute('aria-pressed', String(e.alarma.silenciada));
-    var mt = e.alarma.silenciada ? '🔕' : '🔔';
-    if (mute.firstElementChild.textContent !== mt) mute.firstElementChild.textContent = mt;
-    txt('rl-mute-tx', e.alarma.silenciada ? 'Silenciado' : 'Sonido');
+    // el rótulo del slider sale del estado (no del control): distancia pedida del obstáculo inyectado
+    txt('rl-lbl-dist', (e.obstaculo && e.obstaculo.cm != null ? e.obstaculo.cm : Number($('rl-in-dist').value)) + ' cm');
+    if (e.obstaculo && e.obstaculo.cm != null) sinc('rl-in-dist', String(e.obstaculo.cm));
     dibujarRadar(e);
     dibujarVelo(e);
     dibujarBrujula(e);
@@ -538,9 +554,7 @@
   });
   $('rl-mute').addEventListener('click', function () { S.silenciar(); });
   $('rl-in-dist').addEventListener('input', function (ev) {
-    var v = Number(ev.target.value);
-    txt('rl-lbl-dist', v + ' cm');
-    S.inyectarObstaculo(v);
+    S.inyectarObstaculo(Number(ev.target.value)); // el rótulo se actualiza desde el estado
   });
   $('rl-in-vel').addEventListener('input', function (ev) { S.setConsigna(Number(ev.target.value)); });
   todos('[data-imu]').forEach(function (b) { b.addEventListener('click', function () { S.eventoImu(b.getAttribute('data-imu')); }); });
@@ -572,11 +586,13 @@
   S.subscribe(function (e, origen) {
     if (origen !== 'paso') renderPanel(e); // las acciones se ven al instante
   });
+  var idCuadro = null;
   function bucle(ahora) {
-    requestAnimationFrame(bucle);
+    idCuadro = null;
+    if (document.hidden) return; // sin agendar el siguiente: se reanuda en visibilitychange
+    idCuadro = requestAnimationFrame(bucle);
     var dt = Math.min(0.1, (ahora - previo) / 1000);
     previo = ahora;
-    if (document.hidden) return;
     var pasos = Math.max(1, Math.round(dt / (1 / 60)));
     for (var i = 0; i < pasos; i++) S.paso(dt / pasos);
     var e = S.get();
@@ -591,6 +607,18 @@
   if (window.ResizeObserver) new ResizeObserver(function () { dibujarEscena(S.get()); renderPanel(S.get()); }).observe($('rl-sim'));
   renderPanel(S.get());
   dibujarEscena(S.get());
-  requestAnimationFrame(bucle);
+  idCuadro = requestAnimationFrame(bucle);
+  // pestaña oculta: se detiene el ciclo (y la alarma sonora); al volver se reanuda sin salto de tiempo
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      if (idCuadro != null) cancelAnimationFrame(idCuadro);
+      idCuadro = null;
+      if (audio && audio.state === 'running') audio.suspend();
+    } else if (idCuadro == null) {
+      previo = performance.now();
+      if (audio && audio.state === 'suspended') audio.resume();
+      idCuadro = requestAnimationFrame(bucle);
+    }
+  });
   window.RUTA_LINEAL = {estado: S, dibujarEscena: dibujarEscena};
 })();

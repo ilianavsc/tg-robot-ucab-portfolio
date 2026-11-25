@@ -252,7 +252,21 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     aplicaEntrada();
   };
   addEventListener('blur', soltarTodo);
-  document.addEventListener('visibilitychange', () => document.hidden && soltarTodo());
+  // pestaña oculta: se suelta el mando y el bucle 3D se detiene del todo; al volver se reanuda con el reloj al día
+  let pausadoPorOculto = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      soltarTodo();
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+        pausadoPorOculto = true;
+      }
+    } else if (pausadoPorOculto || ui.encendido) {
+      pausadoPorOculto = false;
+      solicitarCuadro(); // reinicia `ultimo`: sin salto de física por el tiempo que estuvo oculta
+    }
+  });
   // D-Pad: pulsación sostenida (pointer) y touch como respaldo, igual que el Simulador 1
   const pulsa = (k) => {
     if (!ui.encendido) return;
@@ -715,6 +729,10 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   }
   function bucle(ahora) {
     rafId = null;
+    if (document.hidden) {
+      pausadoPorOculto = true; // no se agenda otro cuadro hasta que la pestaña vuelva a verse
+      return;
+    }
     const dt = Math.min(0.25, Math.max(0, (ahora - ultimo) / 1000));
     ultimo = ahora;
     renderizarCuadro(dt);

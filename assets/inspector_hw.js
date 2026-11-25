@@ -288,7 +288,9 @@
   if (!doc) return;
 
   function $(id) { return doc.getElementById(id); }
-  function todos(sel) { return Array.prototype.slice.call(doc.querySelectorAll(sel)); }
+  // los grupos de controles no cambian después de cargar: se consultan una sola vez
+  var cacheTodos = {};
+  function todos(sel) { return cacheTodos[sel] || (cacheTodos[sel] = Array.prototype.slice.call(doc.querySelectorAll(sel))); }
   function texto(id, t) { var el = $(id); if (el && el.textContent !== t) el.textContent = t; }
   function clase(id, c) { var el = $(id); if (el && el.className !== c) el.className = c; }
   function n1(v) { return (v >= 0 ? '+' : '') + v.toFixed(1); }
@@ -734,8 +736,24 @@
       render(s);
     });
     render(S.get());
-    (raiz.setInterval || setInterval)(tick, 60);
-    if (raiz.addEventListener) raiz.addEventListener('resize', function () { render(S.get()); });
+    // animación del radar y del osciloscopio: solo con la pestaña visible
+    var poner = raiz.setInterval || setInterval;
+    var quitar = raiz.clearInterval || (typeof clearInterval === 'function' ? clearInterval : function () {});
+    var idTick = null;
+    var arrancarTick = function () { if (idTick == null) idTick = poner(tick, 60); };
+    var pararTick = function () { if (idTick != null) { quitar(idTick); idTick = null; } };
+    if (!doc.hidden) arrancarTick();
+    if (doc.addEventListener) doc.addEventListener('visibilitychange', function () {
+      if (doc.hidden) pararTick();
+      else { arrancarTick(); render(S.get()); }
+    });
+    // al cambiar el tamaño se repinta una sola vez por cuadro
+    var resizePend = false;
+    if (raiz.addEventListener) raiz.addEventListener('resize', function () {
+      if (resizePend) return;
+      resizePend = true;
+      (raiz.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(function () { resizePend = false; render(S.get()); });
+    });
   }
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', iniciar);

@@ -143,6 +143,7 @@
       return (semilla - 1) / 2147483646;
     };
     var prevV = 0;
+    var obstaculoAvisado = false;
 
     function registrar(texto, tipo) {
       e.eventos.unshift({t: Math.round(e.ruta.t * 10) / 10, texto: texto, tipo: tipo || 'info'});
@@ -350,7 +351,7 @@
           // al volver quedó mirando a la base: gira solo sobre la marca de inicio antes de salir
           e.ruta.sub = 'alineando';
           e.ruta.giro = 0;
-          registrar('Giro automático de 180° en la base', 'info');
+          registrar('Giro automático de 180° en la base [supuesto de simulación]', 'info');
         } else {
           cambiarEstado('EN_RUTA_IDA', 'Ida: sigue la línea hacia el destino');
         }
@@ -379,9 +380,9 @@
         var d = clamp(cm == null ? 60 : cm, LIM.distMinCm, LIM.distMaxCm) / 100;
         var rb = e.robot;
         var x = rb.x + rb.dir * (GEO.usAdelante + d + GEO.radioObstaculo);
-        e.obstaculo = {x: clamp(x, 0.08, GEO.largo - 0.08)};
-        if (cm == null || !api._obstaculoAvisado) registrar('Obstáculo inyectado a ' + Math.round(d * 100) + ' cm al frente', 'alarma');
-        api._obstaculoAvisado = cm != null;
+        e.obstaculo = {x: clamp(x, 0.08, GEO.largo - 0.08), cm: Math.round(d * 100)}; // cm: distancia pedida (la consola la muestra)
+        if (cm == null || !obstaculoAvisado) registrar('Obstáculo inyectado a ' + Math.round(d * 100) + ' cm al frente', 'alarma');
+        obstaculoAvisado = cm != null; // el slider manda muchos valores seguidos: se registra solo el primero
         medir();
         actualizarMotores();
         emitir('accion');
@@ -390,7 +391,7 @@
       quitarObstaculo: function () {
         if (!e.obstaculo) return false;
         e.obstaculo = null;
-        api._obstaculoAvisado = false;
+        obstaculoAvisado = false;
         registrar('Obstáculo retirado del pasillo', 'ok');
         medir();
         actualizarMotores();
