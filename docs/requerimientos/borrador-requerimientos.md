@@ -58,9 +58,9 @@ Lleven cinta métrica, un teléfono para fotos (con permiso) y, si pueden, el ES
 | RF-06 | Re-localizarse en puntos de referencia | Corrige su posición en cada punto (2 balizas BLE en los extremos) | P14, Fase IV | Pendiente |
 | RF-07 | Transportar los componentes pedidos | Carga hasta ? g sin perder la línea | H5 | Pendiente |
 | RF-08 | Alarmar si alguien lo levanta o lo mueve sin una orden | La alarma llega a la app 1 sola vez; ≤ ? falsas alarmas en N recorridos | P11, H6 | Pendiente |
-| RF-09 | Permitir pedir, ver el estado y recibir avisos desde la app | Notificación en ≤ 5 s | P06, P09, P11 | Pendiente |
-| RF-10 | Registrar quién pidió qué y cuándo | Historial consultable en la app | P05, P06 | Pendiente (confirmar en entrevista) |
-| RF-11 | Pedir usuario para entrar a la app | Solo usuarios autorizados hacen pedidos | P06 | Pendiente (definir roles en entrevista) |
+| RF-09 | Permitir pedir, ver el estado y recibir avisos desde la app | Notificación en ≤ 5 s | P10, P09, P11 | Pendiente |
+| RF-10 | Registrar quién pidió qué y cuándo | Historial consultable en la app | P05, P10 | Pendiente (confirmar en entrevista) |
+| RF-11 | Pedir usuario para entrar a la app | Solo usuarios autorizados hacen pedidos | P10 | Pendiente (definir roles en entrevista) |
 
 ## 4. Requerimientos no funcionales
 | ID | Requerimiento | Criterio medible | De dónde sale |

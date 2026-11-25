@@ -56,8 +56,8 @@ jobs:
       - name: Pruebas P05 (Gemelo Digital)
         run: node prototipos/P05-gemelo-digital/simulador_movimiento.test.js
 
-      - name: Pruebas P10 (Ruta lineal con reposicionamiento)
-        run: node prototipos/P10-ruta-lineal/ruta_lineal.test.js
+      - name: Pruebas P06 (Ruta lineal con reposicionamiento)
+        run: node prototipos/P06-ruta-lineal/ruta_lineal.test.js
 
       - name: Armar carpeta estática del portafolio
         run: |

@@ -73,10 +73,10 @@ La numeración oficial es P01 a P14 (fuente: `datos/proyecto.js`). Estado al 24/
 | P03 | Radar ultrasónico | Distancias frente y atrás + frenado ante obstáculos | Hecho (simulación) |
 | P04 | Simulador 1 + ESP32 | Simulador 1 con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT v2.0.0 en vivo con la app | Hecho (robot simulado, conexión MQTT en vivo) |
 | P05 | Gemelo Digital | Calibra y aprende la pista (teach & repeat) y ejecuta la Capa 3 operacional (rutas y pedidos) | Hecho (simulación) |
-| P06 | Robot virtual y puente | Puente MQTT a Firebase | Planificado (sin código aún) |
+| P06 | Ruta lineal con reposicionamiento | Ida, alarma en el destino, giro manual de 180° y retorno a la base | Hecho (simulación) |
 | P07 | El cerebro completo | Firmware integrado (`robot_integrado.ino`) | En pruebas (lógica validada en PC) |
 | P09 | App Flutter (v1 · Modo Demo) | App Flutter Web (*Autonomous Laboratory Cockpit*): Dashboard con Mapa de Pista, Controles, Radar y Alertas; acceso local con roles Operador y Administrador | Hecho (simulación); sin backend ni Firebase |
-| P10 | Ruta lineal con reposicionamiento | Ida, alarma en el destino, giro manual de 180° y retorno a la base | Hecho (simulación) |
+| P10 | Robot virtual y puente | Puente MQTT a Firebase | Planificado (sin código aún) |
 | P11 | La alarma llega al teléfono | Centro de alertas en la app | En pruebas (simulación) |
 | P12 | Pruebas y estadística | Analítica de sesión y reporte CSV | En pruebas (simulación) |
 | P14 | Balizas BLE (Extremos) | Re-localización en puntos de referencia | Pendiente (Fase II) |

@@ -1,4 +1,4 @@
-/* P10 · Ruta lineal · interfaz: escena 2.5D en canvas, alarma (visual + Web Audio), panel con 2 pestañas.
+/* P06 · Ruta lineal · interfaz: escena 2.5D en canvas, alarma (visual + Web Audio), panel con 2 pestañas.
    Todo lee y escribe en window.SimulationState (ruta_lineal.js). Sin librerías. */
 (function () {
   'use strict';

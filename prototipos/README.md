@@ -40,16 +40,16 @@ La auditoría visual de cada prototipo frente a la identidad del portafolio est�
 | **P03** | `P03-radar-ultrasonico/` | Simulación del radar ultrasónico (2× HC-SR04P, frente y atrás) y frenado automático ante obstáculos. | Completado · SIL · Hardware / Sensores |
 | **P04** | `P04-simulador-1-esp32/` | Simulador 1 integrado con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT v2.0.0 bidireccional con la app web (control remoto desde Admin + Modo Desarrollador, Capa 3 y alertas inerciales). | Completado · EN VIVO · MQTT v2.0.0 · Comunicación / MQTT |
 | **P05** | `P05-gemelo-digital/` | Gemelo Digital: calibra y aprende la pista (teach & repeat) y ejecuta la Capa 3 operacional (rutas cerrada y lineal, pedidos, MPU-6050). | Completado · SIL · Capa 3 · Operacional |
-| **P10** | `P10-ruta-lineal/` | Ruta lineal con reposicionamiento manual: ida por la línea, alarma en el destino, giro de 180° confirmado por el operador y retorno a la base; panel con pestañas Operación y Consola de sensores. | Completado · SIL · Capa 3 · Operacional |
+| **P06** | `P06-ruta-lineal/` | Ruta lineal con reposicionamiento manual: ida por la línea, alarma en el destino, giro de 180° confirmado por el operador y retorno a la base; panel con pestañas Operación y Consola de sensores. | Completado · SIL · Capa 3 · Operacional |
 
-P06 (puente a Firebase), P07 (firmware), P09/P11/P12 (app) y P14 (balizas BLE) no tienen carpeta aquí: su estado y etiquetas están en `datos/proyecto.js`.
+P07 (firmware), P09/P11/P12 (app), P10 (puente a Firebase) y P14 (balizas BLE) no tienen carpeta aquí: su estado y etiquetas están en `datos/proyecto.js`.
 
 ## Cómo recompilar los simuladores 3D (P01, P02 y P04)
-P03, P05 y P10 no necesitan compilar: son HTML + JavaScript sin empaquetar.
+P03, P05 y P06 no necesitan compilar: son HTML + JavaScript sin empaquetar.
 
-**Parámetros reales del robot (fuente única):** `assets/js/parametros_robot.js` (`window.TG_ROBOT` en el navegador, `require()` en Node) define la velocidad máxima (0,46 m/s), los 4 canales del TCRT5000, el rango del HC-SR04 (5–80 cm; parada < 20 cm, precaución 20–50 cm) y los umbrales de la MPU-6050. P02, P03, P05 y P10 los leen de ahí; P01 no usa parámetros físicos.
+**Parámetros reales del robot (fuente única):** `assets/js/parametros_robot.js` (`window.TG_ROBOT` en el navegador, `require()` en Node) define la velocidad máxima (0,46 m/s), los 4 canales del TCRT5000, el rango del HC-SR04 (5–80 cm; parada < 20 cm, precaución 20–50 cm) y los umbrales de la MPU-6050. P02, P03, P05 y P06 los leen de ahí; P01 no usa parámetros físicos.
 
-**Colores de los `<canvas>`:** `assets/js/tokens_canvas.js` (`TGTokens.paleta`) lee las variables `--tg-dark-*` y `--tg-sim-*` de `tokens.css` con `getComputedStyle`; P03, P05 y P10 ya no llevan colores hexadecimales sueltos en su código de dibujo (solo el respaldo de cada token).
+**Colores de los `<canvas>`:** `assets/js/tokens_canvas.js` (`TGTokens.paleta`) lee las variables `--tg-dark-*` y `--tg-sim-*` de `tokens.css` con `getComputedStyle`; P03, P05 y P06 ya no llevan colores hexadecimales sueltos en su código de dibujo (solo el respaldo de cada token).
 
 Los tres simuladores se empaquetan igual, con esbuild y `three` de npm (ya no se usa el kit teardown). Cada `codigo/` tiene todo el fuente: `main.js` (entrada), los módulos, `style.css`, `fuentes.css`, `plantilla.html` y `construir.mjs`.
 ```bash
@@ -77,5 +77,5 @@ Igual que P02: `P04-simulador-1-esp32/codigo/` se empaqueta con esbuild (`npm in
 ## P05 · Gemelo Digital (teach-and-repeat)
 `P05-gemelo-digital/` es el gemelo digital de **movimiento** (SIL). Carga tal cual `specs/pista_canonica.json` (9,0 m) y `specs/navegacion/teach_and_repeat.js`, y usa las 2 pistas del Simulador 1 (`P04-simulador-1-esp32/codigo/pista.js`) sin copiarlas; la planta física (cinta, sensores, cinemática, giroscopio, RSSI de las 2 balizas BLE en los extremos) está en `simulador_movimiento.js` y el radar sale de P03. Pruebas: `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` (55) y `pistas_radar.test.js`. La Capa 3 operacional (rutas, pedidos y MPU-6050) está en `capa3_operacional.js`. Se abre por http (no por `file://`).
 
-## P10 · Ruta lineal con reposicionamiento manual
-`P10-ruta-lineal/` no necesita compilar: `ruta_lineal.js` es el núcleo (estado central `SimulationState`, máquina de estados `EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → EN_RUTA_RETORNO → EN_BASE` y sensores) y `ruta_lineal_ui.js` dibuja la escena en canvas y el panel. Pruebas: `node prototipos/P10-ruta-lineal/ruta_lineal.test.js` (10). Se le dio el código P10 porque P06 sigue reservado para el robot virtual y el puente a Firebase.
+## P06 · Ruta lineal con reposicionamiento manual
+`P06-ruta-lineal/` no necesita compilar: `ruta_lineal.js` es el núcleo (estado central `SimulationState`, máquina de estados `EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → EN_RUTA_RETORNO → EN_BASE` y sensores) y `ruta_lineal_ui.js` dibuja la escena en canvas y el panel. Pruebas: `node prototipos/P06-ruta-lineal/ruta_lineal.test.js` (10). El puente a Firebase queda reservado en `P10` (Planificado).

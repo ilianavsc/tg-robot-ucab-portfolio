@@ -1,5 +1,5 @@
-/* Pruebas del núcleo de P10 · Ruta lineal con reposicionamiento manual (sin navegador ni dependencias).
- * Uso:  node prototipos/P10-ruta-lineal/ruta_lineal.test.js */
+/* Pruebas del núcleo de P06 · Ruta lineal con reposicionamiento manual (sin navegador ni dependencias).
+ * Uso:  node prototipos/P06-ruta-lineal/ruta_lineal.test.js */
 'use strict';
 const assert = require('node:assert');
 const {readFileSync} = require('node:fs');
@@ -212,10 +212,10 @@ prueba('alarma silenciable y estado central único para la página (escena, alar
 prueba('integración en el portafolio: listado de prototipos y datos del proyecto', () => {
   const raiz = join(__dirname, '..', '..');
   const lista = readFileSync(join(raiz, 'prototipos', 'index.html'), 'utf8');
-  assert.ok(/ordenListos = \[[^\]]*"P10"/.test(lista), 'P10 en "Listos para usar"');
+  assert.ok(/ordenListos = \[[^\]]*"P06"/.test(lista), 'P06 en "Listos para usar"');
   const datos = readFileSync(join(raiz, 'datos', 'proyecto.js'), 'utf8');
-  assert.ok(/codigo: "P10"[^\n]*url: "prototipos\/P10-ruta-lineal\/"/.test(datos), 'P10 en datos/proyecto.js');
-  assert.ok(/codigo: "P06", nombre: "Robot virtual y puente"/.test(datos), 'P06 (Firebase) se mantiene');
+  assert.ok(/codigo: "P06"[^\n]*url: "prototipos\/P06-ruta-lineal\/"/.test(datos), 'P06 en datos/proyecto.js');
+  assert.ok(/codigo: "P10", nombre: "Robot virtual y puente"/.test(datos), 'P10 (Firebase) se mantiene');
 });
 
-console.log(`\nP10 ruta lineal: ${ok}/${ok} pruebas pasaron`);
+console.log(`\nP06 ruta lineal: ${ok}/${ok} pruebas pasaron`);

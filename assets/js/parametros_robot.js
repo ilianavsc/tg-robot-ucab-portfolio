@@ -2,7 +2,7 @@
    TG ROBOT UCAB · PARÁMETROS REALES ÚNICOS DEL ROBOT (fuente única)
    --------------------------------------------------------------------------
    Los consumen P02 (inspector + circuito 3D), P03 (radar), P05 (gemelo) y
-   P10 (ruta lineal). Coinciden con el firmware (firmware/robot_integrado.ino)
+   P06 (ruta lineal). Coinciden con el firmware (firmware/robot_integrado.ino)
    y con el Simulador 1 (P04). En el navegador queda en window.TG_ROBOT;
    en Node se obtiene con require(). Sin DOM ni dependencias.
    ========================================================================== */

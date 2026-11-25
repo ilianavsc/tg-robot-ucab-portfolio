@@ -1,5 +1,5 @@
 /* ==========================================================================
-   P10 · RUTA LINEAL CON REPOSICIONAMIENTO MANUAL · núcleo de la simulación (SIL)
+   P06 · RUTA LINEAL CON REPOSICIONAMIENTO MANUAL · núcleo de la simulación (SIL)
    --------------------------------------------------------------------------
    Un solo estado central (SimulationState) con la máquina de estados del ciclo
      EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → (giro 180° + confirmación)
@@ -14,7 +14,7 @@
 
   // Parámetros reales únicos del robot (assets/js/parametros_robot.js): navegador → window.TG_ROBOT, Node → require
   var P = raiz.TG_ROBOT || (typeof require === 'function' ? require('../../assets/js/parametros_robot.js') : null);
-  if (!P) throw new Error('P10: falta assets/js/parametros_robot.js (TG_ROBOT)');
+  if (!P) throw new Error('P06: falta assets/js/parametros_robot.js (TG_ROBOT)');
 
   // ------------------------------------------------------------------ geometría y límites (m, s)
   var GEO = {

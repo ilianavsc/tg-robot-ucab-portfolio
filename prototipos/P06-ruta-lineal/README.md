@@ -1,4 +1,4 @@
-# P10 Ruta lineal con reposicionamiento manual
+# P06 Ruta lineal con reposicionamiento manual
 
 **Fase:** IV · Navegación progresiva (semana 17)
 **Responsable:** Iliana Semprun y Andrea Ferrer
@@ -37,7 +37,7 @@ Desde la base, la siguiente ida empieza con un giro automático de 180° sobre l
 
 ## 4. Cómo se prueba
 ```bash
-node prototipos/P10-ruta-lineal/ruta_lineal.test.js   # 10 pruebas, sin navegador
+node prototipos/P06-ruta-lineal/ruta_lineal.test.js   # 10 pruebas, sin navegador
 ```
 En el navegador (por http): Iniciar ida → esperar la alarma → Girar robot 180° y confirmar → ver el retorno. Probar también el obstáculo (slider 5–80 cm) y los eventos de la IMU.
 

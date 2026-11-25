@@ -257,7 +257,7 @@ a.ir:hover {
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P02 (Tracción):</strong> PWM a 20 kHz e interrupciones de encoders con batería Li-Ion 3S.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P04 (Línea):</strong> Control PD a 100 Hz con 4 sensores TCRT5000 a 0,41 m/s y puente MQTT v2.0.0 en vivo con la app.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P05 (Gemelo Digital):</strong> Teach &amp; repeat con la Capa 3 operacional (rutas cerrada y lineal, pedidos y MPU-6050): 55 pruebas SIL.</div></li>
-              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P10 (Ruta lineal):</strong> Ida, alarma en <code>ESPERA_REPOSICION</code>, giro manual de 180° y retorno a la base: 10 pruebas SIL.</div></li>
+              <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P06 (Ruta lineal):</strong> Ida, alarma en <code>ESPERA_REPOSICION</code>, giro manual de 180° y retorno a la base: 10 pruebas SIL.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>P03 (Ultrasonido):</strong> Radar interactivo en canvas (Adelante y Atrás) publicando en <code>ucab-tg-sf/robot/ultrasonido</code>.</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware C++ · pruebas SIL (10 escenarios T1-T10):</strong> órdenes, ACK, duplicados QoS 1, obstáculos, fallo de ultrasonido, timeout manual y corte por batería, probados en el PC (corren solos en GitHub Actions); el contrato MQTT es el de <code>docs/arquitectura/topicos-mqtt.md</code>. Falta la prueba con el ESP32 real (<a href="docs/centro_de_pruebas.md" data-md="docs/centro_de_pruebas.md" data-titulo="Centro de pruebas">flujo de la prueba física</a>).</div></li>
               <li class="estado-item"><span class="estado-icon check">✓</span><div><strong>Firmware Integrado:</strong> Un solo archivo <code>.ino</code> sin <code>delay()</code> (71 % Flash, 15 % RAM) con fail-safe y corte por batería baja (9,9 V).</div></li>
@@ -409,14 +409,14 @@ a.ir:hover {
         { label: "Ficha técnica (.md)", href: "prototipos/P05-gemelo-digital/README.md", md: true, titulo: "Ficha técnica P05 · Gemelo Digital" }
       ]
     },
-    P10: {
-      corto: "Ruta lineal (P10)",
+    P06: {
+      corto: "Ruta lineal (P06)",
       linea: "Ida por la línea, alarma en el destino, giro manual de 180° confirmado y retorno automático a la base.",
       boton: "Abrir Ruta lineal",
-      url: "prototipos/P10-ruta-lineal/",
+      url: "prototipos/P06-ruta-lineal/",
       tecnico: "EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → EN_RUTA_RETORNO · pestaña Consola de sensores · 10 pruebas.",
       links: [
-        { label: "Ficha técnica (.md)", href: "prototipos/P10-ruta-lineal/README.md", md: true, titulo: "Ficha técnica P10 · Ruta lineal" }
+        { label: "Ficha técnica (.md)", href: "prototipos/P06-ruta-lineal/README.md", md: true, titulo: "Ficha técnica P06 · Ruta lineal" }
       ]
     },
     P09: {
@@ -456,7 +456,7 @@ a.ir:hover {
       return true;
     });
     // Los Listos primero en orden lógico del proyecto.
-    var ordenListos = ["P01", "P02", "P03", "P04", "P05", "P10", "P09"];
+    var ordenListos = ["P01", "P02", "P03", "P04", "P05", "P06", "P09"];
     lista = lista.slice().sort(function (a, b) {
       var ia = ordenListos.indexOf(a.codigo), ib = ordenListos.indexOf(b.codigo);
       if (ia === -1 && ib === -1) return 0;

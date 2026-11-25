@@ -44,7 +44,7 @@
   /* Objetivos táctiles accesibles */
   --tg-touch-min: 44px;
 
-  /* Paleta oscura oficial: consolas, tableros y simuladores de los prototipos (P02, P03, P05, P10).
+  /* Paleta oscura oficial: consolas, tableros y simuladores de los prototipos (P02, P03, P05, P06).
      Una sola fuente para el fondo, las superficies, los bordes, el texto y los acentos de estado. */
   --tg-dark-bg: #10141A;            /* fondo de consola */
   --tg-dark-surface: #181C22;       /* tarjeta / panel */
