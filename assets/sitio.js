@@ -56,7 +56,6 @@
       ["requerimientos", "Requerimientos", "requerimientos.html"],
       ["hardware", "Hardware", "hardware.html"],
       ["arquitectura", "Arquitectura", "arquitectura.html"],
-      ["como-funciona-app", "Cómo funciona la App", "como-funciona-app.html"],
       ["decisiones", "Decisiones", "decisiones.html"],
       ["tesis", "Tesis", "tesis.html"]
     ] },
