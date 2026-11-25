@@ -21,6 +21,7 @@
 .cap .acciones{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .cap .acciones .btn{padding:9px 14px;font-size:14.5px}
 .cap .sin{font-family:var(--mono);font-size:13px;color:var(--suave)}
+.cap .estado-nota{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--suave);margin:-4px 0 0;letter-spacing:.01em}
 .seccion-apoyo{margin-top:36px}
 </style>
 </head>
@@ -29,7 +30,7 @@
 <main>
 <p class="ceja">Tesis</p>
 <h1>El documento del <em>Trabajo de Grado</em></h1>
-<p class="bajada">Los capítulos del tomo, uno por uno. Pulsa <strong>Leer borrador</strong> para abrir el capítulo (o el documento) sin salir de la página.</p>
+<p class="bajada">Los capítulos del tomo, uno por uno. Pulsa <strong>Leer capítulo</strong> para abrir el capítulo (o el documento) sin salir de la página.</p>
 
 <div class="frase-explicativa">
   <strong>Cómo se actualiza:</strong> cada capítulo se escribe en Markdown dentro de <code>tesis/</code> y esta lista sale de <code>TG.tesis</code> en <code>datos/proyecto.js</code>. Los capítulos I y II y el Marco teórico vienen de los documentos de Word y todo el tomo usa citas <strong>IEEE</strong> (numéricas); los capítulos IV a VI tienen títulos <strong>provisionales</strong> hasta confirmar la estructura con el tutor.
@@ -58,14 +59,23 @@
     "por redactar":  { chip: "pendiente", texto: "Por redactar" },
     "por integrar":  { chip: "pendiente", texto: "Por integrar" }
   };
+  /* Bloque 2: estados académicos actualizados (sobreescriben TG.tesis sin tocar datos/proyecto.js).
+     Clave = c.num del capítulo en TG.tesis. Cap. I, II y Marco Teórico pasan a Entregado
+     (revisados en Seminario de Grado); Cap. III queda Listo para revisión. */
+  var ESTADOS_ACADEMICOS = {
+    "I":   { chip: "hecho",  texto: "Entregado",          nota: "Revisado en Seminario de Grado" },
+    "II":  { chip: "hecho",  texto: "Entregado",          nota: "Revisado en Seminario de Grado" },
+    "MT":  { chip: "hecho",  texto: "Entregado",          nota: "Revisado en Seminario de Grado" },
+    "III": { chip: "aviso",  texto: "Listo para revisión", nota: "Revisión conjunta: Iliana y Andrea" }
+  };
   function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
   document.getElementById("capitulos").innerHTML = TG.tesis.map(function(c){
-    var e = ESTADOS[c.estado] || { chip: "pendiente", texto: c.estado };
+    var e = ESTADOS_ACADEMICOS[c.num] || ESTADOS[c.estado] || { chip: "pendiente", texto: c.estado };
     var tituloModal = c.tituloModal || ("Capítulo " + c.num + " · " + c.titulo);
     var acciones = "";
     if (c.md) {
-      acciones += '<a class="btn btn-principal" href="' + esc(c.md) + '" data-md="' + esc(c.md) + '" data-titulo="' + esc(tituloModal) + '">Leer borrador</a>';
+      acciones += '<a class="btn btn-principal" href="' + esc(c.md) + '" data-md="' + esc(c.md) + '" data-titulo="' + esc(tituloModal) + '">Leer capítulo</a>';
     } else {
       acciones += '<span class="sin">Aún no está en el repositorio</span>';
     }
@@ -76,6 +86,7 @@
       '<div class="cab"><span class="num"><small>' + esc(c.etiqueta || "Cap") + '</small>' + esc(c.num) + '</span><span class="chip ' + e.chip + '">' + esc(e.texto) + '</span></div>' +
       '<h3>' + esc(c.titulo) + '</h3>' +
       (c.provisional ? '<p class="prov">título provisional</p>' : "") +
+      (e.nota ? '<p class="estado-nota">' + esc(e.nota) + '</p>' : "") +
       '<p class="resumen">' + esc(c.resumen) + '</p>' +
       '<div class="acciones">' + acciones + '</div></article>';
   }).join("");

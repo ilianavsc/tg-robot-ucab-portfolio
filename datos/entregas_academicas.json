@@ -21,7 +21,7 @@
       "carpeta": "tesis/entregas/capitulo-1/",
       "metadata": "tesis/entregas/capitulo-1/metadata.json",
       "borrador_md": "tesis/capitulo_1.md",
-      "notas": "Planteamiento del problema, objetivos, justificación y alcance entregados."
+      "notas": "Planteamiento del problema, objetivos, justificación y alcance entregados. Revisado en Seminario de Grado."
     },
     {
       "id": "E2",
@@ -33,31 +33,31 @@
       "carpeta": "tesis/entregas/marco-preliminar/",
       "metadata": "tesis/entregas/marco-preliminar/metadata.json",
       "borrador_md": "tesis/marco_teorico.md",
-      "notas": "Antecedentes, bases teóricas y marco conceptual entregados."
+      "notas": "Antecedentes, bases teóricas y marco conceptual entregados. Revisado en Seminario de Grado."
     },
     {
       "id": "E3",
       "orden": 3,
       "entrega": "capitulo-2",
-      "titulo": "Capítulo II — Marco Metodológico",
+      "titulo": "Capítulo II — Marco Teórico",
       "estado": "entregada",
       "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
       "carpeta": "tesis/entregas/capitulo-2/",
       "metadata": "tesis/entregas/capitulo-2/metadata.json",
       "borrador_md": "tesis/capitulo_2.md",
-      "notas": "Diseño metodológico, arquitectura preliminar y protocolo de validación entregados."
+      "notas": "Antecedentes, bases teóricas (robótica móvil, sensores, control, localización, ESP32, Wi-Fi y MQTT), bases normativas y términos básicos entregados. Revisado en Seminario de Grado."
     },
     {
       "id": "E4",
       "orden": 4,
       "entrega": "capitulo-3",
-      "titulo": "Capítulo III — Diseño e Implementación del Sistema",
-      "estado": "en_preparacion",
+      "titulo": "Capítulo III — Marco Metodológico",
+      "estado": "en_revision",
       "fecha_entrega": "Pendiente de confirmación (Escuela/tutor)",
       "carpeta": null,
       "metadata": null,
       "borrador_md": "tesis/capitulo_3.md",
-      "notas": "Borrador técnico en preparación; el desarrollo de simuladores y app avanza por separado en Línea A."
+      "notas": "Nivel de investigación, diseño del prototipo, técnicas e instrumentos y plan de análisis. Listo para revisión conjunta por Iliana y Andrea."
     },
     {
       "id": "E5",
