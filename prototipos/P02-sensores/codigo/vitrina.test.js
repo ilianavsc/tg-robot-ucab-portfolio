@@ -206,11 +206,9 @@ prueba('se restaura el simulador 3D del circuito: barra superior, D-Pad, tira de
   const main = leerAqui('main.js');
   assert.strictEqual(ORDEN.length, 7);
   for (const id of ORDEN) assert.ok(FICHAS[id] && FICHAS[id].nombre && FICHAS[id].rol, `ficha ${id}`);
-  for (const id of ['lienzo', 'guias', 'etiquetas', 'tira', 'dpad', 'pista-tocar', 'b-xray', 'b-etiq', 'b-vista', 'b-pausa']) assert.ok(app.includes(`id="${id}"`), `falta #${id}`);
+  for (const id of ['lienzo', 'guias', 'etiquetas', 'tira', 'dpad', 'pista-tocar', 'b-xray', 'b-etiq', 'b-vista', 'b-pausa', 'b-herramientas', 'b-ajustes']) assert.ok(app.includes(`id="${id}"`), `falta #${id}`);
   assert.ok(/data-modo="auto"/.test(app) && /data-modo="manual"/.test(app), 'Auto y Manual');
   for (const dp of ['arriba', 'izq', 'stop', 'der', 'abajo']) assert.ok(app.includes(`data-dp="${dp}"`), `D-Pad ${dp}`);
-  const barra = app.slice(app.indexOf('class="barra"'), app.indexOf('<p class="pista-tocar"'));
-  assert.ok(barra.indexOf('b-xray') < barra.indexOf('data-modo="auto"'), 'Rayos X va antes del manejo');
   assert.ok(/ponEtiquetas\(true\)/.test(main), 'etiquetas encendidas en todos los tamaños');
   assert.ok(/crearMundo\(canvas, demo\.ruta, demo\.obstaculos\)/.test(main), 'escena del circuito ovalado con obstáculos');
   for (const n of ['TCRT5000 ×4', 'HC-SR04P frontal', 'HC-SR04P trasero', 'ESP32 móvil', 'MPU-6050', 'Tracción + chasis PLA', 'Batería 3S']) {
@@ -531,20 +529,22 @@ prueba('hardware.html se mantiene como catálogo BOM sin la consola 2x2', () => 
   assert.ok(hwHtml.includes('id="lista"') && hwHtml.includes('id="mat"') && hwHtml.includes('id="pines"'), 'hardware.html mantiene catálogo BOM y pines');
 });
 
-prueba('UX P02: panel enfocado por componente, D-pad oculto por defecto con toggle y Encender en barra superior', () => {
+prueba('UX P02: barra superior limpia, menús agrupados, D-pad solo en manual, panel enfocado y radar dual', () => {
   const app = leerAqui('app.html');
   const css = leerAqui('style.css');
   const main = leerAqui('main.js');
-  // 1. Encender/Detener en .sim-top y fuera de .barra
+  // 1. Barra superior (.sim-top): SIL · LOCAL, AUTO/MANUAL, Encender y ⚙ Restablecer
   const simTop = app.slice(app.indexOf('<header class="sim-top">'), app.indexOf('</header>'));
   const barra = app.slice(app.indexOf('class="barra"'), app.indexOf('<p class="pista-tocar"'));
-  assert.ok(simTop.includes('id="b-pausa"'), '#b-pausa debe estar en la barra superior (.sim-top)');
-  assert.ok(!barra.includes('id="b-pausa"'), '#b-pausa no debe estar dentro de .barra sobre el lienzo');
-  // 2. D-pad oculto por defecto + botón toggle #b-mando en .barra
+  assert.ok(simTop.includes('SIL · LOCAL') && simTop.includes('title="SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS"'), 'badge corto SIL · LOCAL con tooltip');
+  assert.ok(simTop.includes('id="b-pausa"') && simTop.includes('data-modo="auto"') && simTop.includes('data-modo="manual"'), 'AUTO/MANUAL y Encender en barra superior');
+  assert.ok(simTop.includes('id="b-ajustes"') && simTop.includes('id="menu-ajustes"') && simTop.includes('id="hw-btn-reset"'), 'Restablecer nominal en menú ⚙');
+  assert.ok(/id="hw-fuente"[^>]*hidden/.test(simTop), 'texto redundante CIRCUITO · AUTO oculto');
+  assert.ok(!barra.includes('id="b-pausa"') && barra.includes('id="b-herramientas"') && barra.includes('id="b-vista"'), 'Herramientas y Vista agrupados en .barra');
+  // 2. D-pad oculto por defecto y condicionado a modo MANUAL
   assert.ok(/<div class="dpad" id="dpad"[^>]*\shidden>/.test(app), '#dpad oculto por defecto');
-  assert.ok(barra.includes('id="b-mando"') && /id="b-mando"[^>]*aria-pressed="false"[^>]*aria-controls="dpad"/.test(barra), 'botón toggle Controles para D-pad');
   assert.ok(css.includes('.p02-sim .dpad[hidden]{display:none}'), 'regla CSS para ocultar D-pad');
-  assert.ok(main.includes('ponMando(false)') && main.includes("bMando.addEventListener('click'"), 'inicializa D-pad oculto y escucha toggle');
+  assert.ok(main.includes("ponMando(m === 'manual')") && main.includes('ponMando(false)'), 'D-pad visible solo en MANUAL');
   // 3. Panel enfocado por componente + botón Ver todas (4)
   assert.ok(app.includes('id="hw-foco-cerrar"') && app.includes('Ver todas (4)'), 'botón Ver todas (4) en encabezado del panel');
   assert.ok(css.includes('.hw-panel[data-foco-activo="1"] .hw-card{display:none}'), 'oculta las demás consolas al enfocar');

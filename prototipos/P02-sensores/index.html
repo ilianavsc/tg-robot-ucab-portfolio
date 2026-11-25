@@ -28,15 +28,26 @@
 <!--APP:inicio-->
 <section class="p02-sim" id="hw-inspector-root" data-seguridad="nominal" aria-label="Inspector de hardware: circuito 3D con consolas interactivas">
   <header class="sim-top">
-    <span class="tg-ejec tg-ejec--sil" id="hw-sim-badge" role="note"><i aria-hidden="true"></i>SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS</span>
+    <span class="tg-ejec tg-ejec--sil" id="hw-sim-badge" role="note" title="SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS"><i aria-hidden="true"></i>SIL · LOCAL</span>
     <div class="hw-seguridad" id="hw-seguridad" role="status" aria-live="polite">
       <span class="hw-seguridad-k">Seguridad</span>
       <b id="hw-seguridad-estado">NOMINAL</b>
       <span id="hw-seguridad-motivo">Todos los sensores en rango</span>
     </div>
-    <span class="hw-fuente" id="hw-fuente">CIRCUITO · APAGADO</span>
-    <button class="btn pri en-pausa sim-top-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
-    <button type="button" class="hw-btn-reset" id="hw-btn-reset">Restablecer nominal</button>
+    <span class="hw-fuente" id="hw-fuente" hidden>CIRCUITO · APAGADO</span>
+    <div class="sim-top-acciones">
+      <div class="grupo sim-top-modo" role="group" aria-label="Modo de manejo">
+        <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
+        <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
+      </div>
+      <button class="btn pri en-pausa sim-top-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
+      <div class="p02-menu-wrap" id="wrap-ajustes">
+        <button type="button" class="hw-btn-reset p02-gear-btn" id="b-ajustes" aria-haspopup="true" aria-expanded="false" aria-controls="menu-ajustes" aria-label="Ajustes secundarios" title="Ajustes">⚙</button>
+        <div class="p02-dropdown p02-dropdown-der" id="menu-ajustes" role="menu" hidden>
+          <button type="button" class="p02-drop-item" id="hw-btn-reset" role="menuitem">↺ Restablecer nominal</button>
+        </div>
+      </div>
+    </div>
   </header>
 
   <div class="app" id="app">
@@ -44,15 +55,22 @@
     <svg id="guias" aria-hidden="true"></svg>
     <div id="etiquetas"></div>
 
-    <div class="barra" role="toolbar" aria-label="Controles">
-      <button class="btn" id="b-xray" type="button" aria-pressed="false"><span aria-hidden="true">🩻</span><span class="largo"> Rayos X</span></button>
-      <button class="btn" id="b-etiq" type="button" aria-pressed="true" aria-label="Etiquetas"><span aria-hidden="true">🏷️</span><span class="largo"> Etiquetas</span></button>
-      <button class="btn" id="b-vista" type="button" aria-label="Cambiar la vista de la cámara"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Inspección</span></button>
-      <div class="grupo" role="group" aria-label="Modo de manejo">
-        <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
-        <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
+    <div class="barra" role="toolbar" aria-label="Controles del visor 3D">
+      <div class="p02-menu-wrap">
+        <button class="btn" id="b-herramientas" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu-herramientas"><span aria-hidden="true">🧰</span><span class="largo"> Herramientas ▾</span></button>
+        <div class="p02-dropdown" id="menu-herramientas" role="menu" hidden>
+          <button class="p02-drop-item" id="b-xray" type="button" role="menuitemcheckbox" aria-checked="false" aria-pressed="false"><span aria-hidden="true">🩻</span> Rayos X</button>
+          <button class="p02-drop-item" id="b-etiq" type="button" role="menuitemcheckbox" aria-checked="true" aria-pressed="true"><span aria-hidden="true">🏷️</span> Etiquetas 3D</button>
+        </div>
       </div>
-      <button class="btn" id="b-mando" type="button" aria-pressed="false" aria-controls="dpad" aria-label="Mostrar u ocultar controles direccionales"><span aria-hidden="true">🕹️</span><span class="largo"> Controles</span></button>
+      <div class="p02-menu-wrap">
+        <button class="btn" id="b-vista" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu-vista"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Vista</span> ▾</button>
+        <div class="p02-dropdown" id="menu-vista" role="menu" hidden>
+          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="inspeccion" aria-checked="true">🔍 Inspección</button>
+          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="seguir" aria-checked="false">🎯 Seguir robot</button>
+          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="general" aria-checked="false">🗺️ Panorámica</button>
+        </div>
+      </div>
     </div>
     <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para enfocar su consola</p>
 

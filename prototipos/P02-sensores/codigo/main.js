@@ -89,7 +89,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const irA = (v, instantaneo = false) => {
     ui.vista = v;
     aro.visible = v === 'general';
-    $('#b-vista-tx').textContent = NOMBRE_VISTA[v];
+    if ($('#b-vista-tx')) $('#b-vista-tx').textContent = NOMBRE_VISTA[v];
+    $$('[data-vista]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.vista === v)));
     controls.enablePan = v === 'general';
     controls.minDistance = v === 'general' ? 1 : 0.25;
     controls.maxDistance = v === 'general' ? 7 : 3;
@@ -165,34 +166,61 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   bX.addEventListener('click', () => {
     ui.xrayMeta = ui.xrayMeta ? 0 : 1;
     bX.setAttribute('aria-pressed', String(!!ui.xrayMeta));
+    bX.setAttribute('aria-checked', String(!!ui.xrayMeta));
     solicitarCuadro();
   });
   const bE = $('#b-etiq');
   const ponEtiquetas = (on) => {
     ui.etiquetas = on;
     bE.setAttribute('aria-pressed', String(on));
+    bE.setAttribute('aria-checked', String(on));
     $('#etiquetas').hidden = !on;
     $('#guias').style.display = on ? '' : 'none';
     if (on) solicitarCuadro();
   };
   bE.addEventListener('click', () => ponEtiquetas(!ui.etiquetas));
-  $('#b-vista').addEventListener('click', () => {
-    const orden = ['inspeccion', 'seguir', 'general'];
-    irA(orden[(orden.indexOf(ui.vista) + 1) % orden.length]);
-    solicitarCuadro();
+
+  // Menús desplegables (Herramientas ▾, Vista ▾, Ajustes ⚙)
+  const menus = [
+    [$('#b-herramientas'), $('#menu-herramientas')],
+    [$('#b-vista'), $('#menu-vista')],
+    [$('#b-ajustes'), $('#menu-ajustes')],
+  ].filter(([b, m]) => b && m);
+  const cerrarMenus = (excepto = null) => {
+    menus.forEach(([b, m]) => {
+      if (m === excepto) return;
+      m.hidden = true;
+      b.setAttribute('aria-expanded', 'false');
+    });
+  };
+  menus.forEach(([b, m]) => {
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const abrir = m.hidden;
+      cerrarMenus(abrir ? m : null);
+      m.hidden = !abrir;
+      b.setAttribute('aria-expanded', String(abrir));
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest || !e.target.closest('.p02-menu-wrap')) cerrarMenus();
+  });
+  $$('[data-vista]').forEach((b) => {
+    b.addEventListener('click', () => {
+      irA(b.dataset.vista);
+      cerrarMenus();
+      solicitarCuadro();
+    });
   });
   const dpadEl = $('#dpad');
-  const bMando = $('#b-mando');
   const ponMando = (on) => {
     ui.mando = Boolean(on);
     if (dpadEl) dpadEl.hidden = !ui.mando;
-    if (bMando) bMando.setAttribute('aria-pressed', String(ui.mando));
     if (!ui.mando) {
       botones.clear();
       aplicaEntrada();
     }
   };
-  if (bMando) bMando.addEventListener('click', () => ponMando(!ui.mando));
 
   // ---------------------------------------------------------------- manejo: la modalidad del Simulador 1 (P04)
   const teclas = new Set();
@@ -217,6 +245,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     demo.setModo(m);
     document.body.dataset.modo = m;
     $$('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === m)));
+    ponMando(m === 'manual');
     aplicaEntrada();
   };
   // tocar un control toma el mando (pasa a manual) cuando está encendido
@@ -368,7 +397,10 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     solicitarCuadro();
   };
   addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && ui.sel) abrirFicha(null);
+    if (e.key === 'Escape') {
+      cerrarMenus();
+      if (ui.sel) abrirFicha(null);
+    }
   });
   tira.addEventListener('click', (e) => {
     const b = e.target.closest('[data-comp]');
