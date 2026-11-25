@@ -563,12 +563,13 @@ a.ir:hover {
       ]
     },
     P09: {
-      corto: "App Flutter (v1 · Modo Demo)",
-      linea: "Pide y monitorea el robot desde el celular, con acceso por rol y Modo Demo integrado.",
-      boton: "Probar App en vivo",
-      url: "https://ilianavsc.github.io/tg-robot-ucab-app/",
-      tecnico: "Flutter Web / Móvil · roles Operador y Admin · MQTT en vivo + Modo Demo sin hardware.",
+      corto: "App de solicitudes y alertas (Flutter v2)",
+      linea: "Cómo funciona la app: pantallas, flujo MQTT v2.0.0, pedidos, alertas y el botón para abrirla en vivo.",
+      boton: "Cómo funciona la App",
+      url: "como-funciona-app.html",
+      tecnico: "Flutter Web / Móvil (v2) · roles Operador y Admin · MQTT v2.0.0 en vivo + Modo Demo · 173/173 pruebas.",
       links: [
+        { label: "Abrir App Web ↗", href: "https://ilianavsc.github.io/tg-robot-ucab-app/", ext: true },
         { label: "Tópicos MQTT (.md)", href: "docs/arquitectura/topicos-mqtt.md", md: true, titulo: "Tópicos MQTT" }
       ]
     }
@@ -630,7 +631,7 @@ a.ir:hover {
           } else if (lk.md) {
             extras += '<a href="' + lk.href + '" data-md="' + lk.href + '" data-titulo="' + lk.titulo + '" class="btn-descargar" style="padding:6px 12px;font-size:13.5px">' + lk.label + '</a>';
           } else {
-            extras += '<a href="' + lk.href + '" class="btn-descargar" style="padding:6px 12px;font-size:13.5px">' + lk.label + '</a>';
+            extras += '<a href="' + lk.href + '"' + (lk.ext ? ' target="_blank" rel="noopener"' : '') + ' class="btn-descargar" style="padding:6px 12px;font-size:13.5px">' + lk.label + '</a>';
           }
         });
         if (!cfg) {
