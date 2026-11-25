@@ -38,8 +38,20 @@
 .p02-sim .pista-tocar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--alto-tira,64px) + 18px);margin:0;padding:8px 14px;border-radius:999px;background:#FFD23F;border:2px solid var(--tinta);font-weight:700;font-size:14px;box-shadow:var(--sombra);pointer-events:none;white-space:nowrap;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis}
 .p02-sim .pista-tocar[hidden]{display:none}
 
-/* D-Pad: la misma modalidad del Simulador 1 (P04) */
+/* D-Pad: la misma modalidad del Simulador 1 (P04), oculto por defecto */
 .p02-sim .dpad{position:absolute;left:10px;bottom:calc(var(--alto-tira,64px) + 18px);display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);grid-template-areas:". u ." "l s r" ". d .";gap:4px;touch-action:none;user-select:none;-webkit-user-select:none}
+.p02-sim .dpad[hidden]{display:none}
+
+/* Botón Encender / Detener en la barra superior (.sim-top) */
+.p02-sim .sim-top .sim-top-pausa{min-height:38px;min-width:0;padding:0 12px;border-radius:10px;font-size:13px;gap:6px;box-shadow:none;white-space:nowrap}
+
+/* Panel lateral enfocado por componente: muestra únicamente la consola seleccionada */
+.p02-sim .hw-panel[data-foco-activo="1"] .hw-consolas{grid-template-columns:1fr}
+.p02-sim .hw-panel[data-foco-activo="1"] .hw-card{display:none}
+.p02-sim .hw-panel[data-foco-card="hcsr04"] #hw-card-hcsr04,
+.p02-sim .hw-panel[data-foco-card="tcrt5000"] #hw-card-tcrt5000,
+.p02-sim .hw-panel[data-foco-card="motores"] #hw-card-motores,
+.p02-sim .hw-panel[data-foco-card="mpu6050"] #hw-card-mpu6050{display:grid;grid-column:1 / -1;order:-2}
 .p02-sim .dp{border-radius:12px;border:2px solid var(--tinta);background:rgba(20,33,61,.82);color:#fff;font-weight:700;font-size:18px;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .p02-sim .dp.on{background:var(--verde)}
 .p02-sim .dp.stop{background:rgba(242,96,61,.92);font-size:15px}

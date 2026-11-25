@@ -7,6 +7,7 @@
       <span id="hw-seguridad-motivo">Todos los sensores en rango</span>
     </div>
     <span class="hw-fuente" id="hw-fuente">CIRCUITO · APAGADO</span>
+    <button class="btn pri en-pausa sim-top-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
     <button type="button" class="hw-btn-reset" id="hw-btn-reset">Restablecer nominal</button>
   </header>
 
@@ -23,11 +24,11 @@
         <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
         <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
       </div>
-      <button class="btn pri en-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
+      <button class="btn" id="b-mando" type="button" aria-pressed="false" aria-controls="dpad" aria-label="Mostrar u ocultar controles direccionales"><span aria-hidden="true">🕹️</span><span class="largo"> Controles</span></button>
     </div>
     <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para enfocar su consola</p>
 
-    <div class="dpad" id="dpad" role="group" aria-label="Manejo: avanzar, girar, frenar y retroceder">
+    <div class="dpad" id="dpad" role="group" aria-label="Manejo: avanzar, girar, frenar y retroceder" hidden>
       <button type="button" class="dp" data-dp="arriba" aria-label="Avanzar" style="grid-area:u">▲</button>
       <button type="button" class="dp" data-dp="izq" aria-label="Girar a la izquierda" style="grid-area:l">◄</button>
       <button type="button" class="dp stop" data-dp="stop" aria-label="Frenar" style="grid-area:s">■</button>
@@ -41,7 +42,7 @@
   <aside class="hw-panel" id="hw-panel" aria-label="Consolas interactivas y ficha técnica">
     <div class="hw-panel-head">
       <span class="hw-panel-tit" id="hw-panel-titulo">Vista general · 4 consolas en vivo</span>
-      <button type="button" class="hw-foco-cerrar" id="hw-foco-cerrar" hidden>× Vista general</button>
+      <button type="button" class="hw-foco-cerrar" id="hw-foco-cerrar" hidden>Ver todas (4)</button>
     </div>
     <div class="hw-consolas" id="hw-consolas">
       <!-- 1 · HC-SR04 -->

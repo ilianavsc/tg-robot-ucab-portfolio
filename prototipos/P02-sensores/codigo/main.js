@@ -58,7 +58,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const est = demo.est;
 
   // ---------------------------------------------------------------- estado de la interfaz
-  const ui = {encendido: false, pausa: true, xray: 0, xrayMeta: 0, etiquetas: true, vista: 'inspeccion', sel: null, t: 0, pitch: 0, roll: 0, sacudida: 0};
+  const ui = {encendido: false, pausa: true, xray: 0, xrayMeta: 0, etiquetas: true, mando: false, vista: 'inspeccion', sel: null, t: 0, pitch: 0, roll: 0, sacudida: 0};
   let rafId = null;
   const anim = {
     ang: {izq: 0, der: 0},
@@ -181,6 +181,18 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     irA(orden[(orden.indexOf(ui.vista) + 1) % orden.length]);
     solicitarCuadro();
   });
+  const dpadEl = $('#dpad');
+  const bMando = $('#b-mando');
+  const ponMando = (on) => {
+    ui.mando = Boolean(on);
+    if (dpadEl) dpadEl.hidden = !ui.mando;
+    if (bMando) bMando.setAttribute('aria-pressed', String(ui.mando));
+    if (!ui.mando) {
+      botones.clear();
+      aplicaEntrada();
+    }
+  };
+  if (bMando) bMando.addEventListener('click', () => ponMando(!ui.mando));
 
   // ---------------------------------------------------------------- manejo: la modalidad del Simulador 1 (P04)
   const teclas = new Set();
@@ -310,12 +322,25 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     return `<button class="chip" data-comp="${id}" style="--c:${f.color}" aria-pressed="false"><b>${esc(f.corto)}</b><span class="res">${esc(f.resumen || '')}</span><span class="v" data-v="${id}">${extra}</span></button>`;
   }).join('');
   const hwFicha = $('#hw-ficha');
+  const hwPanel = $('#hw-panel');
+  const CONSOLA_COMP = {tcrt: 'tcrt5000', us_front: 'hcsr04', us_rear: 'hcsr04', mpu: 'mpu6050', traccion: 'motores', esp32: 'motores', bateria: null};
+  const sincronizarFocoPanel = (id) => {
+    if (!hwPanel) return;
+    if (id) {
+      hwPanel.dataset.focoActivo = '1';
+      hwPanel.dataset.focoCard = CONSOLA_COMP[id] || 'ninguna';
+    } else {
+      delete hwPanel.dataset.focoActivo;
+      delete hwPanel.dataset.focoCard;
+    }
+  };
   // el bloque compacto de datos técnicos del proyecto va dentro del panel oscuro, justo debajo de su consola
   const abrirFicha = (id, desdePanel = false) => {
     ui.sel = id || null;
     if (id) $('#pista-tocar').hidden = true;
     $$('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.comp === id)));
     $$('.et').forEach((e) => e.classList.toggle('act', e.dataset.comp === id));
+    sincronizarFocoPanel(ui.sel);
     if (hwFicha) {
       if (id) {
         const f = FICHAS[id];
@@ -333,7 +358,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
         refrescaFicha();
       } else hwFicha.innerHTML = '';
     }
-    if (!desdePanel && S && S.get().foco !== ui.sel) S.set({foco: ui.sel, seleccion: ui.sel ? S.CONSOLA_DE[ui.sel] : null}, 'circuito-ui');
+    const consolaSel = ui.sel ? CONSOLA_COMP[ui.sel] : null;
+    if (!desdePanel && S && (S.get().foco !== ui.sel || S.get().seleccion !== consolaSel)) S.set({foco: ui.sel, seleccion: consolaSel}, 'circuito-ui');
     solicitarCuadro();
   };
   addEventListener('keydown', (e) => {
@@ -764,6 +790,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   resize();
   irA('inspeccion', true);
   ponEtiquetas(true); // la inspección es lo principal: etiquetas 3D encendidas en todos los tamaños
+  ponMando(false); // D-Pad oculto por defecto hasta pulsar Controles
   conectarEstado();
   thPrev = est.th;
   irA('inspeccion', true);
@@ -779,6 +806,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ponEncendido,
     ponPausa,
     ponEtiquetas,
+    ponMando,
     ponModo,
     estado: S,
     manual: MANUAL,

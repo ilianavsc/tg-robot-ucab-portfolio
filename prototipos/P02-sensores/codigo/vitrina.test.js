@@ -531,4 +531,24 @@ prueba('hardware.html se mantiene como catálogo BOM sin la consola 2x2', () => 
   assert.ok(hwHtml.includes('id="lista"') && hwHtml.includes('id="mat"') && hwHtml.includes('id="pines"'), 'hardware.html mantiene catálogo BOM y pines');
 });
 
+prueba('UX P02: panel enfocado por componente, D-pad oculto por defecto con toggle y Encender en barra superior', () => {
+  const app = leerAqui('app.html');
+  const css = leerAqui('style.css');
+  const main = leerAqui('main.js');
+  // 1. Encender/Detener en .sim-top y fuera de .barra
+  const simTop = app.slice(app.indexOf('<header class="sim-top">'), app.indexOf('</header>'));
+  const barra = app.slice(app.indexOf('class="barra"'), app.indexOf('<p class="pista-tocar"'));
+  assert.ok(simTop.includes('id="b-pausa"'), '#b-pausa debe estar en la barra superior (.sim-top)');
+  assert.ok(!barra.includes('id="b-pausa"'), '#b-pausa no debe estar dentro de .barra sobre el lienzo');
+  // 2. D-pad oculto por defecto + botón toggle #b-mando en .barra
+  assert.ok(/<div class="dpad" id="dpad"[^>]*\shidden>/.test(app), '#dpad oculto por defecto');
+  assert.ok(barra.includes('id="b-mando"') && /id="b-mando"[^>]*aria-pressed="false"[^>]*aria-controls="dpad"/.test(barra), 'botón toggle Controles para D-pad');
+  assert.ok(css.includes('.p02-sim .dpad[hidden]{display:none}'), 'regla CSS para ocultar D-pad');
+  assert.ok(main.includes('ponMando(false)') && main.includes("bMando.addEventListener('click'"), 'inicializa D-pad oculto y escucha toggle');
+  // 3. Panel enfocado por componente + botón Ver todas (4)
+  assert.ok(app.includes('id="hw-foco-cerrar"') && app.includes('Ver todas (4)'), 'botón Ver todas (4) en encabezado del panel');
+  assert.ok(css.includes('.hw-panel[data-foco-activo="1"] .hw-card{display:none}'), 'oculta las demás consolas al enfocar');
+  assert.ok(main.includes("esp32: 'motores'") && main.includes('bateria: null') && main.includes('sincronizarFocoPanel'), 'mapeo de consolas incluyendo ESP32 y Batería');
+});
+
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);
