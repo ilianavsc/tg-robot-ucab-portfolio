@@ -59,6 +59,7 @@ const css = leer(join(aqui, 'fuentes.css')) + leer(join(raiz, 'assets', 'css', '
 const html = leer(join(aqui, 'plantilla.html'))
   .replace('/*CSS*/', () => css)
   .replace('<!--APP-->', () => app)
+  .replace('/*PARAMETROS*/', () => sinCierre(leer(join(raiz, 'assets', 'js', 'parametros_robot.js'))))
   .replace('/*ESTADO*/', () => sinCierre(leer(join(raiz, 'assets', 'inspector_hw.js'))))
   .replace('/*JS*/', () => sinCierre(js));
 writeFileSync(join(aqui, '..', 'simulador.html'), html);

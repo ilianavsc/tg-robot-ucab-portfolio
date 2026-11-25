@@ -381,6 +381,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 <footer id="pie"></footer>
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="../../assets/js/parametros_robot.js"></script>
+<script src="../../assets/js/tokens_canvas.js"></script>
 <script src="radar_motor.js"></script>
 <script src="../../datos/proyecto.js"></script>
 <script src="../../assets/sitio.js"></script>
@@ -428,7 +430,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     }
   });
   var zona = M.zona;
-  var COLOR = { verde: "#22c55e", ambar: "#f59e0b", rojo: "#ef4444" };
+  /* Colores del radar desde tokens.css (--tg-dark-*); el segundo valor es solo el respaldo */
+  var PAL = window.TGTokens.paleta({
+    ok: ["--tg-dark-ok", "#34D399"], aviso: ["--tg-dark-warning-solid", "#F59E0B"], fallo: ["--tg-dark-danger-solid", "#EF4444"],
+    acento: ["--tg-dark-accent", "#00F2FE"], tenue: ["--tg-dark-text-subtle", "#849495"], muted: ["--tg-dark-text-muted", "#94A3B8"],
+    texto: ["--tg-dark-text", "#E2E8F0"], fuerte: ["--tg-dark-text-strong", "#E0FDFF"], blanco: ["--tg-surface", "#FFFFFF"],
+    falloTexto: ["--tg-dark-danger", "#F87171"], avisoTexto: ["--tg-dark-warning", "#FBBF24"]
+  });
+  var COLOR = { verde: PAL.ok, ambar: PAL.aviso, rojo: PAL.fallo };
 
   /* ---------------- registro en pantalla ---------------- */
   function log(txt, tipo) {
@@ -481,7 +490,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var esMovil = W < 400;
     ctx.lineWidth = 1;
     ctx.font = (esMovil ? "9.5px" : "11px") + " 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = PAL.tenue;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     var angEtiqueta = Math.PI / 4;
@@ -545,7 +554,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     });
 
     /* robot */
-    ctx.fillStyle = activo ? "#38bdf8" : "#64748b";
+    ctx.fillStyle = activo ? PAL.acento : PAL.tenue;
     ctx.beginPath();
     ctx.moveTo(ox, oy - 14); ctx.lineTo(ox + 11, oy + 8); ctx.lineTo(ox - 11, oy + 8); ctx.closePath(); ctx.fill();
 
@@ -570,8 +579,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 
       ctx.fillStyle = arrastrando ? "rgba(239, 68, 68, 0.38)" : (sobreObstaculo ? "rgba(239, 68, 68, 0.30)" : "rgba(239, 68, 68, 0.22)");
       ctx.beginPath(); ctx.arc(obsX, obsY, arrastrando ? 21 : (sobreObstaculo ? 19 : 17), 0, 2 * Math.PI); ctx.fill();
-      ctx.fillStyle = "#ef4444";
-      ctx.strokeStyle = "#ffffff";
+      ctx.fillStyle = PAL.fallo;
+      ctx.strokeStyle = PAL.blanco;
       ctx.lineWidth = arrastrando ? 2.5 : 2;
       ctx.beginPath(); ctx.arc(obsX, obsY, 10, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
       ctx.lineWidth = 1;
@@ -580,7 +589,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     if (!activo) {
       ctx.textAlign = "center";
       ctx.font = "700 12px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "#94a3b8";
+      ctx.fillStyle = PAL.muted;
       ctx.fillText("RADAR APAGADO", ox, oy + 32);
       return;
     }
@@ -605,7 +614,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       if (ctx.roundRect) ctx.roundRect(lx - tw / 2, ly - 9, tw, 18, 5);
       else ctx.rect(lx - tw / 2, ly - 9, tw, 18);
       ctx.fill();
-      ctx.fillStyle = "#f1f5f9";
+      ctx.fillStyle = PAL.fuerte;
       ctx.fillText(txt, lx, ly + 4);
     });
   }
@@ -623,15 +632,15 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var velTxt = vel.toFixed(2);
     if (!motor.encendido) {
       lecturaEl.textContent = "APAGADO · 0.00 m/s";
-      lecturaEl.style.color = "#94a3b8";
+      lecturaEl.style.color = PAL.muted;
     } else {
       lecturaEl.textContent = "Adelante " + motor.dist.frente + " · Atrás " + motor.dist.atras + " cm · " + velTxt + " m/s";
-      lecturaEl.style.color = (vel <= 0.005 || zFrente === "rojo") ? "#fca5a5" : ((det.frente || zFrente === "ambar") ? "#fcd34d" : "#e2e8f0");
+      lecturaEl.style.color = (vel <= 0.005 || zFrente === "rojo") ? PAL.falloTexto : ((det.frente || zFrente === "ambar") ? PAL.avisoTexto : PAL.texto);
     }
 
     var ratioVel = Math.max(0, Math.min(1, vel / VEL_MAX));
     var frenando = motor.encendido && (det.frente || motor.dist.frente <= LIMITE_CERCA || vel < (VEL_CRUCERO - VEL_VAR_CRUCERO - 0.01));
-    var colorVel = !motor.encendido ? "#64748b" : (vel <= 0.005 ? COLOR.rojo : (frenando ? COLOR.ambar : COLOR.verde));
+    var colorVel = !motor.encendido ? PAL.tenue : (vel <= 0.005 ? COLOR.rojo : (frenando ? COLOR.ambar : COLOR.verde));
     veloArco.setAttribute("stroke-dashoffset", (ARCO_LEN * (1 - ratioVel)).toFixed(2));
     veloArco.style.stroke = colorVel;
     veloAguja.setAttribute("transform", "rotate(" + (-90 + ratioVel * 180).toFixed(1) + " 40 40)");

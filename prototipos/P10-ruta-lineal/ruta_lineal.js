@@ -12,17 +12,21 @@
 (function (raiz) {
   'use strict';
 
+  // Parámetros reales únicos del robot (assets/js/parametros_robot.js): navegador → window.TG_ROBOT, Node → require
+  var P = raiz.TG_ROBOT || (typeof require === 'function' ? require('../../assets/js/parametros_robot.js') : null);
+  if (!P) throw new Error('P10: falta assets/js/parametros_robot.js (TG_ROBOT)');
+
   // ------------------------------------------------------------------ geometría y límites (m, s)
   var GEO = {
     largo: 6.0, // pasillo: de la pared de la base (x = 0) a la pared del fondo (x = largo)
     anchoPasillo: 0.9,
-    cinta: 0.019, // cinta negra de 19 mm
+    cinta: P.tcrt5000.cintaMm / 1000, // cinta negra de 19 mm
     huella: 0.004, // radio de la huella de cada TCRT5000 (supuesto)
     marcaBase: 0.45, // centro de la marca transversal de la base (inicio)
     marcaParada: 5.55, // centro de la marca transversal de parada (destino)
     anchoMarca: 0.03,
     tcrtAdelante: 0.112, // la regleta va 11,2 cm adelante del centro del robot
-    tcrtLat: [0.027, 0.009, -0.009, -0.027], // S1…S4 (izquierda → derecha), 18 mm entre sí
+    tcrtLat: P.tcrt5000.posicionesMm.map(function (mm) { return -mm / 1000; }), // S1…S4 (+ a la izquierda), 18 mm entre sí
     usAdelante: 0.109, // cara del HC-SR04 frontal
     largoRobot: 0.21,
     anchoRobot: 0.14,
@@ -30,21 +34,21 @@
     zonaLenta: 0.4 // últimos 40 cm antes de una marca: aproximación lenta (odometría)
   };
   var LIM = {
-    vMax: 0.46, // m/s (PWM 0,8 × 0,57 m/s, como el Simulador 1)
-    vPwm100: 0.57, // m/s al 100 % de PWM
+    vMax: P.velocidad.maxMs, // m/s (PWM 0,8 × 0,57 m/s, como el Simulador 1)
+    vPwm100: P.velocidad.pwm100Ms, // m/s al 100 % de PWM
     vNominal: 0.4,
     vMin: 0.1,
     vAproximacion: 0.12,
     acel: 0.8, // m/s²
     freno: 2.0, // m/s²
-    distMinCm: 5,
-    distMaxCm: 80,
-    alcanceM: 4, // HC-SR04: sin eco más allá de 4 m
-    paradaM: 0.2, // < 20 cm: bloqueo por obstáculo
-    precaucionM: 0.5, // 20–50 cm: reduce la velocidad
-    canales: 4,
+    distMinCm: P.hcsr04.minCm,
+    distMaxCm: P.hcsr04.maxCm,
+    alcanceM: P.hcsr04.alcanceCm / 100, // HC-SR04: sin eco más allá de 4 m
+    paradaM: P.hcsr04.paradaCm / 100, // < 20 cm: bloqueo por obstáculo
+    precaucionM: P.hcsr04.precaucionCm / 100, // 20–50 cm: reduce la velocidad
+    canales: P.tcrt5000.canales,
     giroSeg: 2.4, // duración de la animación del giro manual de 180°
-    alineaSeg: 1.6, // giro automático en la base (sobre la marca de inicio)
+    alineaSeg: 1.6, // [SUPUESTO DE SIMULACIÓN] giro automático de 180° en la base (sobre la marca de inicio)
     toleranciaYawDeg: 5
   };
   var ESTADOS = ['EN_BASE', 'EN_RUTA_IDA', 'ESPERA_REPOSICION', 'EN_RUTA_RETORNO'];

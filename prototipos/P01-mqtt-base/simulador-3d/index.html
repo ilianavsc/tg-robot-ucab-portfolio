@@ -8,10 +8,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../../assets/css/style.css">
+<link rel="stylesheet" href="simulador3d.css">
 <style>
 dialog{border:none;border-radius:16px;padding:12px;max-width:min(1400px,96vw);background:#ffffff;box-shadow:var(--shadow-hard)}
 dialog::backdrop{background:rgba(15,23,42,.75);backdrop-filter:blur(3px)}
 dialog img{max-width:100%;max-height:84vh;display:block;border-radius:8px}
+/* Simulador 3D integrado en la página (sin iframe): ocupa su contenedor, no toda la ventana */
+.p01-sim{position:relative;overflow:hidden;background:#EEF3F1}
+@media (min-width:769px){
+  .p01-sim{height:clamp(560px,calc(100svh - 200px),760px)}
+  .p01-sim #app{position:absolute!important}
+  .p01-sim .panel{top:16px}
+  .p01-sim .consola{margin:0} /* la consola es un <section>: sin el margen global de las secciones del portafolio */
+}
+.p01-sim .barra{display:none} /* el título ya está en el encabezado de la página */
+@media (max-width:768px){.p01-sim #app{padding-bottom:14px}}
 </style>
 </head>
 <body data-pagina="prototipos" data-base="../../../">
@@ -59,11 +70,11 @@ dialog img{max-width:100%;max-height:84vh;display:block;border-radius:8px}
         <span><i class="dot-live" aria-hidden="true"></i>BROKER MQTT & CANAL VIRTUAL ACTIVO</span>
         <span>Three.js / WebGL</span>
       </div>
-      <iframe src="simulador.html" class="simulador-embed-frame" title="Simulador 3D interactivo de mensajes MQTT P01" loading="lazy" scrolling="no"></iframe>
+      <div class="p01-sim" id="p01-sim" role="region" aria-label="Simulador 3D interactivo de mensajes MQTT P01"><div id="app"></div></div>
       <div class="simulador-embed-footer">
         <span style="color:#94a3b8;font-size:13.5px">Controles: <kbd style="background:#334155;color:#fff;padding:2px 6px;border-radius:4px">Espacio</kbd> envía la orden, <kbd style="background:#334155;color:#fff;padding:2px 6px;border-radius:4px">0</kbd> <kbd style="background:#334155;color:#fff;padding:2px 6px;border-radius:4px">1</kbd> <kbd style="background:#334155;color:#fff;padding:2px 6px;border-radius:4px">2</kbd> eligen el QoS, <kbd style="background:#334155;color:#fff;padding:2px 6px;border-radius:4px">M</kbd> manipulación y <kbd style="background:#334155;color:#fff;padding:2px 6px;border-radius:4px">L</kbd> desconexión. Abre «Controles» para la cámara lenta 0.5× y la pérdida de red.</span>
         <a href="simulador.html" target="_blank" rel="noopener" class="btn-link-dark">
-          Ver simulador sin marcos ↗
+          Pantalla completa ↗
         </a>
       </div>
     </div>
@@ -256,18 +267,9 @@ const char* T_CONEXION = "robot/conexion";
 
 <footer id="pie"></footer>
 
-<script>
-/* Movil: el iframe crece a la altura de su contenido para que baje toda la pagina con el scroll normal. */
-window.addEventListener('message', function (e) {
-  var d = e.data;
-  if (!d || d.tipo !== 'p01-altura') return;
-  var f = document.querySelector('.simulador-embed-frame');
-  if (!f || e.source !== f.contentWindow) return;
-  f.style.height = d.h ? d.h + 'px' : '';
-});
-</script>
 <script src="../../../datos/proyecto.js"></script>
 <script src="../../../assets/sitio.js"></script>
+<script src="simulador3d.js"></script>
 <script>
 document.querySelectorAll('.galeria img').forEach(function(im){
   im.addEventListener('click', function(){

@@ -47,13 +47,17 @@ P06 (puente a Firebase), P07 (firmware), P09/P11/P12 (app) y P14 (balizas BLE) n
 ## Cómo recompilar los simuladores 3D (P01, P02 y P04)
 P03, P05 y P10 no necesitan compilar: son HTML + JavaScript sin empaquetar.
 
+**Parámetros reales del robot (fuente única):** `assets/js/parametros_robot.js` (`window.TG_ROBOT` en el navegador, `require()` en Node) define la velocidad máxima (0,46 m/s), los 4 canales del TCRT5000, el rango del HC-SR04 (5–80 cm; parada < 20 cm, precaución 20–50 cm) y los umbrales de la MPU-6050. P02, P03, P05 y P10 los leen de ahí; P01 no usa parámetros físicos.
+
+**Colores de los `<canvas>`:** `assets/js/tokens_canvas.js` (`TGTokens.paleta`) lee las variables `--tg-dark-*` y `--tg-sim-*` de `tokens.css` con `getComputedStyle`; P03, P05 y P10 ya no llevan colores hexadecimales sueltos en su código de dibujo (solo el respaldo de cada token).
+
 Los tres simuladores se empaquetan igual, con esbuild y `three` de npm (ya no se usa el kit teardown). Cada `codigo/` tiene todo el fuente: `main.js` (entrada), los módulos, `style.css`, `fuentes.css`, `plantilla.html` y `construir.mjs`.
 ```bash
 cd prototipos/P01-mqtt-base/simulador-3d/codigo   # o P02-sensores/codigo, o P04-simulador-1-esp32/codigo
 npm install --no-save three@0.187.0 esbuild      # una sola vez
 node construir.mjs                               # genera ../simulador.html (un solo archivo)
 ```
-P01: `node pruebas.mjs` valida los pasos de cada QoS, la telemetría QoS 0 cada 1–1,5 s y la pérdida de red con reintentos.
+P01: además genera `../simulador3d.js` y `../simulador3d.css` (CSS acotado a `#p01-sim`) para mostrar el simulador **dentro de `index.html`, sin `iframe`**; `node pruebas.mjs` valida los pasos de cada QoS, la telemetría QoS 0 cada 1–1,5 s y la pérdida de red con reintentos.
 
 No edites `simulador.html` a mano: se pierde al recompilar. Cambia el fuente en `codigo/`.
 

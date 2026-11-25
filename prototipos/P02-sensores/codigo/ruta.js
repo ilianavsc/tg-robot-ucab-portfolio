@@ -2,19 +2,21 @@
 // Mundo: x a la derecha de la pantalla, z hacia el frente, ángulo th sobre +y.
 // Con th = 0 el robot mira a +z; su izquierda es +x.
 
-export const CINTA = 0.019; // cinta negra de 19 mm (proyecto)
+import P from '../../../assets/js/parametros_robot.js'; // parámetros reales únicos del robot
+
+export const CINTA = P.tcrt5000.cintaMm / 1000; // cinta negra de 19 mm (proyecto)
 export const HUELLA = 0.004; // radio de la huella del TCRT5000 sobre el piso (supuesto, ⌀ 8 mm)
 
 // Posiciones de los sensores en el marco del robot
 export const GEO = {
   tcrtZ: 0.112, // la regleta TCRT5000, al frente bajo el chasis
-  tcrtX: [0.027, 0.009, -0.009, -0.027], // S1..S4 de izquierda a derecha, separación de 18 mm
+  tcrtX: P.tcrt5000.posicionesMm.map((mm) => -mm / 1000), // S1..S4 de izquierda a derecha (+x a la izquierda), separación de 18 mm
   usF: {z: 0.109}, // cara del HC-SR04P frontal
   usR: {z: -0.109}, // cara del HC-SR04P trasero
-  semiAngulo: (15 * Math.PI) / 180, // abertura del haz del HC-SR04P
+  semiAngulo: (P.hcsr04.conoGrados * Math.PI) / 180, // abertura del haz del HC-SR04P
 };
 
-export const ZONAS = {critica: 0.2, precaucion: 0.5}; // m
+export const ZONAS = {critica: P.hcsr04.paradaCm / 100, precaucion: P.hcsr04.precaucionCm / 100}; // m
 
 export const zonaDe = (d) => (d < ZONAS.critica ? 'critica' : d < ZONAS.precaucion ? 'precaucion' : 'libre');
 

@@ -1,21 +1,23 @@
 /* P03 · Radar ultrasónico · motor de dinámica local y control Encender/Detener.
  * Sin dependencias de DOM: compartido por index.html y radar_motor.test.js. */
 (function (raiz, fabrica) {
-  if (typeof module === "object" && module.exports) module.exports = fabrica();
-  else raiz.RadarMotorP03 = fabrica();
-})(typeof self !== "undefined" ? self : this, function () {
+  /* parámetros reales únicos del robot: assets/js/parametros_robot.js */
+  if (typeof module === "object" && module.exports) module.exports = fabrica(require("../../assets/js/parametros_robot.js"));
+  else raiz.RadarMotorP03 = fabrica(raiz.TG_ROBOT);
+})(typeof self !== "undefined" ? self : this, function (P) {
   "use strict";
+  if (!P) throw new Error("P03: falta assets/js/parametros_robot.js (TG_ROBOT)");
 
   var C = {
-    VEL_MAX: 0.46,
-    VEL_CRUCERO: 0.41,
+    VEL_MAX: P.velocidad.maxMs,
+    VEL_CRUCERO: P.velocidad.cruceroMs,
     VEL_VAR_CRUCERO: 0.035,
     DIST_MIN: 2,
     DIST_MAX: 200,
     DIST_LIBRE_FRENTE: 160,
     DIST_LIBRE_ATRAS: 150,
-    LIMITE_PELIGRO: 20,
-    LIMITE_CERCA: 50,
+    LIMITE_PELIGRO: P.hcsr04.paradaCm,
+    LIMITE_CERCA: P.hcsr04.precaucionCm,
     ANG_DETECCION: 35,
     PERIODO_MS: 500
   };

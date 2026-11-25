@@ -9,7 +9,20 @@
   var $ = function (id) { return document.getElementById(id); };
   var todos = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
   var reducido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var COL = {tinta: '#14213D', cian: '#00F2FE', ok: '#2EE6A8', aviso: '#F59E0B', peligro: '#EF4444', violeta: '#6B4EE6', tenue: '#849495', linea: '#262A31', claro: '#E0FDFF', coral: '#F2603D', verde: '#0F9D84'};
+  // Colores del canvas: se leen de tokens.css (--tg-*, --tg-dark-*, --tg-sim-*); el segundo valor es solo el respaldo
+  var T = window.TGTokens || {paleta: function (d) { var o = {}; Object.keys(d).forEach(function (k) { o[k] = d[k][1]; }); return o; }};
+  var COL = T.paleta({
+    tinta: ['--tg-border-strong', '#0F172A'], cian: ['--tg-dark-accent', '#00F2FE'], ok: ['--tg-dark-ok', '#34D399'],
+    aviso: ['--tg-dark-warning-solid', '#F59E0B'], peligro: ['--tg-dark-danger-solid', '#EF4444'], violeta: ['--tg-purple', '#6B4EE6'],
+    alarma: ['--tg-dark-alarm', '#A78BFA'], tenue: ['--tg-dark-text-subtle', '#849495'], linea: ['--tg-dark-off', '#262A31'],
+    claro: ['--tg-dark-text-strong', '#E0FDFF'], coral: ['--tg-coral', '#F2603D'], verde: ['--tg-accent', '#0F9D84'],
+    blanco: ['--tg-surface', '#FFFFFF'], apagado: ['--tg-text-muted', '#475569'],
+    piso: ['--tg-sim-piso', '#E4ECE9'], pisoClaro: ['--tg-sim-piso-claro', '#F4F7F6'], pisoOscuro: ['--tg-sim-piso-oscuro', '#DCE5E2'],
+    detalle: ['--tg-sim-detalle', '#F7FAF9'], pared: ['--tg-sim-pared', '#C5D2CD'], paredExtremo: ['--tg-sim-pared-extremo', '#B3C3BD'],
+    cinta: ['--tg-sim-cinta', '#0B0C0E'], chasis: ['--tg-sim-chasis', '#1E3A5F'], rueda: ['--tg-sim-rueda', '#1D2025'],
+    pcb: ['--tg-sim-pcb', '#2F6F55'], ultrasonico: ['--tg-sim-ultrasonico', '#2A63B5'], obstaculo: ['--tg-sim-obstaculo', '#EA580C'],
+    obstaculoClaro: ['--tg-sim-obstaculo-claro', '#FB923C'], obstaculoOscuro: ['--tg-sim-obstaculo-oscuro', '#C2410C'], obstaculoBorde: ['--tg-sim-obstaculo-borde', '#7C2D12']
+  });
 
   // ---------------------------------------------------------------- canvas nítido
   function preparar(c) {
@@ -69,15 +82,15 @@
     var ox = mx + 2 * semi * sx, oy = 30 + pared + semi * sy;
     var pr = function (x, y) { return [ox + x * k - (y + semi) * sx, oy - y * sy]; };
     // fondo
-    ctx.fillStyle = '#E4ECE9';
+    ctx.fillStyle = COL.piso;
     ctx.fillRect(0, 0, W, H);
     // piso del pasillo
     var a = pr(0, semi), b = pr(G.largo, semi), c2 = pr(G.largo, -semi), d = pr(0, -semi);
     ctx.beginPath();
     ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c2[0], c2[1]); ctx.lineTo(d[0], d[1]); ctx.closePath();
     var grad = ctx.createLinearGradient(0, a[1], 0, d[1]);
-    grad.addColorStop(0, '#DCE5E2');
-    grad.addColorStop(1, '#F4F7F6');
+    grad.addColorStop(0, COL.pisoOscuro);
+    grad.addColorStop(1, COL.pisoClaro);
     ctx.fillStyle = grad;
     ctx.fill();
     // baldosas cada 1 m
@@ -88,9 +101,9 @@
       ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
     }
     // pared del fondo (lado izquierdo del sentido de ida) y paredes de los extremos
-    ctx.fillStyle = '#C5D2CD';
+    ctx.fillStyle = COL.pared;
     ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(b[0], b[1] - pared); ctx.lineTo(a[0], a[1] - pared); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#B3C3BD';
+    ctx.fillStyle = COL.paredExtremo;
     [[a, d], [b, c2]].forEach(function (q) {
       ctx.beginPath(); ctx.moveTo(q[0][0], q[0][1]); ctx.lineTo(q[1][0], q[1][1]); ctx.lineTo(q[1][0], q[1][1] - pared); ctx.lineTo(q[0][0], q[0][1] - pared); ctx.closePath(); ctx.fill();
     });
@@ -103,7 +116,7 @@
     ctx.beginPath(); ctx.moveTo(z1[0], z1[1]); ctx.lineTo(z2[0], z2[1]); ctx.lineTo(z3[0], z3[1]); ctx.lineTo(z4[0], z4[1]); ctx.closePath(); ctx.fill();
     // línea guía negra
     var l1 = pr(G.marcaBase, 0), l2 = pr(G.marcaParada, 0);
-    ctx.strokeStyle = '#0B0C0E';
+    ctx.strokeStyle = COL.cinta;
     ctx.lineWidth = Math.max(3, G.cinta * sy * 2.2);
     ctx.lineCap = 'butt';
     ctx.beginPath(); ctx.moveTo(l1[0], l1[1]); ctx.lineTo(l2[0], l2[1]); ctx.stroke();
@@ -131,17 +144,17 @@
     }
     ctx.textAlign = 'left';
     var eb = pr(0.05, semi);
-    etiqueta(ctx, estrecho ? 'BASE' : 'BASE · INICIO', eb[0] - 4, eb[1] - pared - 14, COL.verde, '#fff');
+    etiqueta(ctx, estrecho ? 'BASE' : 'BASE · INICIO', eb[0] - 4, eb[1] - pared - 14, COL.verde, COL.blanco);
     var ed = pr(G.largo - 0.05, semi);
-    etiqueta(ctx, estrecho ? 'DESTINO' : 'PARADA · DESTINO', ed[0] + 4, ed[1] - pared - 14, e.ruta.estado === 'ESPERA_REPOSICION' ? COL.violeta : COL.coral, '#fff', 'der');
+    etiqueta(ctx, estrecho ? 'DESTINO' : 'PARADA · DESTINO', ed[0] + 4, ed[1] - pared - 14, e.ruta.estado === 'ESPERA_REPOSICION' ? COL.violeta : COL.coral, COL.blanco, 'der');
     // obstáculo
     if (e.obstaculo) {
       var po = pr(e.obstaculo.x, 0);
       var ro = Math.max(5, G.radioObstaculo * k);
-      ctx.fillStyle = '#C2410C';
+      ctx.fillStyle = COL.obstaculoOscuro;
       ctx.fillRect(po[0] - ro, po[1] - 22, ro * 2, 22);
       ctx.beginPath(); ctx.ellipse(po[0], po[1], ro, ro * 0.45, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#FB923C';
+      ctx.fillStyle = COL.obstaculoClaro;
       ctx.beginPath(); ctx.ellipse(po[0], po[1] - 22, ro, ro * 0.45, 0, 0, Math.PI * 2); ctx.fill();
     }
     // robot: haz del HC-SR04 + caja extruida + flecha de rumbo
@@ -162,14 +175,14 @@
     var alto = estrecho ? 7 : 10;
     ctx.fillStyle = 'rgba(20,33,61,0.25)';
     ctx.beginPath(); esquinas.forEach(function (q, i) { if (i) ctx.lineTo(q[0] + 3, q[1] + 3); else ctx.moveTo(q[0] + 3, q[1] + 3); }); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#1E3A5F';
+    ctx.fillStyle = COL.chasis;
     ctx.beginPath(); esquinas.forEach(function (q, i) { if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }); ctx.closePath(); ctx.fill();
     ctx.fillStyle = e.ruta.estado === 'ESPERA_REPOSICION' ? COL.violeta : rb.dir > 0 ? COL.verde : COL.coral;
     ctx.strokeStyle = COL.tinta;
     ctx.lineWidth = 1.5;
     ctx.beginPath(); esquinas.forEach(function (q, i) { if (i) ctx.lineTo(q[0], q[1] - alto); else ctx.moveTo(q[0], q[1] - alto); }); ctx.closePath(); ctx.fill(); ctx.stroke();
     var pc = pr(cx, cy), pf = pr(cx + Math.cos(th) * 0.16, cy + Math.sin(th) * 0.16);
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = COL.blanco;
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(pc[0], pc[1] - alto); ctx.lineTo(pf[0], pf[1] - alto); ctx.stroke();
     // ---- vista de detalle (cenital, con zoom) alrededor del robot
@@ -180,7 +193,7 @@
     var dx0 = margen, dy0 = top, dw = W - margen * 2, dh = H - top - margen;
     if (dh < 80) return;
     rr(ctx, dx0, dy0, dw, dh, 12);
-    ctx.fillStyle = '#F7FAF9';
+    ctx.fillStyle = COL.detalle;
     ctx.fill();
     ctx.strokeStyle = COL.tinta;
     ctx.lineWidth = 1.5;
@@ -200,7 +213,7 @@
       ctx.beginPath(); ctx.moveTo(g1[0], g1[1]); ctx.lineTo(g2[0], g2[1]); ctx.stroke();
     }
     // cinta y marcas
-    ctx.fillStyle = '#0B0C0E';
+    ctx.fillStyle = COL.cinta;
     var c0 = dpz(G.marcaBase, G.cinta / 2), c1 = dpz(G.marcaParada, -G.cinta / 2);
     ctx.fillRect(c0[0], c0[1], c1[0] - c0[0], c1[1] - c0[1]);
     [G.marcaBase, G.marcaParada].forEach(function (mxm) {
@@ -211,15 +224,15 @@
     [0, G.largo].forEach(function (xw) {
       if (Math.abs(xw - rb.x) < 0.8) {
         var w1 = dpz(xw, 0.5);
-        ctx.fillStyle = '#B3C3BD';
+        ctx.fillStyle = COL.paredExtremo;
         ctx.fillRect(w1[0] - (xw === 0 ? 10 : 0), dy0, 10, dh);
       }
     });
     if (e.obstaculo && Math.abs(e.obstaculo.x - rb.x) < 0.9) {
       var oo = dpz(e.obstaculo.x, 0);
-      ctx.fillStyle = '#EA580C';
+      ctx.fillStyle = COL.obstaculo;
       ctx.beginPath(); ctx.arc(oo[0], oo[1], G.radioObstaculo * z, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#7C2D12';
+      ctx.strokeStyle = COL.obstaculoBorde;
       ctx.stroke();
     }
     // robot en el marco propio
@@ -240,23 +253,23 @@
     ctx.lineWidth = 2;
     ctx.stroke();
     // ruedas (eje adelantado 3 cm) y rueda loca
-    ctx.fillStyle = '#1D2025';
+    ctx.fillStyle = COL.rueda;
     [-1, 1].forEach(function (s) { rr(ctx, 0.03 * z - 0.0325 * z, s * (ar / 2 + 0.002 * z) - (s > 0 ? 0 : 0.026 * z), 0.065 * z, 0.026 * z, 3); ctx.fill(); });
     ctx.beginPath(); ctx.arc(-0.07 * z, 0, 0.009 * z, 0, Math.PI * 2); ctx.fill();
     // HC-SR04 al frente
-    ctx.fillStyle = '#2A63B5';
+    ctx.fillStyle = COL.ultrasonico;
     ctx.fillRect(G.usAdelante * z - 0.012 * z, -0.0225 * z, 0.012 * z, 0.045 * z);
     // regleta TCRT5000 con los 4 sensores
-    ctx.fillStyle = '#2F6F55';
+    ctx.fillStyle = COL.pcb;
     ctx.fillRect(G.tcrtAdelante * z - 0.01 * z, -0.04 * z, 0.02 * z, 0.08 * z);
     var marca = e.tcrt5000.patron === '1111';
     G.tcrtLat.forEach(function (lat, i) {
       var on = e.tcrt5000.canales[i];
       ctx.beginPath();
       ctx.arc(G.tcrtAdelante * z, -lat * z, Math.max(3, 0.0045 * z), 0, Math.PI * 2);
-      ctx.fillStyle = on ? (marca ? '#A78BFA' : '#2EE6A8') : '#475569';
+      ctx.fillStyle = on ? (marca ? COL.alarma : COL.ok) : COL.apagado;
       ctx.fill();
-      ctx.strokeStyle = '#fff';
+      ctx.strokeStyle = COL.blanco;
       ctx.lineWidth = 1;
       ctx.stroke();
     });
@@ -280,8 +293,8 @@
       ctx.setLineDash([]);
     }
     ctx.restore();
-    etiqueta(ctx, 'Vista de detalle · regleta ' + e.tcrt5000.patron, dx0 + 8, dy0 + 16, COL.tinta, '#E0FDFF');
-    if (e.ruta.sub) etiqueta(ctx, (e.ruta.sub === 'girando' ? 'Giro manual ' : 'Giro en base ') + Math.round(e.ruta.giro * 180) + '°', dx0 + dw - 8, dy0 + 16, COL.violeta, '#fff', 'der');
+    etiqueta(ctx, 'Vista de detalle · regleta ' + e.tcrt5000.patron, dx0 + 8, dy0 + 16, COL.tinta, COL.claro);
+    if (e.ruta.sub) etiqueta(ctx, (e.ruta.sub === 'girando' ? 'Giro manual ' : 'Giro en base ') + Math.round(e.ruta.giro * 180) + '°', dx0 + dw - 8, dy0 + 16, COL.violeta, COL.blanco, 'der');
   }
 
   // ---------------------------------------------------------------- consolas (canvas)
@@ -291,8 +304,9 @@
     var ctx = P.ctx, w = P.w, h = P.h;
     var cx = w / 2, cy = h - 8, R = Math.min(w * 0.46, h - 14);
     ctx.font = '9.5px "JetBrains Mono", monospace';
-    [[20, 'rgba(239,68,68,0.6)'], [50, 'rgba(245,158,11,0.55)'], [80, 'rgba(0,242,254,0.32)']].forEach(function (q) {
-      var r = (R * q[0]) / 80;
+    var HC = window.TG_ROBOT.hcsr04;
+    [[HC.paradaCm, 'rgba(239,68,68,0.6)'], [HC.precaucionCm, 'rgba(245,158,11,0.55)'], [HC.maxCm, 'rgba(0,242,254,0.32)']].forEach(function (q) {
+      var r = (R * q[0]) / HC.maxCm;
       ctx.strokeStyle = q[1];
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.stroke();
@@ -304,13 +318,13 @@
     ctx.fillStyle = z === 'critica' ? 'rgba(239,68,68,0.18)' : z === 'precaucion' ? 'rgba(245,158,11,0.14)' : 'rgba(0,242,254,0.08)';
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, -Math.PI / 2 - 0.5, -Math.PI / 2 + 0.5); ctx.closePath(); ctx.fill();
     var d = e.hcsr04.distanciaM * 100;
-    if (d <= 80) {
+    if (d <= HC.maxCm) {
       ctx.fillStyle = col;
-      ctx.beginPath(); ctx.arc(cx, cy - (R * d) / 80, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy - (R * d) / HC.maxCm, 5, 0, Math.PI * 2); ctx.fill();
     } else {
       ctx.fillStyle = COL.tenue;
       ctx.textAlign = 'center';
-      ctx.fillText('> 80 cm', cx, 12);
+      ctx.fillText('> ' + HC.maxCm + ' cm', cx, 12);
       ctx.textAlign = 'left';
     }
   }
@@ -333,8 +347,8 @@
     ctx.font = '9.5px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('0', cx - r, cy + 10);
-    ctx.fillText('0.23', cx, cy - r - 5);
-    ctx.fillText('0.46', cx + r, cy + 10);
+    ctx.fillText((L.vMax / 2).toFixed(2), cx, cy - r - 5);
+    ctx.fillText(L.vMax.toFixed(2), cx + r, cy + 10);
     ctx.textAlign = 'left';
     var an = Math.PI + f * Math.PI;
     ctx.strokeStyle = e.motores.bloqueado ? COL.peligro : COL.claro;

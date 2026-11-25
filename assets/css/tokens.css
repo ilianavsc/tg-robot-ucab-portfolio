@@ -65,6 +65,23 @@
   --tg-dark-danger-solid: #EF4444;  /* estado Fallo (relleno) */
   --tg-dark-alarm: #A78BFA;         /* alarmas operativas (violeta) */
   --tg-dark-focus: #FFD23F;         /* anillo de foco */
+
+  /* Escena de simulación en <canvas> (piso, paredes, cinta y piezas del robot), leída con assets/js/tokens_canvas.js */
+  --tg-sim-piso: #E4ECE9;
+  --tg-sim-piso-claro: #F4F7F6;
+  --tg-sim-piso-oscuro: #DCE5E2;
+  --tg-sim-detalle: #F7FAF9;
+  --tg-sim-pared: #C5D2CD;
+  --tg-sim-pared-extremo: #B3C3BD;
+  --tg-sim-cinta: #0B0C0E;
+  --tg-sim-chasis: #1E3A5F;
+  --tg-sim-rueda: #1D2025;
+  --tg-sim-pcb: #2F6F55;
+  --tg-sim-ultrasonico: #2A63B5;
+  --tg-sim-obstaculo: #EA580C;
+  --tg-sim-obstaculo-claro: #FB923C;
+  --tg-sim-obstaculo-oscuro: #C2410C;
+  --tg-sim-obstaculo-borde: #7C2D12;
 }
 
 .tg-num,

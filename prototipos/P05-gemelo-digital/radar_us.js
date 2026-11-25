@@ -8,21 +8,23 @@
  * Diferencia a propósito: el cono es de ±15° (como el simulador 3D de P02, más realista para un HC-SR04P) y no de ±35°.
  */
 (function (raiz, fabrica) {
-  if (typeof module === "object" && module.exports) module.exports = fabrica();
-  else raiz.RadarUS = fabrica();
-})(typeof self !== "undefined" ? self : this, function () {
+  /* parámetros reales únicos del robot: assets/js/parametros_robot.js */
+  if (typeof module === "object" && module.exports) module.exports = fabrica(require("../../assets/js/parametros_robot.js"));
+  else raiz.RadarUS = fabrica(raiz.TG_ROBOT);
+})(typeof self !== "undefined" ? self : this, function (P) {
   "use strict";
+  if (!P) throw new Error("P05: falta assets/js/parametros_robot.js (TG_ROBOT)");
 
   var RAD = Math.PI / 180;
   var C = {
-    CONO_GRADOS: 15,         /* semiapertura del haz (P02) */
-    PARADA_CM: 20,
-    AVISO_CM: 50,
-    VEL_MAX_VELO: 0.46,      /* fondo de escala del velocímetro (m/s) */
+    CONO_GRADOS: P.hcsr04.conoGrados,     /* semiapertura del haz (P02) */
+    PARADA_CM: P.hcsr04.paradaCm,
+    AVISO_CM: P.hcsr04.precaucionCm,
+    VEL_MAX_VELO: P.velocidad.maxMs,      /* fondo de escala del velocímetro (m/s) */
     ARCO_LEN: 94.25,         /* largo del arco SVG del velocímetro (igual que P03) */
     RAMPA_DECEL_MS2: 0.55,   /* frenado suave (P03) */
     RAMPA_ACEL_MS2: 0.90,    /* recuperación tras despejar (algo más ágil que los 0,42 de P03 para no alargar la demo) */
-    ALCANCE_M: 4
+    ALCANCE_M: P.hcsr04.alcanceCm / 100
   };
 
   function zona(cm) {

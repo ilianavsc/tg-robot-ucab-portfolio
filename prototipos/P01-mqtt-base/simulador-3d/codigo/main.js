@@ -60,7 +60,7 @@ document.getElementById('leyenda').innerHTML = '<h2>Buzones</h2>' + Object.value
 // ---------- Escena ----------
 const canvas = document.getElementById('gl');
 const LIVIANO = true; // una sola versión: la optimizada (sin sombras), para que no vaya lenta
-const aviso = crearAviso();
+const aviso = crearAviso(app); // dentro del simulador (en la página del portafolio no tapa el menú)
 aviso.cargando();
 let renderer;
 try {
@@ -738,6 +738,9 @@ document.getElementById('perdida').onchange = (e) => {
 };
 addEventListener('keydown', (e) => {
   if (e.altKey || e.ctrlKey || e.metaKey) return;
+  // en la página del portafolio no se roban las teclas de los controles ni de los enlaces
+  const t = e.target;
+  if (t && t.closest && t.closest('input, select, textarea, button, a, summary')) return;
   const k = e.key;
   if (k === '0' || k === '1' || k === '2') !S.ocupado && elegirQos(Number(k));
   else if (k === ' ' || k === 'Enter') { enviarOrden(); e.preventDefault(); }

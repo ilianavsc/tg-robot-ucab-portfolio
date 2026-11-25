@@ -1,7 +1,7 @@
 // Arranque seguro del 3D: mensaje de "Cargando", aviso si el navegador no puede con WebGL
 // y aviso si se pierde el contexto 3D. Sin three.js aquí.
 const CSS = `
-.sim-aviso{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:50;font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
+.sim-aviso{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:50;font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
 .sim-aviso>div{pointer-events:auto;max-width:440px;margin:20px;background:#fff;border:2px solid #14213D;border-radius:16px;box-shadow:5px 5px 0 #14213D;padding:18px 22px;color:#14213D;font-size:17px;line-height:1.4;text-align:center}
 .sim-aviso b{display:block;font-size:20px;margin-bottom:4px}
 .sim-aviso button{margin-top:12px;font:700 16px 'Atkinson Hyperlegible',system-ui,sans-serif;background:#0F9D84;color:#fff;border:0;border-radius:10px;padding:9px 18px;cursor:pointer}
@@ -10,14 +10,14 @@ const CSS = `
 @keyframes simlat{from{opacity:.25}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.sim-aviso i{animation:none}}`;
 
-export function crearAviso() {
+export function crearAviso(contenedor = document.body) {
   const style = document.createElement('style');
   style.textContent = CSS;
   document.head.appendChild(style);
   const caja = document.createElement('div');
   caja.className = 'sim-aviso';
   caja.setAttribute('role', 'status');
-  document.body.appendChild(caja);
+  contenedor.appendChild(caja);
   const poner = (html, error) => {
     caja.className = 'sim-aviso' + (error ? ' error' : '');
     caja.innerHTML = `<div>${html}</div>`;

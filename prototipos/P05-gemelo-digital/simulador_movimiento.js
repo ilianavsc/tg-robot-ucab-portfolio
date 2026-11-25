@@ -49,7 +49,7 @@
     GIRO_MANUAL_PWM: 0.4,
     ATRAS_LIBRE_CM: 160,
     ALCANCE_US_CM: 400,
-    CONO_US_GRADOS: 15,    /* semiapertura del haz del HC-SR04P (P02) */
+    CONO_US_GRADOS: RadarUS.C.CONO_GRADOS, /* semiapertura del haz del HC-SR04P (TG_ROBOT.hcsr04.conoGrados) */
     OBST_RADIO_M: 0.05,    /* ficha del obstáculo: ⌀ 10 cm */
     RAMPA_DECEL_MS2: 0.55, /* limitador suave del frenado (P03) */
     RAMPA_ACEL_MS2: 0.9,

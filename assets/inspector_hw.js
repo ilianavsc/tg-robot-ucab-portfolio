@@ -16,23 +16,27 @@
   'use strict';
 
   // ------------------------------------------------------------------ límites técnicos
+  // Los valores del robot salen de assets/js/parametros_robot.js (window.TG_ROBOT); aquí solo los de la consola
+  var P = raiz.TG_ROBOT || (typeof require === 'function' ? require('./js/parametros_robot.js') : null);
+  if (!P) throw new Error('Inspector P02: falta assets/js/parametros_robot.js (TG_ROBOT)');
   var LIMITES = {
-    distMinCm: 5, // slider HC-SR04
-    distMaxCm: 80,
-    sinEcoCm: 400, // alcance del HC-SR04P: más allá no hay eco
-    paradaCm: 20, // < 20 cm: parada (firmware)
-    precaucionCm: 50, // 20–50 cm: precaución
-    canalesTcrt: 4, // regleta de 4 TCRT5000 (S1…S4)
-    tcrtPosMm: [-27, -9, 9, 27], // S1..S4 (izquierda → derecha), 18 mm entre sí
+    distMinCm: P.hcsr04.minCm, // slider HC-SR04
+    distMaxCm: P.hcsr04.maxCm,
+    sinEcoCm: P.hcsr04.alcanceCm, // alcance del HC-SR04P: más allá no hay eco
+    paradaCm: P.hcsr04.paradaCm, // < 20 cm: parada (firmware)
+    precaucionCm: P.hcsr04.precaucionCm, // 20–50 cm: precaución
+    canalesTcrt: P.tcrt5000.canales, // regleta de 4 TCRT5000 (S1…S4)
+    tcrtPosMm: P.tcrt5000.posicionesMm.slice(), // S1..S4 (izquierda → derecha), 18 mm entre sí
     tcrtUmbralMm: 12, // medio ancho de la cinta (9,5 mm) + huella del sensor
     desvioMaxMm: 30,
-    vMax: 0.46, // m/s: PWM 0,8 × 0,57 m/s (Speed 200 + L298N)
-    vNominal: 0.4, // m/s: velocidad de crucero del circuito
-    vPwm100: 0.57, // m/s al 100 % de PWM
-    giroDif: 0.45, // diferencia de PWM al girar (manejo del Simulador 1)
-    inclinacionDeg: 20, // alerta de inclinación
-    vuelcoDeg: 30, // parada por inclinación peligrosa
-    anguloMaxDeg: 45
+    vMax: P.velocidad.maxMs, // m/s: PWM 0,8 × 0,57 m/s (Speed 200 + L298N)
+    vNominal: 0.4, // m/s: velocidad de crucero del circuito 3D (Auto)
+    vPwm100: P.velocidad.pwm100Ms, // m/s al 100 % de PWM
+    giroDif: P.velocidad.giroDifPwm, // diferencia de PWM al girar (manejo del Simulador 1)
+    inclinacionDeg: P.mpu6050.inclinacionDeg, // alerta de inclinación
+    vuelcoDeg: P.mpu6050.vuelcoDeg, // parada por inclinación peligrosa
+    impactoG: P.mpu6050.impactoG, // aceleración de impacto
+    anguloMaxDeg: P.mpu6050.anguloMaxDeg
   };
 
   var DIRECCIONES = ['ADELANTE', 'ATRÁS', 'IZQUIERDA', 'DERECHA', 'DETENIDO'];
@@ -126,7 +130,7 @@
     var inc = Math.max(Math.abs(i.pitchDeg), Math.abs(i.rollDeg));
     i.alerta = null;
     if (sal.mpu6050 === 'fallo') { i.alerta = 'fallo'; forzar('imu', 'MPU-6050 sin respuesta I2C'); }
-    else if (i.evento === 'impacto' || i.acelG > 2) { i.alerta = 'impacto'; forzar('impacto', 'Impacto detectado (' + i.acelG.toFixed(2) + ' g)'); }
+    else if (i.evento === 'impacto' || i.acelG > LIMITES.impactoG) { i.alerta = 'impacto'; forzar('impacto', 'Impacto detectado (' + i.acelG.toFixed(2) + ' g)'); }
     else if (inc > LIMITES.vuelcoDeg) { i.alerta = 'inclinacion'; forzar('vuelco', 'Inclinación peligrosa > 30°'); }
     else if (inc > LIMITES.inclinacionDeg || i.evento === 'inclinacion') { precaucion = true; i.alerta = 'inclinacion'; motivos.push('Inclinación > 20°'); }
     else if (i.evento === 'atascamiento') { precaucion = true; i.alerta = 'atascamiento'; motivos.push('Atascamiento: ruedas sin avance'); }

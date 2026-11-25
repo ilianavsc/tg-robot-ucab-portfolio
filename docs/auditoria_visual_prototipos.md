@@ -55,7 +55,7 @@
 | 1. Inter no se carga en los prototipos | ✅ Resuelto | Las 6 páginas (P01–P05, P10) cargan Inter; P02 y P10 dejaron de escribir Atkinson y usan `--tg-font-sans`. También `arquitectura.html`, `como-funciona-app.html` y `hardware.html` cargan Inter. |
 | 2. Sin paleta oscura en los tokens | ✅ Resuelto | `tokens.css` define la paleta oscura oficial `--tg-dark-*` (fondo, superficies, bordes, texto principal/secundario y estados OK / Aviso / Fallo / alarma / foco). P02 (`assets/css/inspector_hw.css`), P10 (`ruta_lineal.css`), P03 (su `<style>`) y P05 (alias `--s2-*`) la usan. El dibujo en `canvas` conserva sus colores en JavaScript (no se tocó la lógica). |
 | 3. Tinta duplicada `#14213D` | ⏳ Pendiente | Sigue en los simuladores 3D de P01, P02 y P04 y en `assets/estilo.css`. |
-| 4. `iframe` en P01 y P04 | ⏳ Pendiente | Requiere integrar sus simuladores en la página como en P02 y P10. |
+| 4. `iframe` en P01 y P04 | ✅ P01 (Fase 3) · ⏳ P04 | P01 monta su simulador 3D directo en la página (`simulador3d.js` + `simulador3d.css` acotado a `#p01-sim`). P04: ver el reporte de la Fase 3. |
 | 5. Badge de ejecución sin componente común | ✅ Resuelto | `assets/css/prototipos.css` (importado por `style.css`): `.tg-ejec--sil` en P01, P02, P03, P05 y P10 y `.tg-ejec--vivo` («EN VIVO · MQTT v2.0.0 · ROBOT SIMULADO») en P04. |
 | 6. Encabezados irregulares | ✅ Resuelto | Encabezado común `.proto-intro` (← Prototipos · ceja `P0X · Nombre` · h1 corto · badge) en los 6 prototipos. P05 recupera el menú del portafolio. |
 | 7. Hoja heredada `assets/estilo.css` | ⏳ Pendiente | Sigue en `prototipos/index.html`, `cronograma.html`, `bitacora.html` y las páginas antiguas de P01. |

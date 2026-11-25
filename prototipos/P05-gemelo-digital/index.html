@@ -854,6 +854,8 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
 
 <script src="../../datos/proyecto.js"></script>
 <script src="../../assets/sitio.js"></script>
+<script src="../../assets/js/parametros_robot.js"></script>
+<script src="../../assets/js/tokens_canvas.js"></script>
 <script src="pistas_sim1.js"></script>
 <script src="radar_us.js"></script>
 <script src="simulador_movimiento.js"></script>
@@ -863,6 +865,14 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
 <script>
 (function () {
   "use strict";
+  /* Colores del canvas desde tokens.css (--tg-dark-*); el segundo valor es solo el respaldo */
+  var PAL = window.TGTokens.paleta({
+    acento: ["--tg-dark-accent", "#00F2FE"], ok: ["--tg-dark-ok", "#34D399"], aviso: ["--tg-dark-warning-solid", "#F59E0B"],
+    fallo: ["--tg-dark-danger-solid", "#EF4444"], avisoTexto: ["--tg-dark-warning", "#FBBF24"], alarma: ["--tg-dark-alarm", "#A78BFA"],
+    texto: ["--tg-dark-text", "#E2E8F0"], muted: ["--tg-dark-text-muted", "#94A3B8"], tenue: ["--tg-dark-text-subtle", "#849495"],
+    fuerte: ["--tg-dark-text-strong", "#E0FDFF"], fondo: ["--tg-dark-bg", "#10141A"], realce: ["--tg-dark-raised", "#20252D"],
+    apagado: ["--tg-dark-off", "#262A31"], blanco: ["--tg-surface", "#FFFFFF"], negro: ["--tg-sim-cinta", "#0B0C0E"]
+  });
   var BASE = "../../";
   var URL_SIM1 = "../P04-simulador-1-esp32/codigo/pista.js"; /* las 2 pistas de SIM1, sin copiarlas */
   var NOMBRES = { A: "Pista A · circuito histórico (SIM1)", B: "Pista B · canónica (SIM1)" };
@@ -1921,7 +1931,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     /* Velocímetro SVG (0,00–0,46 m/s) */
     var v = R.velocimetro(sim.vLineal);
     $("velo-arco").setAttribute("stroke-dashoffset", String(v.dashoffset));
-    $("velo-arco").style.stroke = v.color === "rojo" ? "#ef4444" : ((zf !== "libre" || sim.limitadorActivo) ? "#f59e0b" : "#22c55e");
+    $("velo-arco").style.stroke = v.color === "rojo" ? PAL.fallo : ((zf !== "libre" || sim.limitadorActivo) ? PAL.aviso : PAL.ok);
     $("velo-aguja").setAttribute("transform", "rotate(" + v.agujaGrados + " 40 40)");
     $("velo-val").innerHTML = vel.replace(",", ".") + "<small>m/s</small>";
 
@@ -1985,7 +1995,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   }
   var VX = function (x) { return vista.ox + x * vista.sc; }, VY = function (y) { return vista.oy - y * vista.sc; };
 
-  var COL = { cinta: "#00f2fe", fantasma: "rgba(0,242,254,0.22)", ens: "#f59e0b", sinEns: "#f43f5e", ok: "#4ade80", crit: "#f43f5e", aviso: "#f59e0b" };
+  var COL = { cinta: PAL.acento, fantasma: "rgba(0,242,254,0.22)", ens: PAL.aviso, sinEns: PAL.fallo, ok: PAL.ok, crit: PAL.fallo, aviso: PAL.aviso };
 
   function dibujar(ahora) {
     if (!sim) return;
@@ -2010,13 +2020,13 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     for (k = 0; k < 3; k++) {
       f = (t + k / 3) % 1; r = f * 0.5 * sc;
       if (cm > 0 && r > cm / 100 * sc) continue;
-      c.globalAlpha = (1 - f) * 0.7; c.strokeStyle = zona === "critica" ? COL.crit : (zona === "precaucion" ? COL.aviso : "#7dd3fc"); c.lineWidth = 1.5;
+      c.globalAlpha = (1 - f) * 0.7; c.strokeStyle = zona === "critica" ? COL.crit : (zona === "precaucion" ? COL.aviso : PAL.acento); c.lineWidth = 1.5;
       c.beginPath(); c.arc(0, 0, r, -semi, semi); c.stroke();
     }
     c.globalAlpha = 1;
     if (cm > 0 && cm < 150) {
       var d = cm / 100 * sc, fe = 1 - ((t * 1.3) % 1);
-      c.strokeStyle = zona === "critica" ? COL.crit : "#fde68a"; c.lineWidth = 1; c.setLineDash([3, 3]);
+      c.strokeStyle = zona === "critica" ? COL.crit : PAL.avisoTexto; c.lineWidth = 1; c.setLineDash([3, 3]);
       c.beginPath(); c.moveTo(0, 0); c.lineTo(d, 0); c.stroke(); c.setLineDash([]);
       for (k = 0; k < 2; k++) {
         var ff = (fe + k * 0.5) % 1, rr = d * ff;
@@ -2049,7 +2059,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     c.setLineDash([]);
     /* Cotas en metros (ancho abajo, alto izquierda) */
     c.strokeStyle = "rgba(125,211,252,0.6)";
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = PAL.acento;
     c.font = "10px JetBrains Mono, monospace";
     c.textAlign = "center";
     var yc = Math.min(dimP.h - 10, yBot + 14);
@@ -2072,11 +2082,11 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
   function dibujarTorresBLE(c, ahora, w) {
     var C = nucleo.CFG, rs = S.rssiActual(sim);
     var colores = {
-      apagada: { stroke: "rgba(100,116,139,0.45)", fill: "#64748b", txt: "#94a3b8" },
-      encendiendo: { stroke: "rgba(245,158,11,0.75)", fill: "#f59e0b", txt: "#fde68a" },
-      anunciando: { stroke: "rgba(0,242,254,0.65)", fill: "#00f2fe", txt: "#67e8f9" },
-      detectada: { stroke: "rgba(56,189,248,0.85)", fill: "#38bdf8", txt: "#bae6fd" },
-      rssi_valido: { stroke: "rgba(74,222,128,0.95)", fill: "#4ade80", txt: "#86efac" }
+      apagada: { stroke: "rgba(100,116,139,0.45)", fill: PAL.tenue, txt: PAL.muted },
+      encendiendo: { stroke: "rgba(245,158,11,0.75)", fill: PAL.aviso, txt: PAL.avisoTexto },
+      anunciando: { stroke: "rgba(0,242,254,0.65)", fill: PAL.acento, txt: PAL.acento },
+      detectada: { stroke: "rgba(56,189,248,0.85)", fill: PAL.acento, txt: PAL.fuerte },
+      rssi_valido: { stroke: "rgba(74,222,128,0.95)", fill: PAL.ok, txt: PAL.ok }
     };
     var nombres = { B1: "Cuarto Comp.", B2: "Lab 1" };
     pistaObj.balizasBLE.forEach(function (bl, k) {
@@ -2118,7 +2128,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
       /* Punto de la Torre de Control */
       c.fillStyle = col.fill;
       c.beginPath(); c.arc(x, y, 5.5, 0, 7); c.fill();
-      c.strokeStyle = "#0b1220"; c.lineWidth = 1.5; c.stroke();
+      c.strokeStyle = PAL.fondo; c.lineWidth = 1.5; c.stroke();
 
       /* Etiqueta clara sin terminología GATT */
       var eti;
@@ -2155,7 +2165,7 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
       c.strokeStyle = "rgba(56,189,248," + (0.25 + 0.45 * pulso).toFixed(2) + ")";
       c.lineWidth = 2;
       c.beginPath(); c.arc(VX(pIni.x), VY(pIni.y), 12 + pulso * 5, 0, 7); c.stroke();
-      c.fillStyle = "#7dd3fc"; c.textAlign = "left";
+      c.fillStyle = PAL.acento; c.textAlign = "left";
       c.fillText("Inicio (0,0 m)", VX(pIni.x) + 18, VY(pIni.y) - 14);
       c.fillStyle = "rgba(148,163,184,0.85)"; c.textAlign = "center";
       c.fillText("Espacio sin mapear · inicia lectura lenta (0,16 m/s)", w / 2, h - 14);
@@ -2193,14 +2203,14 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
         var centro = (t.desdeM + t.hastaM) / 2;
         if (centro > sim.s) return;
         var p = tr.puntoEn(centro), ang = tr.rumboPistaGrados(centro) * Math.PI / 180;
-        c.fillStyle = "#94a3b8"; c.fillText(t.id, VX(p.x) + Math.sin(ang) * 18, VY(p.y) - Math.cos(ang) * 18);
+        c.fillStyle = PAL.muted; c.fillText(t.id, VX(p.x) + Math.sin(ang) * 18, VY(p.y) - Math.cos(ang) * 18);
       });
       puntosDeControlDibujo().forEach(function (pc) {
         if (pc.posicionM > sim.s) return;
         var p = tr.puntoEn(pc.posicionM), x = VX(p.x), y = VY(p.y);
-        c.fillStyle = "#000"; c.strokeStyle = "rgba(203,213,225,0.8)"; c.lineWidth = 1.5;
+        c.fillStyle = PAL.negro; c.strokeStyle = "rgba(203,213,225,0.8)"; c.lineWidth = 1.5;
         c.fillRect(x - 6, y - 6, 12, 12); c.strokeRect(x - 6, y - 6, 12, 12);
-        c.fillStyle = "#e2e8f0"; c.fillText(pc.id, x, y + 18);
+        c.fillStyle = PAL.texto; c.fillText(pc.id, x, y + 18);
       });
     } else {
       /* Mapa completo (Gemelo V1 creado en adelante) */
@@ -2240,13 +2250,13 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
       pistaObj.tramos.forEach(function (t) {
         if (pistaObj.tramos.length < 2) return;
         var p = tr.puntoEn((t.desdeM + t.hastaM) / 2), ang = tr.rumboPistaGrados((t.desdeM + t.hastaM) / 2) * Math.PI / 180;
-        c.fillStyle = "#94a3b8"; c.fillText(t.id, VX(p.x) + Math.sin(ang) * 18, VY(p.y) - Math.cos(ang) * 18);
+        c.fillStyle = PAL.muted; c.fillText(t.id, VX(p.x) + Math.sin(ang) * 18, VY(p.y) - Math.cos(ang) * 18);
       });
       puntosDeControlDibujo().forEach(function (pc) {
         var p = tr.puntoEn(pc.posicionM), x = VX(p.x), y = VY(p.y);
-        c.fillStyle = "#000"; c.strokeStyle = "rgba(203,213,225,0.8)"; c.lineWidth = 1.5;
+        c.fillStyle = PAL.negro; c.strokeStyle = "rgba(203,213,225,0.8)"; c.lineWidth = 1.5;
         c.fillRect(x - 6, y - 6, 12, 12); c.strokeRect(x - 6, y - 6, 12, 12);
-        c.fillStyle = "#e2e8f0"; c.fillText(pc.id, x, y + 18);
+        c.fillStyle = PAL.texto; c.fillText(pc.id, x, y + 18);
       });
       var mostrarTorres = ap.estado === "PHASE1_READY" || ap.estado === "BEACONS_STARTING" || ap.estado === "BEACONS_ACTIVE" || ap.estado === "NO_TAPE_TEST" || ap.estado === "PHASE1_VALIDATED" || ap.balizasActivas;
       if (mostrarTorres) dibujarTorresBLE(c, ahora, w);
@@ -2258,18 +2268,18 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     dibujarCono(c, ahora, "frente", f, zf);
     dibujarCono(c, ahora, "atras", at < 160 ? at : 0, za);
     var largo = Math.max(14, 0.24 * vista.sc), ancho = Math.max(10, 0.18 * vista.sc);
-    c.fillStyle = "#1e293b"; c.strokeStyle = COL.cinta; c.lineWidth = 2;
+    c.fillStyle = PAL.realce; c.strokeStyle = COL.cinta; c.lineWidth = 2;
     c.fillRect(-largo / 2 + 0.03 * vista.sc, -ancho / 2, largo, ancho); c.strokeRect(-largo / 2 + 0.03 * vista.sc, -ancho / 2, largo, ancho);
     c.fillStyle = COL.cinta; c.beginPath(); c.moveTo(largo / 2 + 0.03 * vista.sc - 2, 0); c.lineTo(0.03 * vista.sc + largo / 2 - 9, -5); c.lineTo(0.03 * vista.sc + largo / 2 - 9, 5); c.closePath(); c.fill();
     c.restore();
 
     sim.obstaculos.forEach(function (o) {
       var r = Math.max(7, o.r * vista.sc);
-      c.fillStyle = "#ef4444"; c.strokeStyle = "#fff"; c.lineWidth = 2;
+      c.fillStyle = PAL.fallo; c.strokeStyle = PAL.blanco; c.lineWidth = 2;
       c.beginPath(); c.arc(VX(o.x), VY(o.y), r, 0, 7); c.fill(); c.stroke();
     });
 
-    c.textAlign = "left"; c.fillStyle = "#94a3b8";
+    c.textAlign = "left"; c.fillStyle = PAL.muted;
     var tit = enInicial ? ("Sin mapear · Pista " + tr.id) : (enLenta ? ("Mapeo base · " + fmt(sim.s, 1) + "/" + fmt(L, 2) + " m") : (enNormal ? ("Trazado detallado · " + fmt(sim.s, 1) + "/" + fmt(L, 2) + " m") : (tr.id === "B" ? "Pista B · 9,00 m" : "Pista A · 8,05 m")));
     c.fillText(tit, 10, 14);
   }
@@ -2291,16 +2301,16 @@ details.det > summary small { font-size: 10.5px; font-weight: 500; color: var(--
     var psi = sim.yawVerdad * Math.PI / 180, ry = cy - sim.y * pxm;
     c.save(); c.translate(w / 2, ry); c.rotate(psi);
     var largo = 0.24 * pxm, ancho = 0.18 * pxm;
-    c.fillStyle = "#1e293b"; c.strokeStyle = COL.cinta; c.lineWidth = 2;
+    c.fillStyle = PAL.realce; c.strokeStyle = COL.cinta; c.lineWidth = 2;
     c.fillRect(-largo / 2, -ancho / 2, largo, ancho); c.strokeRect(-largo / 2, -ancho / 2, largo, ancho);
     var xs = pistaObj.umbrales.posicionesSensoresMm, sens = sim.sensores || S.sensoresActuales(sim);
     for (var k = 0; k < 4; k++) {
       var sx = P.ADELANTE_SENSOR_M * pxm, sy = -xs[k] / 1000 * pxm;
-      c.fillStyle = sens.bin[k] ? "#5eead4" : "#475569";
+      c.fillStyle = sens.bin[k] ? PAL.ok : PAL.apagado;
       c.beginPath(); c.arc(sx, sy, 4.5, 0, 7); c.fill();
     }
     c.restore();
-    c.fillStyle = "#94a3b8"; c.font = "10.5px JetBrains Mono, monospace"; c.textAlign = "left";
+    c.fillStyle = PAL.muted; c.font = "10.5px JetBrains Mono, monospace"; c.textAlign = "left";
     c.fillText("cinta de 19 mm a escala · avance →", 8, h - 8);
   }
 

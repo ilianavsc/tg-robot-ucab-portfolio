@@ -357,7 +357,10 @@ const cargarEstado = (conDom = null) => {
   const sandbox = {Math, Number, String, console};
   if (conDom) Object.assign(sandbox, conDom);
   sandbox.window = sandbox;
-  vm.runInNewContext(src, sandbox);
+  // igual que en el navegador: primero los parámetros reales del robot (window.TG_ROBOT) y luego el estado central
+  vm.createContext(sandbox);
+  vm.runInContext(readFileSync(join(aqui, '../../../assets/js/parametros_robot.js'), 'utf8'), sandbox);
+  vm.runInContext(src, sandbox);
   return sandbox;
 };
 
