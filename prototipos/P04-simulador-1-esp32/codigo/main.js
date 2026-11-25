@@ -213,27 +213,31 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     el.classList.add('pulso');
   };
   let mqtt;
+  // escribe texto solo si cambió (evita repintados del DOM con la telemetría constante)
+  const ponTexto = (el, txt) => {
+    if (el && el.textContent !== txt) el.textContent = txt;
+  };
   const actualizaMpuUi = () => {
     if (!mpuEstEl || !mqtt) return;
     const st = mqtt.capa3.estado_ruta;
     const bloq = mqtt.movimientoBloqueado;
     mpuEstEl.setAttribute('data-bloq', bloq ? '1' : '0');
     if (st === 'ERROR_SEGURIDAD') {
-      mpuEstEl.textContent = `BLOQUEADO · ${String(mqtt.capa3.alerta_mpu || 'seguridad').toUpperCase()}`;
+      ponTexto(mpuEstEl, `BLOQUEADO · ${String(mqtt.capa3.alerta_mpu || 'seguridad').toUpperCase()}`);
       if (bMpuRecuperar) {
         bMpuRecuperar.hidden = false;
-        bMpuRecuperar.textContent = 'Recuperación manual';
+        ponTexto(bMpuRecuperar, 'Recuperación manual');
       }
       actualizaModoTxt(`Seguridad MPU-6050 (${mqtt.capa3.alerta_mpu || 'alerta'}): movimiento bloqueado`);
     } else if (st === 'RECUPERACION_MANUAL') {
-      mpuEstEl.textContent = 'RECUPERACIÓN MANUAL · BLOQ.';
+      ponTexto(mpuEstEl, 'RECUPERACIÓN MANUAL · BLOQ.');
       if (bMpuRecuperar) {
         bMpuRecuperar.hidden = false;
-        bMpuRecuperar.textContent = 'Confirmar y reanudar';
+        ponTexto(bMpuRecuperar, 'Confirmar y reanudar');
       }
       actualizaModoTxt('Recuperación manual activa: confirma para desbloquear movimiento');
     } else {
-      mpuEstEl.textContent = 'MPU-6050 · OK';
+      ponTexto(mpuEstEl, 'MPU-6050 · OK');
       if (bMpuRecuperar) bMpuRecuperar.hidden = true;
     }
   };
@@ -244,16 +248,16 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     alEstado: ({estado: est, broker}) => {
       mqttDot.className = 'mqtt-dot' + (est === 'desconectado' ? '' : ' ' + est);
       if (est === 'conectado') {
-        mqttEstEl.textContent = `Conectado · ${broker.nombre}`;
-        bMqtt.textContent = 'Desconectar';
+        ponTexto(mqttEstEl, `Conectado · ${broker.nombre}`);
+        ponTexto(bMqtt, 'Desconectar');
         bMqtt.setAttribute('aria-pressed', 'true');
       } else if (est === 'conectando') {
-        mqttEstEl.textContent = `Conectando · ${broker.nombre}…`;
-        bMqtt.textContent = 'Cancelar';
+        ponTexto(mqttEstEl, `Conectando · ${broker.nombre}…`);
+        ponTexto(bMqtt, 'Cancelar');
         bMqtt.setAttribute('aria-pressed', 'true');
       } else {
-        mqttEstEl.textContent = 'Desconectado';
-        bMqtt.textContent = 'Conectar App';
+        ponTexto(mqttEstEl, 'Desconectado');
+        ponTexto(bMqtt, 'Conectar App');
         bMqtt.setAttribute('aria-pressed', 'false');
       }
       actualizaMpuUi();
@@ -484,9 +488,16 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   pintaAj();
 
   // ---------------------------------------------------------------- panel de datos
+  const cacheEl = {};
+  // referencias perezosas: algunos nodos (la marca de la barra de tramos) se crean de nuevo al cambiar de pista
+  const nodo = (sel) => {
+    const c = cacheEl[sel];
+    if (c && c.isConnected) return c;
+    return (cacheEl[sel] = $(sel));
+  };
   const set = (id, txt) => {
-    const el = $('#' + id);
-    if (el.textContent !== txt) el.textContent = txt;
+    const el = nodo('#' + id);
+    if (el && el.textContent !== txt) el.textContent = txt;
   };
   // placa ESP32: se pinta en cada cuadro, sincronizada con el robot de la pista
   const ledsTcrt = $$('.esp-led.tcrt');
@@ -498,8 +509,10 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const led = ledsEsp32(sim.lectura());
     for (let i = 0; i < 4; i++) ledsTcrt[i].classList.toggle('on', led.tcrt[i] === 1);
     set('v-bin', `[${led.tcrt.join(',')}]`);
-    pwmIzq.style.width = `${Math.round(led.ena * 100)}%`;
-    pwmDer.style.width = `${Math.round(led.enb * 100)}%`;
+    const wIzq = `${Math.round(led.ena * 100)}%`;
+    const wDer = `${Math.round(led.enb * 100)}%`;
+    if (pwmIzq.style.width !== wIzq) pwmIzq.style.width = wIzq;
+    if (pwmDer.style.width !== wDer) pwmDer.style.width = wDer;
     pwmIzq.classList.toggle('atras', led.dirIzq < 0);
     pwmDer.classList.toggle('atras', led.dirDer < 0);
     // telemetría del ESP32 cada 2 s (como en el Simulador del ESP32): el LED TX parpadea
@@ -642,6 +655,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     ctx.restore();
   };
   let prevTabla = '';
+  let prevClaveTabla = '';
   let prevMarca = '';
   let prevTramoNom = '';
   let prevEstadoTxt = '';
@@ -653,8 +667,9 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const estTxt = L.perdida ? 'Línea perdida' : 'En la línea';
     if (estTxt !== prevEstadoTxt) {
       prevEstadoTxt = estTxt;
-      $('#v-estado').textContent = estTxt;
-      $('#v-estado').dataset.ok = L.perdida ? '0' : '1';
+      const estadoEl = nodo('#v-estado');
+      estadoEl.textContent = estTxt;
+      estadoEl.dataset.ok = L.perdida ? '0' : '1';
     }
     set('v-vel', `${f(Math.abs(L.v), 2)} m/s`);
     set('v-dist', `${f(L.distancia, 1)} m`);
@@ -669,15 +684,21 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const marcaLeft = `${((L.progresoM / L.largo) * 100).toFixed(2)}%`;
     if (marcaLeft !== prevMarca) {
       prevMarca = marcaLeft;
-      $('#marca').style.left = marcaLeft;
+      const marcaEl = nodo('#marca');
+      if (marcaEl) marcaEl.style.left = marcaLeft;
+      else prevMarca = ''; // la marca aún no existe: se reintenta en el próximo refresco
     }
     const tramoNom = `${L.tramo.nombre}${L.tramo.linea ? '' : ' · sin cinta'}`;
     if (tramoNom !== prevTramoNom) {
       prevTramoNom = tramoNom;
-      $('#tramo-nombre').textContent = tramoNom;
+      nodo('#tramo-nombre').textContent = tramoNom;
     }
     // tabla de comparación (solo repinta si cambió)
-    const filas = sim.resumen().sort((a, b) => (a.pista + a.modo).localeCompare(b.pista + b.modo));
+    const resumen = sim.resumen();
+    const claveTabla = resumen.map((r) => [r.pista, r.modo, r.vueltas, r.mejor, r.vmedia, r.emax, r.erms, r.salidas].join(':')).join('|');
+    if (claveTabla === prevClaveTabla) return; // sin vueltas nuevas: no se reconstruye la tabla
+    prevClaveTabla = claveTabla;
+    const filas = resumen.sort((a, b) => (a.pista + a.modo).localeCompare(b.pista + b.modo));
     const tablaHtml = filas.length
       ? filas
           .map((r) => `<tr><th scope="row">${r.pista} · ${r.modo === 'auto' ? 'auto' : 'manual'}</th><td>${r.vueltas}</td><td>${r.mejor === null ? '—' : f(r.mejor)}</td><td>${f(r.vmedia, 2)}</td><td>${f(r.emax)}</td><td>${f(r.erms)}</td><td>${r.salidas}</td></tr>`)
@@ -685,7 +706,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
       : '<tr><td colspan="7">Sin datos todavía</td></tr>';
     if (tablaHtml !== prevTabla) {
       prevTabla = tablaHtml;
-      $('#comparacion tbody').innerHTML = tablaHtml;
+      nodo('#comparacion tbody').innerHTML = tablaHtml;
     }
   };
 
