@@ -6,7 +6,7 @@
 <title>P01 · Simulador 3D de los Mensajes MQTT · TG Robot UCAB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../../assets/css/style.css">
 <style>
 dialog{border:none;border-radius:16px;padding:12px;max-width:min(1400px,96vw);background:#ffffff;box-shadow:var(--shadow-hard)}
@@ -18,14 +18,15 @@ dialog img{max-width:100%;max-height:84vh;display:block;border-radius:8px}
 <header id="menu"></header>
 
 <main>
-  <!-- Volver al catálogo -->
-  <a class="volver" href="../../index.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    Volver al catálogo de prototipos
-  </a>
-
-  <p class="ceja">Prototipo P01 · Protocolo de Comunicación · Avance 1</p>
-  <h1>P01: Así viajan <em>los mensajes</em> entre la <strong>app</strong> y el robot</h1>
+  <div class="proto-intro">
+      <a class="volver" href="../../index.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Prototipos
+      </a>
+      <p class="ceja">P01 · Base MQTT</p>
+      <h1>Así viajan <em>los mensajes</em> entre la <strong>app</strong> y el robot</h1>
+    <span class="tg-ejec tg-ejec--sil" role="note" title="Se ejecuta en el navegador, sin hardware real (SIL)."><i aria-hidden="true"></i>SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS</span>
+  </div>
   
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px">
     <span class="chip hecho">Simulador 3D Funcional</span>

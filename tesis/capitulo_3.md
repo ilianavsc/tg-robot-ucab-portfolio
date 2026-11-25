@@ -64,23 +64,24 @@ Regla de rigor: un resultado solo pasa de "validado en simulación" a "validado"
 
 ### III.3.2 Prototipos
 
-La numeración oficial es P01 a P14 (fuente: `datos/proyecto.js`). Estado al 19/11/2026:
+La numeración oficial es P01 a P14 (fuente: `datos/proyecto.js`). Estado al 24/11/2026:
 
 | Código | Prototipo | Propósito | Estado |
 |---|---|---|---|
 | P01 | MQTT base | Comunicación robot ↔ app (QoS, confirmaciones, última voluntad) | Hecho (simulación): 7/7 pruebas, 50/50 pedidos |
-| P02 | Inspector de hardware | Inspector interactivo de los componentes del robot (Auto/Manual + consola de sensores) | Hecho (simulación); HIL en diciembre |
+| P02 | Inspector de hardware | El robot en el circuito 3D (Auto/Manual) con 4 consolas interactivas de sensores y la ficha técnica de cada pieza | Hecho (simulación); HIL en diciembre |
 | P03 | Radar ultrasónico | Distancias frente y atrás + frenado ante obstáculos | Hecho (simulación) |
-| P04 | Simulador 1 + ESP32 | Simulador 1 con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT con la app | Hecho (simulación) |
-| P05 | Gemelo Digital | Calibra y aprende la pista; puntos de control en tercios en la 2ª vuelta | Hecho (simulación) |
-| P06 | Robot virtual y puente | Puente MQTT a Firebase | En pruebas |
+| P04 | Simulador 1 + ESP32 | Simulador 1 con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT v2.0.0 en vivo con la app | Hecho (robot simulado, conexión MQTT en vivo) |
+| P05 | Gemelo Digital | Calibra y aprende la pista (teach & repeat) y ejecuta la Capa 3 operacional (rutas y pedidos) | Hecho (simulación) |
+| P06 | Robot virtual y puente | Puente MQTT a Firebase | Planificado (sin código aún) |
 | P07 | El cerebro completo | Firmware integrado (`robot_integrado.ino`) | En pruebas (lógica validada en PC) |
 | P09 | App Flutter (v1 · Modo Demo) | App Flutter Web (*Autonomous Laboratory Cockpit*): Dashboard con Mapa de Pista, Controles, Radar y Alertas; acceso local con roles Operador y Administrador | Hecho (simulación); sin backend ni Firebase |
+| P10 | Ruta lineal con reposicionamiento | Ida, alarma en el destino, giro manual de 180° y retorno a la base | Hecho (simulación) |
 | P11 | La alarma llega al teléfono | Centro de alertas en la app | En pruebas (simulación) |
 | P12 | Pruebas y estadística | Analítica de sesión y reporte CSV | En pruebas (simulación) |
 | P14 | Balizas BLE (Extremos) | Re-localización en puntos de referencia | Pendiente (Fase II) |
 
-> **P09 ≠ P05.** P09 es la aplicación que usa el operador; P05 (Gemelo Digital) simula la navegación y publica el estado MQTT para validar el software antes de recibir el hardware (pedido de Amazon: llegada estimada a Miami entre el 15 y el 28 de diciembre de 2026). La confirmación de órdenes en vivo (ACK) queda para el ESP32 real; hasta entonces la app se valida en Modo Demo.
+> **P09 ≠ P05.** P09 es la aplicación que usa el operador; P05 (Gemelo Digital) simula la navegación y la Capa 3 en el navegador, sin conectarse a un broker real, para validar el software antes de recibir el hardware (pedido de Amazon: llegada estimada a Miami entre el 15 y el 28 de diciembre de 2026). La confirmación de órdenes en vivo (ACK) queda para el ESP32 real; hasta entonces la app se valida en Modo Demo.
 
 ### III.3.3 Variables, indicadores y criterios de aceptación
 

@@ -1,0 +1,89 @@
+/* ==========================================================================
+   TG ROBOT UCAB · COMPONENTES COMUNES DE LOS PROTOTIPOS (P01–P05, P10)
+   Encabezado estándar, badge de ejecución (SIL / EN VIVO) y botones de consola.
+   Todo sale de tokens.css (claro y paleta oscura --tg-dark-*).
+   ========================================================================== */
+
+/* Encabezado estándar: ← Prototipos · ceja «P0X · Nombre» · h1 corto · badge de ejecución */
+.proto-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0 0 12px;
+  min-width: 0;
+}
+.proto-intro .volver,
+.proto-intro .ceja,
+.proto-intro h1 {
+  margin: 0;
+}
+.proto-intro h1 {
+  font-family: var(--tg-font-display);
+  font-size: clamp(20px, 2.4vw, 28px);
+  line-height: 1.15;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+/* Badge de ejecución: mismos valores que TG.etiquetas.ejecucion */
+.tg-ejec {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 5px 11px;
+  border-radius: var(--tg-radius-full);
+  border: 2px solid transparent;
+  font-family: var(--tg-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tg-ejec i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  background: currentColor;
+}
+.tg-ejec--sil {
+  background: #E0F2FE;
+  border-color: var(--tg-info);
+  color: #075985;
+}
+.tg-ejec--vivo {
+  background: var(--tg-text);
+  border-color: var(--tg-text);
+  color: #FFFFFF;
+}
+.tg-ejec--vivo i {
+  background: var(--tg-dark-ok);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.28);
+}
+
+/* Botón de consola oscura (P02, P05, P10) */
+.tg-btn-consola {
+  min-height: var(--tg-touch-min);
+  padding: 8px 14px;
+  border-radius: var(--tg-radius-lg);
+  border: 2px solid var(--tg-dark-border-strong);
+  background: var(--tg-dark-raised);
+  color: var(--tg-dark-text);
+  font-family: var(--tg-font-sans);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.tg-btn-consola:hover:not(:disabled) { border-color: var(--tg-dark-accent); }
+.tg-btn-consola:focus-visible { outline: 3px solid var(--tg-dark-focus); outline-offset: 2px; }
+.tg-btn-consola:disabled { opacity: 0.4; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .proto-intro { gap: 4px 10px; }
+  .tg-ejec { font-size: 11px; padding: 4px 9px; }
+}

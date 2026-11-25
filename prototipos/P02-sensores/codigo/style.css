@@ -3,7 +3,7 @@
    assets/css/inspector_hw.css. Las fuentes van aparte (fuentes.css) y se unen al construir simulador.html. */
 .p02-sim{--tinta:#14213D;--coral:#F2603D;--verde:#0F9D84;--ambar:#E8B90C;--violeta:#6B4EE6;--papel:#ffffff;--vidrio:rgba(20,33,61,.88);--sombra:0 4px 0 rgba(20,33,61,.35)}
 .p02-sim *,.p02-sim *::before,.p02-sim *::after{box-sizing:border-box}
-.p02-sim .app{position:relative;overflow:hidden;min-width:0;min-height:0;background:#dfe8e5;color:var(--tinta);font-family:'Atkinson Hyperlegible',system-ui,sans-serif;-webkit-tap-highlight-color:transparent;container:app / inline-size}
+.p02-sim .app{position:relative;overflow:hidden;min-width:0;min-height:0;background:#dfe8e5;color:var(--tinta);font-family:var(--tg-font-sans,'Atkinson Hyperlegible',system-ui,sans-serif);-webkit-tap-highlight-color:transparent;container:app / inline-size}
 .p02-sim #lienzo{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
 .p02-sim #guias{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden}
 .p02-sim #guias line{stroke-width:1.6;stroke-linecap:round;opacity:.75}

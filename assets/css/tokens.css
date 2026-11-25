@@ -43,6 +43,28 @@
 
   /* Objetivos táctiles accesibles */
   --tg-touch-min: 44px;
+
+  /* Paleta oscura oficial: consolas, tableros y simuladores de los prototipos (P02, P03, P05, P10).
+     Una sola fuente para el fondo, las superficies, los bordes, el texto y los acentos de estado. */
+  --tg-dark-bg: #10141A;            /* fondo de consola */
+  --tg-dark-surface: #181C22;       /* tarjeta / panel */
+  --tg-dark-raised: #20252D;        /* controles y cabeceras sobre la tarjeta */
+  --tg-dark-inset: #12161B;         /* lecturas y lienzos hundidos */
+  --tg-dark-off: #262A31;           /* LED apagado, pistas de barras */
+  --tg-dark-border: #2B313B;
+  --tg-dark-border-strong: #3A424D;
+  --tg-dark-text: #E2E8F0;          /* texto principal */
+  --tg-dark-text-muted: #94A3B8;    /* texto secundario */
+  --tg-dark-text-subtle: #849495;   /* rótulos en mayúsculas */
+  --tg-dark-text-strong: #E0FDFF;   /* valores destacados */
+  --tg-dark-accent: #00F2FE;        /* acento de datos en vivo */
+  --tg-dark-ok: #34D399;            /* estado OK */
+  --tg-dark-warning: #FBBF24;       /* estado Aviso */
+  --tg-dark-warning-solid: #F59E0B;
+  --tg-dark-danger: #F87171;        /* estado Fallo (texto) */
+  --tg-dark-danger-solid: #EF4444;  /* estado Fallo (relleno) */
+  --tg-dark-alarm: #A78BFA;         /* alarmas operativas (violeta) */
+  --tg-dark-focus: #FFD23F;         /* anillo de foco */
 }
 
 .tg-num,

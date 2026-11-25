@@ -266,7 +266,8 @@ prueba('panel oscuro integrado: 4 consolas con sus controles dentro y la ficha t
   }
   const css = readFileSync(join(aqui, '../../../assets/css/inspector_hw.css'), 'utf8');
   assert.ok(/\.hw-consolas \{[^}]*repeat\(2, minmax\(0, 1fr\)\)/.test(css), 'consolas 2×2');
-  assert.ok(/\.hw-panel \{[^}]*background: #10141A/.test(css), 'panel oscuro');
+  assert.ok(/\.hw-panel \{[^}]*background: var\(--tg-dark-bg\)/.test(css), 'panel oscuro con el token oficial --tg-dark-bg');
+  assert.ok(readFileSync(join(aqui, '../../../assets/css/tokens.css'), 'utf8').includes('--tg-dark-bg: #10141A'), 'paleta oscura en tokens.css');
   assert.ok(/@media \(max-width: 900px\)[\s\S]*\.hw-panel \{ grid-row: 3/.test(css), 'móvil: consolas debajo del 3D');
   // la ficha usa los datos técnicos del proyecto
   const main = leerAqui('main.js');

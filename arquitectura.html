@@ -6,7 +6,7 @@
 <title>TG Robot UCAB · Arquitectura</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/estilo.css">
 <style>
 .diagrama{padding:14px}
@@ -31,18 +31,18 @@
 <main>
 <p class="ceja">Arquitectura · Contrato MQTT v2.0.0</p>
 <h1>El sistema <em>completo</em></h1>
-<p class="bajada">La arquitectura opera bajo el contrato canónico <strong>MQTT v2.0.0</strong> (<code>specs/mqtt/contract.json</code>): la <strong>App Flutter</strong> habla directo por WebSocket seguro (WSS) con el clúster de respaldo MQTT (<strong>HiveMQ → EMQX → Mosquitto</strong>), y el mismo contrato enlaza el simulador <strong>P04 (SIL)</strong>, el <strong>Gemelo Digital (P05)</strong> y el <strong>ESP32 físico (HIL)</strong>.</p>
+<p class="bajada">La arquitectura opera bajo el contrato canónico <strong>MQTT v2.0.0</strong> (<code>specs/mqtt/contract.json</code>): la <strong>App Flutter</strong> habla directo por WebSocket seguro (WSS) con el clúster de respaldo MQTT (<strong>HiveMQ → EMQX → Mosquitto</strong>), y el mismo contrato enlaza el simulador <strong>P04 (EN VIVO · MQTT v2.0.0</strong>, con el robot simulado) y el <strong>ESP32 físico (HIL)</strong>. El <strong>Gemelo Digital (P05)</strong> aplica la misma Capa 3 en <strong>simulación local</strong>: no es un cliente MQTT real.</p>
 
 <section aria-labelledby="t-mapa">
   <h2 id="t-mapa">El mapa del sistema</h2>
   <div class="tarjeta sombra diagrama"><div class="desliza">
-  <svg viewBox="0 0 960 280" role="img" aria-label="La App Flutter se comunica por MQTT v2.0.0 WSS con el broker HiveMQ, EMQX y Mosquitto; el broker enlaza el ESP32 físico, el simulador P04 y el banco de pruebas P01">
+  <svg viewBox="0 0 960 280" role="img" aria-label="La App Flutter se comunica por MQTT v2.0.0 WSS con el broker HiveMQ, EMQX y Mosquitto; el broker enlaza el ESP32 físico, el simulador P04 en vivo y el banco de pruebas P01. El Gemelo Digital P05 es simulado y no se conecta al broker">
     <defs><marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#14213D"/></marker></defs>
     <g font-family="Atkinson Hyperlegible, sans-serif" font-size="13" fill="#4A5A73">
       <line x1="214" y1="100" x2="366" y2="100" stroke="#14213D" stroke-width="2" marker-start="url(#fl)" marker-end="url(#fl)"/>
       <text x="290" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5">MQTT v2.0.0 · WSS</text>
       <line x1="594" y1="100" x2="736" y2="100" stroke="#14213D" stroke-width="2" marker-start="url(#fl)" marker-end="url(#fl)"/>
-      <text x="665" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5">WSS (SIL) / TCP 1883</text>
+      <text x="665" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11.5">WSS (P04 en vivo) / TCP 1883</text>
       <line x1="480" y1="150" x2="480" y2="196" stroke="#14213D" stroke-width="1.8" marker-start="url(#fl)" marker-end="url(#fl)"/>
       <text x="492" y="178" font-family="JetBrains Mono, monospace" font-size="11">WSS · QA</text>
     </g>
@@ -60,11 +60,15 @@
       <rect x="738" y="48" width="198" height="104" rx="14" fill="#E2F4F0" stroke="#0F9D84" stroke-width="2.5"/>
       <text x="837" y="86" text-anchor="middle" font-weight="700" font-size="17" fill="#14213D">Robot (P04 / ESP32)</text>
       <text x="837" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">Capa 3 + MPU-6050</text>
-      <text x="837" y="126" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">SIL activo · HIL listo</text>
+      <text x="837" y="126" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#0F9D84">P04 EN VIVO · MQTT v2.0.0</text>
 
       <rect x="368" y="198" width="224" height="66" rx="14" fill="#FFFFFF" stroke="#6B4EE6" stroke-width="2"/>
-      <text x="480" y="226" text-anchor="middle" font-weight="700" font-size="15.5" fill="#14213D">Banco P01 y Gemelo P05</text>
-      <text x="480" y="246" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">Pruebas SIL · specs/state-machine.md</text>
+      <text x="480" y="226" text-anchor="middle" font-weight="700" font-size="15.5" fill="#14213D">Banco de pruebas P01</text>
+      <text x="480" y="246" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">QoS 0 / 1 / 2 · broker público</text>
+
+      <rect x="24" y="198" width="188" height="66" rx="14" fill="#FFFFFF" stroke="#4A5A73" stroke-width="2" stroke-dasharray="6 5"/>
+      <text x="118" y="226" text-anchor="middle" font-weight="700" font-size="15.5" fill="#14213D">Gemelo Digital P05</text>
+      <text x="118" y="246" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#4A5A73">Simulado · sin cliente MQTT</text>
     </g>
   </svg></div></div>
   <p class="suave" style="font-size:15px;margin-top:10px">¿Quieres ver los 5 flujos detallados con diagramas Mermaid? Abre <a href="como-funciona-app.html">Cómo funciona la App por dentro</a>.</p>
@@ -118,7 +122,7 @@
   </ul>
   <p class="suave" style="font-size:15px;margin:14px 0 6px">Ejemplo de payload de solicitud de pedido (MQTT v2.0.0):</p>
   <pre style="font-family:var(--mono);font-size:13.5px;background:var(--blanco);border:2px solid var(--tinta);border-radius:12px;padding:12px 14px;overflow-x:auto;margin:0 0 10px">{"request_id":"PED-0001","parada_id":"P1","con_carga":true,"message_id":"msg-0042","sequence":42,"timestamp":"2026-11-24T01:30:00Z","schema_version":"2.0.0"}</pre>
-  <p class="suave" style="font-size:15px">Probado en <a href="prototipos/P01-mqtt-base/">P01</a>, <a href="prototipos/P04-simulador-1-esp32/">P04</a>, el <a href="prototipos/P05-gemelo-digital/">Gemelo Digital (P05)</a> y la <a href="https://ilianavsc.github.io/tg-robot-ucab-app/" target="_blank" rel="noopener">App Flutter</a>. Referencia técnica: <a href="docs/arquitectura/topicos-mqtt.md">docs/arquitectura/topicos-mqtt.md</a> y <a href="specs/state-machine.md">specs/state-machine.md</a>.</p>
+  <p class="suave" style="font-size:15px">Probado en vivo con el banco <a href="prototipos/P01-mqtt-base/">P01</a>, <a href="prototipos/P04-simulador-1-esp32/">P04</a> (EN VIVO · MQTT v2.0.0) y la <a href="https://ilianavsc.github.io/tg-robot-ucab-app/" target="_blank" rel="noopener">App Flutter</a>. El <a href="prototipos/P05-gemelo-digital/">Gemelo Digital (P05)</a> y la <a href="prototipos/P10-ruta-lineal/">Ruta lineal (P10)</a> reproducen la Capa 3 en simulación local, sin conectarse al broker. Referencia técnica: <a href="docs/arquitectura/topicos-mqtt.md">docs/arquitectura/topicos-mqtt.md</a> y <a href="specs/state-machine.md">specs/state-machine.md</a>.</p>
 </section>
 </main>
 <footer id="pie"></footer>

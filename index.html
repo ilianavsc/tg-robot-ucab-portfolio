@@ -86,6 +86,12 @@ a.ir:hover {
   color: var(--text-light);
   text-decoration: line-through;
 }
+.lista-pend-corta li.atrasado {
+  border-left-color: var(--tg-danger, #DC2626);
+}
+.lista-pend-corta li.atrasado .cuando {
+  color: var(--tg-danger, #DC2626);
+}
 .lista-pend-corta .cuando {
   font-family: var(--font-mono);
   font-size: 12.5px;
@@ -224,7 +230,7 @@ a.ir:hover {
         <p class="kpi-sub">P01 + P02 + P04 compilados (71 % Flash).</p>
       </div>
       <div class="kpi-card">
-        <p class="ceja" style="margin:0">Prueba en Lab</p>
+        <p class="ceja" style="margin:0">Pruebas con hardware</p>
         <div class="kpi-valor" id="prueba-dias"></div>
         <p class="kpi-sub" id="prueba-texto"></p>
       </div>
@@ -549,15 +555,24 @@ a.ir:hover {
   document.getElementById("hito-dias").innerHTML = faltan >= 0 ? faltan + " <small>días</small>" : "Listo";
   document.getElementById("hito-texto").textContent = fase.hito;
 
-  var prueba = U.fecha("2026-11-18"), faltanPrueba = U.dias(hoy, prueba);
-  document.getElementById("prueba-dias").innerHTML = faltanPrueba > 0 ? "En " + faltanPrueba + " <small>d</small>"
-    : (faltanPrueba === 0 ? "Hoy" : "18 nov");
-  document.getElementById("prueba-texto").innerHTML = '<a href="docs/guia_pruebas_lab.md" data-md="docs/guia_pruebas_lab.md" data-titulo="Guía de pruebas en laboratorio">Ver protocolo de lab →</a>';
+  /* Estado real de las pruebas con hardware (TG.hil): nunca muestra una fecha pasada como próxima */
+  var hil = D.hil, desde = U.fecha(hil.desde), hasta = U.fecha(hil.hasta);
+  var faltanHil = U.dias(hoy, desde);
+  document.getElementById("prueba-dias").innerHTML = faltanHil > 0 ? "En ~" + faltanHil + " <small>d</small>"
+    : U.dias(hoy, hasta) >= 0 ? "Llegando" : "Por confirmar";
+  document.getElementById("prueba-texto").innerHTML = hil.estado + " (" + U.corto(desde) + "–" + U.corto(hasta) + '). <a href="docs/guia_pruebas_lab.md" data-md="docs/guia_pruebas_lab.md" data-titulo="Guía de pruebas en laboratorio">Protocolo HIL →</a>';
+  document.getElementById("prueba-texto").title = hil.texto;
 
-  document.getElementById("pendientes").innerHTML = D.pendientes.slice(0, 6).map(function (p) {
+  /* Pendientes: primero lo próximo, luego lo atrasado (sin presentarlo como próximo) y al final lo hecho */
+  var orden = function (p) { var f = U.fecha(p.fecha); return p.hecho ? 2 : U.dias(hoy, f) < 0 ? 1 : 0; };
+  document.getElementById("pendientes").innerHTML = D.pendientes.slice().sort(function (a, b) {
+    return orden(a) - orden(b) || U.fecha(a.fecha) - U.fecha(b.fecha);
+  }).slice(0, 6).map(function (p) {
     var f = U.fecha(p.fecha);
     var texto = p.corto || p.que;
-    return '<li class="' + (p.hecho ? "hecho" : "") + '"><span>' + texto + '</span><span class="cuando">' + U.corto(f) + '</span></li>';
+    var o = orden(p);
+    var cuando = o === 1 ? "Atrasado · era el " + U.corto(f) : U.corto(f);
+    return '<li class="' + (p.hecho ? "hecho" : o === 1 ? "atrasado" : "") + '"><span>' + texto + '</span><span class="cuando">' + cuando + '</span></li>';
   }).join("");
 })();
 </script>

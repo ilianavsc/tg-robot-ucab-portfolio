@@ -89,6 +89,13 @@ window.TG = {
   /* Frase corta de qué resuelve el robot (portada) */
   queResuelve: "Un robot que lleva los componentes del laboratorio UCAB hasta tu puesto.",
 
+  /* Estado real de las pruebas con hardware (HIL) para la portada. Se actualiza a mano cuando cambie. */
+  hil: {
+    estado: "Esperando el pedido",
+    desde: "2026-12-15", hasta: "2026-12-28", // llegada estimada del pedido de Amazon a Miami
+    texto: "El pedido de Amazon (motores, ESP32, BMS y HC-SR04P) llega a Miami entre el 15 y el 28 dic; luego va a Venezuela. Las pruebas HIL empiezan al recibirlo. Mientras, todo se valida en SIL."
+  },
+
   /* Enlaces principales de la portada */
   enlaces: {
     app: "https://ilianavsc.github.io/tg-robot-ucab-app/",

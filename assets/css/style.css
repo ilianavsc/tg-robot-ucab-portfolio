@@ -3,6 +3,7 @@
    Diseño UX/UI: Portafolio de Ingeniería & Prototipos
    ========================================================================== */
 @import url("./tokens.css");
+@import url("./prototipos.css");
 
 :root {
   /* Paleta Base: Clean Tech (consumida desde tokens.css) */

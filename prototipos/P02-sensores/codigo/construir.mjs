@@ -54,7 +54,8 @@ writeFileSync(indexRuta, index.slice(0, index.indexOf(ini) + ini.length) + '\n' 
 
 // …y en simulador.html, autocontenido
 const sinCierre = (t) => t.replace(/<\/script/gi, '<\\/script');
-const css = leer(join(aqui, 'fuentes.css')) + css3d + leer(join(raiz, 'assets', 'css', 'inspector_hw.css'));
+// tokens (claros y oscuros) + componentes comunes de prototipos + estilos del 3D + panel de consolas
+const css = leer(join(aqui, 'fuentes.css')) + leer(join(raiz, 'assets', 'css', 'tokens.css')) + leer(join(raiz, 'assets', 'css', 'prototipos.css')) + css3d + leer(join(raiz, 'assets', 'css', 'inspector_hw.css'));
 const html = leer(join(aqui, 'plantilla.html'))
   .replace('/*CSS*/', () => css)
   .replace('<!--APP-->', () => app)

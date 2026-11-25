@@ -6,7 +6,7 @@
 <title>TG Robot UCAB · Cómo funciona la App por dentro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <style>
 .indice-flujos{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px}
@@ -58,18 +58,19 @@
       <h2 id="t-d1">1. Arquitectura de comunicación MQTT v2.0.0</h2>
       <span class="flujo-tag">WSS + TCP · QoS 0/1/2</span>
     </div>
-    <p class="flujo-desc">La App Flutter se conecta directo por WebSocket seguro (WSS) al clúster de respaldo MQTT (HiveMQ → EMQX → Mosquitto) sin intermediarios, intercambiando telemetría, rutas, pedidos y alertas con P04 (SIL) o el ESP32 físico (HIL).</p>
+    <p class="flujo-desc">La App Flutter se conecta directo por WebSocket seguro (WSS) al clúster de respaldo MQTT (HiveMQ → EMQX → Mosquitto) sin intermediarios, intercambiando telemetría, rutas, pedidos y alertas con el simulador P04 (<strong>EN VIVO · MQTT v2.0.0</strong>, robot simulado) o el ESP32 físico (HIL).</p>
     <div class="mermaid-box">
       <pre class="mermaid">
 flowchart LR
   OP["Operador en laboratorio"] <--> APP["App Flutter Web / Movil"]
   APP <-->|"WSS · MQTT v2.0.0"| BRK["Broker MQTT (HiveMQ / EMQX / Mosquitto)"]
-  BRK <-->|"WSS (SIL) / TCP 1883 (HIL)"| ROB["Simulador P04 / ESP32"]
+  BRK <-->|"WSS (P04 en vivo) / TCP 1883 (HIL)"| ROB["Simulador P04 / ESP32"]
       </pre>
     </div>
     <ul class="flujo-notas">
       <li><code>estado</code>, <code>ultrasonido</code> y <code>sensores/inercial</code> viajan en <strong>QoS 0</strong>; comandos, <code>rutas/*</code> y <code>pedidos/*</code> en <strong>QoS 1</strong>; <code>alertas</code> críticas en <strong>QoS 2</strong>.</li>
       <li><code>conexion</code>, <code>rutas/estado</code> y <code>pedidos/estado</code> son <strong>retenidos</strong> para restaurar el estado vigente al reconectar.</li>
+      <li>El <strong>Gemelo Digital (P05)</strong> es <strong>simulado</strong>: reproduce la Capa 3 en el navegador y su indicador de enlace MQTT es una simulación; <strong>no es un cliente MQTT real</strong> ni aparece en el broker. Lo mismo vale para la Ruta lineal (P10).</li>
     </ul>
   </section>
 

@@ -6,18 +6,18 @@
 <title>P03 · Radar ultrasónico · TG Robot UCAB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/style.css">
 <style>
 /* ======================================================================
    P03 · Radar ultrasónico: radar protagonista + paneles colapsables (misma consola que P02)
    ====================================================================== */
-:root { --p11-ease: cubic-bezier(0.23, 1, 0.32, 1); --verde: #22c55e; --ambar: #f59e0b; --rojo: #ef4444; }
-button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+:root { --p11-ease: cubic-bezier(0.23, 1, 0.32, 1); --verde: var(--tg-dark-ok); --ambar: var(--tg-dark-warning-solid); --rojo: var(--tg-dark-danger-solid); }
+button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:focus-visible { outline: 3px solid var(--accent-secondary); outline-offset: 2px; }
 
 .consola-us {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--tg-dark-bg);
+  color: var(--tg-dark-text);
   border: 2px solid var(--border-dark);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-hard), 0 10px 24px rgba(15, 23, 42, 0.08);
@@ -25,7 +25,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   margin-bottom: 28px;
 }
 .us-barra {
-  background: #1e293b;
+  background: var(--tg-dark-raised);
   padding: 12px 20px;
   display: flex;
   flex-wrap: wrap;
@@ -39,14 +39,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .us-estado { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .led-us {
   display: inline-block; flex: 0 0 auto; width: 11px; height: 11px; border-radius: 50%;
-  background: #64748b; vertical-align: middle;
+  background: var(--tg-dark-text-subtle); vertical-align: middle;
   transition: background-color 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 .led-us.ok { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
 .led-us.espera { background: var(--ambar); box-shadow: 0 0 8px var(--ambar); }
 .led-us.error { background: var(--rojo); box-shadow: 0 0 8px var(--rojo); }
 .us-lectura {
-  font-weight: 700; color: #e2e8f0; white-space: nowrap;
+  font-weight: 700; color: var(--tg-dark-text); white-space: nowrap;
   font-variant-numeric: tabular-nums;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.2);
@@ -66,7 +66,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 }
 #btn-toggle:active { transform: scale(0.97); }
 #btn-toggle.apagado { background: var(--accent-primary); border-color: var(--accent-primary-hover); color: #fff; }
-#btn-toggle.encendido { background: #dc2626; border-color: #f87171; color: #fff; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22); }
+#btn-toggle.encendido { background: #dc2626; border-color: var(--tg-dark-danger); color: #fff; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22); }
 
 /* Zona de alertas arriba del radar (espacio reservado fijo: 0 px de salto) */
 .us-alertas {
@@ -87,7 +87,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   padding: 8px 14px;
   border-radius: 10px;
   background: rgba(185, 28, 28, 0.92);
-  border: 1.5px solid #f87171;
+  border: 1.5px solid var(--tg-dark-danger);
   color: #fff;
   font-family: var(--font-mono);
   font-size: 12.5px;
@@ -97,7 +97,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   opacity: 1;
   transition: opacity 0.18s ease-out, background-color 0.18s ease-out, border-color 0.18s ease-out;
 }
-.us-alerta.cerca { background: rgba(180, 83, 9, 0.92); border-color: #fbbf24; }
+.us-alerta.cerca { background: rgba(180, 83, 9, 0.92); border-color: var(--tg-dark-warning); }
 .us-alerta[hidden] { display: flex; visibility: hidden; opacity: 0; pointer-events: none; }
 
 /* El radar es el protagonista: centrado y grande */
@@ -112,7 +112,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 #radar {
   width: 100%; height: auto; aspect-ratio: 1 / 1; max-width: 520px; margin: 0 auto; display: block;
   background: radial-gradient(circle at 50% 50%, #12263f 0%, #0b1424 72%);
-  border: 1.5px solid #334155; border-radius: 16px;
+  border: 1.5px solid var(--tg-dark-border-strong); border-radius: 16px;
   box-shadow: inset 0 0 28px rgba(2, 6, 23, 0.65);
   touch-action: pan-y;
   cursor: default;
@@ -144,9 +144,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   box-shadow: 0 4px 12px rgba(2, 6, 23, 0.45);
   transition: transform 0.14s var(--p11-ease), background-color 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out;
 }
-.us-obs-base:hover { background: rgba(30, 41, 59, 0.94); border-color: #f87171; }
+.us-obs-base:hover { background: rgba(30, 41, 59, 0.94); border-color: var(--tg-dark-danger); }
 .us-obs-base:active { cursor: grabbing; transform: scale(0.97); }
-.us-obs-base:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.us-obs-base:focus-visible { outline: 2px solid var(--tg-dark-accent); outline-offset: 2px; }
 .us-obs-hueco {
   width: 26px;
   height: 26px;
@@ -161,7 +161,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #ef4444;
+  background: var(--tg-dark-danger-solid);
   border: 2px solid #ffffff;
   box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.24);
   transition: opacity 0.16s ease-out, transform 0.16s var(--p11-ease);
@@ -171,7 +171,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.03em;
-  color: #cbd5e1;
+  color: var(--tg-dark-text);
   line-height: 1;
 }
 .us-obs-base.fuera {
@@ -182,9 +182,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   opacity: 0;
   transform: scale(0.5);
 }
-.us-obs-base.fuera:hover { border-color: #94a3b8; }
+.us-obs-base.fuera:hover { border-color: var(--tg-dark-text-muted); }
 .us-obs-base.zona-soltar {
-  border-color: #fbbf24;
+  border-color: var(--tg-dark-warning);
   background: rgba(120, 53, 15, 0.42);
   box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25), 0 4px 12px rgba(2, 6, 23, 0.45);
 }
@@ -211,8 +211,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   transition: border-color 0.2s ease-out;
 }
 .us-velo-widget svg { width: 76px; height: 42px; display: block; overflow: visible; }
-.us-velo-pista { fill: none; stroke: #1e293b; stroke-width: 6; stroke-linecap: round; }
-.us-velo-arco { fill: none; stroke: #22c55e; stroke-width: 6; stroke-linecap: round; transition: stroke 0.2s ease-out; }
+.us-velo-pista { fill: none; stroke: var(--tg-dark-raised); stroke-width: 6; stroke-linecap: round; }
+.us-velo-arco { fill: none; stroke: var(--tg-dark-ok); stroke-width: 6; stroke-linecap: round; transition: stroke 0.2s ease-out; }
 .us-velo-aguja { stroke: #f8fafc; stroke-width: 2.2; stroke-linecap: round; }
 .us-velo-pivote { fill: #f8fafc; }
 .us-velo-val {
@@ -220,13 +220,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   font-size: 11.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #22c55e;
+  color: var(--tg-dark-ok);
   line-height: 1.1;
   white-space: nowrap;
   transition: color 0.2s ease-out;
 }
-.us-velo-val small { font-size: 9.5px; font-weight: 600; color: #94a3b8; margin-left: 2px; }
-.us-leyenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; font-size: 13px; color: #94a3b8; }
+.us-velo-val small { font-size: 9.5px; font-weight: 600; color: var(--tg-dark-text-muted); margin-left: 2px; }
+.us-leyenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; font-size: 13px; color: var(--tg-dark-text-muted); }
 .us-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 
 /* Encabezado visual compartido con P02: 3 pistas con íconos y lo técnico plegado */
@@ -240,20 +240,20 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .curiosos ul{margin:0 0 14px;padding-left:20px;line-height:1.5}
 
 /* Panel colapsable Telemetría (patrón <details> estilo P01, adaptado al cockpit) */
-.us-detalle { border-top: 1.5px solid #1e293b; }
+.us-detalle { border-top: 1.5px solid var(--tg-dark-raised); }
 .us-detalle summary {
   cursor: pointer; list-style: none;
   display: flex; align-items: center; gap: 10px;
   min-height: 48px; padding: 12px 20px;
-  font-family: var(--font-display); font-weight: 700; font-size: 15.5px; color: #e2e8f0;
+  font-family: var(--font-display); font-weight: 700; font-size: 15.5px; color: var(--tg-dark-text);
   transition: background-color 0.15s ease-out;
 }
 .us-detalle summary:hover { background: rgba(255, 255, 255, 0.03); }
-.us-detalle summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: -2px; }
+.us-detalle summary:focus-visible { outline: 2px solid var(--tg-dark-accent); outline-offset: -2px; }
 .us-detalle summary::-webkit-details-marker { display: none; }
-.us-detalle summary::after { content: "▾"; color: #94a3b8; font-size: 14px; transition: transform 0.2s ease-out; }
+.us-detalle summary::after { content: "▾"; color: var(--tg-dark-text-muted); font-size: 14px; transition: transform 0.2s ease-out; }
 .us-detalle[open] summary::after { transform: rotate(180deg); }
-.us-detalle-hint { margin-left: auto; font-family: var(--font-mono); font-weight: 600; font-size: 11.5px; color: #64748b; }
+.us-detalle-hint { margin-left: auto; font-family: var(--font-mono); font-weight: 600; font-size: 11.5px; color: var(--tg-dark-text-subtle); }
 .us-detalle-cuerpo { padding: 4px 20px 20px; }
 
 @media (max-width: 640px) {
@@ -267,17 +267,17 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   .us-obs-base { top: 8px; right: 8px; }
 }
 
-.us-broker { font-family: var(--font-mono); font-size: 12.5px; color: #94a3b8; }
-.us-broker b { color: #e2e8f0; }
+.us-broker { font-family: var(--font-mono); font-size: 12.5px; color: var(--tg-dark-text-muted); }
+.us-broker b { color: var(--tg-dark-text); }
 .us-json {
-  background: #0b1424; border: 1.5px solid #334155; border-radius: 10px; padding: 10px 12px; margin-top: 10px;
-  font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; color: #7dd3fc; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%;
+  background: var(--tg-dark-inset); border: 1.5px solid var(--tg-dark-border-strong); border-radius: 10px; padding: 10px 12px; margin-top: 10px;
+  font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--tg-dark-accent); overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%;
 }
 .us-log {
-  background: #0b1424; border: 1.5px solid #1e293b; border-radius: 10px; padding: 10px 12px; margin-top: 10px; height: 150px; overflow-y: auto;
-  font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; line-height: 1.6; color: #94a3b8; overflow-wrap: anywhere; word-break: break-word;
+  background: var(--tg-dark-inset); border: 1.5px solid var(--tg-dark-raised); border-radius: 10px; padding: 10px 12px; margin-top: 10px; height: 150px; overflow-y: auto;
+  font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; line-height: 1.6; color: var(--tg-dark-text-muted); overflow-wrap: anywhere; word-break: break-word;
 }
-.us-log .ok { color: #86efac; } .us-log .err { color: #fca5a5; } .us-log .inf { color: #7dd3fc; }
+.us-log .ok { color: var(--tg-dark-ok); } .us-log .err { color: var(--tg-dark-danger); } .us-log .inf { color: var(--tg-dark-accent); }
 .us-log div { animation: us-ln 0.18s var(--p11-ease); }
 @keyframes us-ln { from { opacity: 0; transform: translateY(4px); } }
 
@@ -300,13 +300,15 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 <header id="menu"></header>
 
 <main>
-  <a class="volver" href="../index.html">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-    Prototipos
-  </a>
-
-  <p class="ceja">P03 · Radar ultrasónico</p>
-  <h1>Pon un obstáculo y <em>mira cómo frena</em></h1>
+  <div class="proto-intro">
+      <a class="volver" href="../index.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Prototipos
+      </a>
+      <p class="ceja">P03 · Radar ultrasónico</p>
+      <h1>Pon un obstáculo y <em>mira cómo frena</em></h1>
+    <span class="tg-ejec tg-ejec--sil" role="note" title="Se ejecuta en el navegador, sin hardware real (SIL)."><i aria-hidden="true"></i>SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS</span>
+  </div>
 
   <div class="pistas-iconos" role="list">
     <div class="pista-icono" role="listitem"><span aria-hidden="true">⚡</span><div>Enciéndelo<small>botón Encender</small></div></div>

@@ -1,7 +1,7 @@
 # Auditoría visual de los prototipos activos
 
 **Fecha:** 24/11/2026 · **Base:** commit `9452318` · **Alcance:** prototipos activos P01–P05 y P10
-**Uso:** archivo de trabajo para la siguiente fase (unificación visual). Este documento solo describe: no cambia ningún prototipo.
+**Uso:** archivo de trabajo de la unificación visual. La matriz describe el estado al 24/11/2026; lo resuelto en la Fase 2 está al final.
 
 ## Identidad principal del portafolio (referencia)
 | Elemento | Valor de referencia | Dónde se define |
@@ -48,3 +48,15 @@
 - `arquitectura.html` y `como-funciona-app.html`: llaman «P04 (SIL)» al único prototipo `EN VIVO · MQTT v2.0.0`; `arquitectura.html` dibuja al Gemelo P05 conectado al broker (su MQTT es simulado) y no menciona P10 ni la ruta lineal.
 - `hardware.html`: enlaza «Lista de materiales v1», mientras que `datos/proyecto.js` describe la matriz de hardware v2.
 - `tesis/capitulo_3.md`: sigue marcando P06 «En pruebas»; en el portafolio ahora es **Planificado** (no hay código en el repositorio).
+
+## Estado tras la Fase 2 (25/11/2026)
+| Hallazgo | Estado | Cómo se resolvió |
+|---|---|---|
+| 1. Inter no se carga en los prototipos | ✅ Resuelto | Las 6 páginas (P01–P05, P10) cargan Inter; P02 y P10 dejaron de escribir Atkinson y usan `--tg-font-sans`. También `arquitectura.html`, `como-funciona-app.html` y `hardware.html` cargan Inter. |
+| 2. Sin paleta oscura en los tokens | ✅ Resuelto | `tokens.css` define la paleta oscura oficial `--tg-dark-*` (fondo, superficies, bordes, texto principal/secundario y estados OK / Aviso / Fallo / alarma / foco). P02 (`assets/css/inspector_hw.css`), P10 (`ruta_lineal.css`), P03 (su `<style>`) y P05 (alias `--s2-*`) la usan. El dibujo en `canvas` conserva sus colores en JavaScript (no se tocó la lógica). |
+| 3. Tinta duplicada `#14213D` | ⏳ Pendiente | Sigue en los simuladores 3D de P01, P02 y P04 y en `assets/estilo.css`. |
+| 4. `iframe` en P01 y P04 | ⏳ Pendiente | Requiere integrar sus simuladores en la página como en P02 y P10. |
+| 5. Badge de ejecución sin componente común | ✅ Resuelto | `assets/css/prototipos.css` (importado por `style.css`): `.tg-ejec--sil` en P01, P02, P03, P05 y P10 y `.tg-ejec--vivo` («EN VIVO · MQTT v2.0.0 · ROBOT SIMULADO») en P04. |
+| 6. Encabezados irregulares | ✅ Resuelto | Encabezado común `.proto-intro` (← Prototipos · ceja `P0X · Nombre` · h1 corto · badge) en los 6 prototipos. P05 recupera el menú del portafolio. |
+| 7. Hoja heredada `assets/estilo.css` | ⏳ Pendiente | Sigue en `prototipos/index.html`, `cronograma.html`, `bitacora.html` y las páginas antiguas de P01. |
+| Discrepancias de contenido | ✅ Resuelto | `arquitectura.html` y `como-funciona-app.html` (P04 EN VIVO, P05 simulado), `hardware.html` (BOM v2: `hardware/materiales/lista-materiales-v2.xlsx`) y `tesis/capitulo_3.md` (P06 Planificado, P10 agregado). |
