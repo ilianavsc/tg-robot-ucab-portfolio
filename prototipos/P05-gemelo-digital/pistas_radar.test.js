@@ -210,16 +210,13 @@ module.exports = async function (ctx) {
     assert.strictEqual(N.CFG.UMBRAL_PARADA_CM, 20); assert.strictEqual(N.CFG.UMBRAL_AVISO_CM, 50);
   });
 
-  await prueba("la página: 6 paneles <details> cerrados por defecto, ranura de alertas de altura fija (sin display:none) y selector de las 2 pistas", () => {
+  await prueba("la página: ranura de alertas de altura fija (sin display:none), selector de las 2 pistas y obstáculo arrastrable", () => {
     const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
-    const dets = [...html.matchAll(/<details class="det"([^>]*)>/g)];
-    assert.ok(dets.length >= 6, "paneles " + dets.length);
-    dets.forEach((d) => assert.ok(!/\bopen\b/.test(d[1]), "un <details> arranca abierto"));
     const css = html.slice(0, html.indexOf("</style>"));
     assert.ok(/\.alerta-slot\s*\{[^}]*\bheight:\s*62px/.test(css) && /\.alerta\s*\{[^}]*\bheight:\s*46px/.test(css), "la ranura y la alerta tienen altura fija (delta = 0 px)");
     assert.ok(!/\.alerta[^{}]*\{[^}]*display:\s*none/.test(css) && !/id="alerta"[^>]*hidden/.test(html), "la alerta no se oculta con display:none ni hidden");
     assert.ok(/data-pista="A"/.test(html) && /data-pista="B"/.test(html));
-    for (const id of ["lienzo-pista", "velocimetro", "velo-arco", "velo-aguja", "base-obstaculo", "alerta", "contrato-json", "btn-ensenar", "btn-viaje-ida"]) assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
+    for (const id of ["lienzo-pista", "velocimetro", "velo-arco", "velo-aguja", "base-obstaculo", "alerta"]) assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     assert.ok(/pointerdown/.test(html) && /pointermove/.test(html) && /pointerup/.test(html), "ficha arrastrable con eventos de puntero");
     assert.ok(html.includes("../P04-simulador-1-esp32/codigo/pista.js"), "usa las pistas de SIM1 sin copiarlas");
   });
@@ -453,8 +450,8 @@ module.exports = async function (ctx) {
       assert.ok(!/\bemparejad[ao]s?\b/i.test(src), f + " menciona emparejada");
       assert.ok(!/\bconectad[ao]s?\b/i.test(src), f + " menciona conectada");
     }
-    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
-    assert.ok(html.includes("HiveMQ → EMQX → Mosquitto"), "falta cadena MQTT de respaldo");
+    const mod = fs.readFileSync(path.join(__dirname, "aprendizaje_gemelo.js"), "utf8");
+    assert.ok(mod.includes("HiveMQ") && mod.includes("EMQX") && mod.includes("Mosquitto"), "falta cadena MQTT de respaldo en el módulo");
   });
 
   await prueba("Etapa 2 (2da vuelta): puntos de control equitativos dividiendo la longitud total entre 3 (Pista B y Pista A)", () => {
@@ -661,6 +658,60 @@ module.exports = async function (ctx) {
 
     const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
     assert.ok(html.includes('data-vel="1"') && html.includes('data-vel="2"') && html.includes('data-vel="4"'));
-    assert.ok(html.includes('id="panel-capa3"') && html.includes("capa3_operacional.js"));
+  });
+
+  /* ---- Primer escaneo de ruta (pantalla principal de P05): velocidad real de P04/TG_ROBOT y un punto cada 2 s ---- */
+  const PE = require("./primer_escaneo.js");
+  const TG = require(path.join(__dirname, "..", "..", "assets", "js", "parametros_robot.js"));
+
+  await prueba("Primer escaneo: la consigna lenta sale de P04 (PWM Base mínimo 0,40) × TG_ROBOT (0,57 m/s) = 0,228 m/s, bajo el crucero 0,41 y el máximo 0,46", () => {
+    const mainP04 = fs.readFileSync(path.join(SIM1, "main.js"), "utf8");
+    const m = mainP04.match(/\['base',\s*'Base',\s*([\d.]+)/);
+    assert.ok(m, "P04 main.js ya no trae el ajuste Base del PD");
+    assert.strictEqual(PE.C.PWM_LENTO, Number(m[1]), "PWM lento = mínimo del ajuste Base de P04");
+    assert.strictEqual(PE.C.PWM_CRUCERO, sim1.sim.PD.base, "PWM crucero = PD.base de P04");
+    const V = PE.velocidades(TG);
+    assert.strictEqual(V.lentaMs, 0.228);
+    assert.strictEqual(V.cruceroMs, TG.velocidad.cruceroMs); assert.strictEqual(V.maxMs, TG.velocidad.maxMs);
+    assert.ok(V.lentaMs < V.cruceroMs && V.cruceroMs <= V.maxMs);
+    assert.strictEqual(PE.C.MUESTRA_MS, 2000);
+  });
+
+  await prueba("Primer escaneo en las pistas A y B: llega con la cinta completa, no pasa de 0,228 m/s y guarda un punto cada 2000 ms con todos los sensores", () => {
+    const V = PE.velocidades(TG);
+    for (const id of ["A", "B"]) {
+      const m = mundo(id);
+      m.sim.t = 3.7; /* el reloj de la planta no empieza en 0: el registro usa tiempo relativo */
+      assert.ok(S.iniciarEnsenanza(m.sim, 1));
+      m.sim.velObjetivoMs = V.lentaMs;
+      const reg = PE.iniciar(PE.crear(), m.sim, S);
+      let vmax = 0;
+      correr(m.sim, 120, (x) => { PE.tick(reg, x, S); vmax = Math.max(vmax, Math.abs(x.vLineal)); return x.llegadaCompleta || x.nav.paradaSeguridad; });
+      PE.finalizar(reg, m.sim, S, m.sim.nav.paradaSeguridad ? "parada" : null);
+      assert.ok(reg.completo && m.sim.llegadaCompleta, id + ": el primer escaneo llega");
+      assert.ok(vmax <= V.lentaMs + 0.005, id + ": vmax " + vmax);
+      const ms = reg.muestras, regulares = ms.filter((x) => !x.final);
+      assert.ok(regulares.length >= Math.floor(m.sim.L / V.lentaMs / 2), id + ": " + regulares.length + " puntos");
+      regulares.forEach((x, i) => assert.strictEqual(x.t_s, i * 2, id + ": punto " + (i + 1) + " en t = " + x.t_s));
+      assert.ok(ms[ms.length - 1].final && ms[ms.length - 1].s_m > m.sim.L - 0.3);
+      for (const k of ["n", "t_s", "s_m", "x", "y", "angulo", "tcrt", "tcrt_n", "frente_cm", "atras_cm", "yaw_deg", "omega_dps", "v_ms", "pwm_izq", "pwm_der"]) assert.ok(k in ms[3], "falta " + k);
+      assert.strictEqual(ms[3].tcrt.length, 4);
+    }
+  });
+
+  await prueba("Página P05: solo el primer escaneo (sin torretas ni balizas), puntos sin línea punteada, nota 'Cargando...' de la App e Ingeniería / Datos con 2 bloques", () => {
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "quedan referencias a torretas/balizas");
+    assert.ok(!/aprendizaje_gemelo\.js|capa3_operacional\.js/.test(html), "la página no carga fases futuras");
+    assert.ok(html.includes('src="primer_escaneo.js"') && html.includes("../../assets/js/parametros_robot.js"));
+    const escena = html.slice(html.indexOf("function dibujarEscena"), html.indexOf("window.__p05"));
+    assert.ok(escena.length > 200 && !/setLineDash/.test(escena), "el trazado no usa línea punteada");
+    assert.ok(!/setLineDash\(\[[1-9]/.test(html), "no queda ninguna línea punteada en el canvas");
+    assert.ok(/Nota de integración App:/.test(html) && html.includes("tg-robot-ucab-app") && html.includes('"Cargando..."'));
+    const cajon = html.slice(html.indexOf('id="cajon-ing"'), html.indexOf("</aside>", html.indexOf('id="cajon-ing"')));
+    assert.strictEqual((cajon.match(/<section class="panel"/g) || []).length, 2, "Ingeniería / Datos tiene exactamente 2 bloques");
+    assert.ok(cajon.includes("Registro del primer viaje") && cajon.includes("Consola de sensores en vivo"));
+    assert.ok(!/data-tab=|<details/.test(html), "sin pestañas ni paneles extra");
+    for (const id of ["reg-filas", "btn-limpiar-viaje", "tcrt-bin", "us-frente", "us-atras", "mpu-rumbo", "mpu-omega", "mov-vel", "mov-pwm"]) assert.ok(cajon.includes('id="' + id + '"'), "falta #" + id);
   });
 };

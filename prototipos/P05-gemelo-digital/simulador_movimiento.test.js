@@ -307,12 +307,10 @@ prueba("el script en línea de index.html compila sin errores de sintaxis", () =
   assert.ok(bloques.length >= 1);
   bloques.forEach((b) => new vm.Script(b));
 });
-prueba("index.html trae pista, controles y telemetría lógica con sus elementos", () => {
-  for (const id of ["lienzo-pista", "lienzo-zoom", "btn-play", "btn-paso", "btn-viaje-ida", "btn-viaje-vuelta",
-    "btn-freno", "btn-reanudar", "btn-ensenar", "btn-restaurar-cinta", "btn-retiro-progresivo", "estado-activo",
-    "tcrt-bin", "mpu-rumbo", "mpu-deriva", "us-frente", "us-atras", "ble-rssi", "ble-validacion", "log-eventos",
-    "ctl-obstaculo-critico", "ctl-obstaculo-precaucion", "ctl-quitar-obstaculo", "ctl-deriva", "ctl-empujon",
-    "modo-auto", "modo-manual", "cinta-tramos", "estados-chips"]) {
+prueba("index.html trae pista, controles del primer escaneo y la consola de sensores con sus elementos", () => {
+  for (const id of ["lienzo-pista", "btn-encender", "btn-principal-ctx", "btn-freno", "btn-ing", "cajon-ing", "estado-activo",
+    "tcrt-bin", "mpu-rumbo", "mpu-omega", "us-frente", "us-atras", "mov-vel", "mov-pwm", "reg-filas", "btn-limpiar-viaje",
+    "hud-t", "hud-s", "hud-n", "hud-prox", "nota-app", "base-obstaculo"]) {
     assert.ok(htmlSrc.includes('id="' + id + '"'), "falta #" + id);
   }
 });
