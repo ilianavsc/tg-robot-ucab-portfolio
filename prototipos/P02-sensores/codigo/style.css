@@ -71,6 +71,19 @@
 /* Consola HC-SR04P: radar dual (frontal arriba + trasero abajo) */
 .p02-sim #hw-canvas-radar[hidden]{display:none}
 .p02-sim .hw-cv-radar-dual{width:100%;height:164px;display:block;border-radius:8px;background:var(--tg-dark-bg,#10141A);border:1px solid var(--tg-dark-border,#242933)}
+
+/* Panel lateral colapsable + botón rápido y Vista general */
+.p02-sim .p02-btn-sensores{margin-left:auto}
+.p02-sim .p02-btn-vista-gen[hidden],
+.p02-sim .p02-ver-consola[hidden]{display:none}
+.p02-sim .p02-btn-vista-gen{background:#0b7a66;border-color:var(--tinta)}
+.p02-sim .p02-btn-vista-gen:hover{background:#096655}
+.p02-sim .p02-ver-consola{position:absolute;right:12px;bottom:calc(var(--alto-tira,64px) + 18px);z-index:12;background:#10141A;color:#00F2FE;border:2px solid #00F2FE;border-radius:999px;padding:8px 14px;min-height:42px;font-size:13.5px;box-shadow:0 6px 18px rgba(15,23,42,.35)}
+.p02-sim .p02-ver-consola:hover{background:#18202c}
+@media (min-width:769px){
+  .p02-sim[data-panel-colapsado="1"]{grid-template-columns:minmax(0,1fr) 0}
+  .p02-sim[data-panel-colapsado="1"] > .hw-panel{display:none}
+}
 .p02-sim .dp{border-radius:12px;border:2px solid var(--tinta);background:rgba(20,33,61,.82);color:#fff;font-weight:700;font-size:18px;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .p02-sim .dp.on{background:var(--verde)}
 .p02-sim .dp.stop{background:rgba(242,96,61,.92);font-size:15px}

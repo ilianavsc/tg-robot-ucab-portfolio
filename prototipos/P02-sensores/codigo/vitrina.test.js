@@ -554,6 +554,10 @@ prueba('UX P02: barra superior limpia, menús agrupados, D-pad solo en manual, p
   assert.ok(FICHAS.us && FICHAS.us.corto === 'HC-SR04P · Radar' && FICHAS.us.consola.id === 'hcsr04', 'ficha unificada HC-SR04P');
   assert.ok(app.includes('id="hw-canvas-radar-dual"') && app.includes('id="hw-in-dist-atras"'), 'canvas de radar dual y slider trasero');
   assert.ok(main.includes('dibujarRadarDual') && main.includes('FRENTE ▲') && main.includes('ATRÁS ▼'), 'dibuja ambos sectores frontal y trasero');
+  // 5. Panel colapsable con resize 3D, zoom suave y botón rápido Ver consola
+  assert.ok(app.includes('id="b-sensores"') && app.includes('id="b-vista-general"') && app.includes('id="b-abrir-consola"'), 'controles de panel colapsable, vista general y acceso rápido');
+  assert.ok(css.includes('data-panel-colapsado="1"') && css.includes('.p02-ver-consola'), 'CSS de panel colapsable y botón rápido');
+  assert.ok(main.includes('ponPanelColapsado') && main.includes('ZOOM_COMP') && main.includes('enfocarCamara'), 'lógica de colapso con resize y zoom suave 3D');
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

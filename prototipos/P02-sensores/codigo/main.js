@@ -58,7 +58,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const est = demo.est;
 
   // ---------------------------------------------------------------- estado de la interfaz
-  const ui = {encendido: false, pausa: true, xray: 0, xrayMeta: 0, etiquetas: true, mando: false, vista: 'inspeccion', sel: null, t: 0, pitch: 0, roll: 0, sacudida: 0};
+  const ui = {encendido: false, pausa: true, xray: 0, xrayMeta: 0, etiquetas: true, mando: false, panelColapsado: false, zoomComp: null, vista: 'inspeccion', sel: null, t: 0, pitch: 0, roll: 0, sacudida: 0};
   let rafId = null;
   const anim = {
     ang: {izq: 0, der: 0},
@@ -75,10 +75,33 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     general: {pos: new THREE.Vector3(0, 3.3, 3.0), tgt: new THREE.Vector3(0, 0, 0.05)},
   };
   const NOMBRE_VISTA = {seguir: 'Seguir', inspeccion: 'Inspección', general: 'Panorámica'};
+  const ZOOM_COMP = {
+    tcrt: {anchor: 'tcrt', off: new THREE.Vector3(0.15, 0.16, 0.24)},
+    us: {anchor: 'us_front', off: new THREE.Vector3(0.22, 0.16, 0.26)},
+    esp32: {anchor: 'esp32', off: new THREE.Vector3(0.18, 0.22, 0.16)},
+    mpu: {anchor: 'mpu', off: new THREE.Vector3(0.16, 0.20, 0.16)},
+    traccion: {anchor: 'traccion', off: new THREE.Vector3(0.28, 0.15, -0.18)},
+    bateria: {anchor: 'bateria', off: new THREE.Vector3(-0.22, 0.20, -0.22)},
+  };
   const yaw = new THREE.Vector3(0, 1, 0);
   let tween = null;
   let thPrev = est.th;
+  const bVistaGen = $('#b-vista-general');
+  const objetivoZoom = (comp) => {
+    const cfg = ZOOM_COMP[comp];
+    if (!cfg) return null;
+    const anchor = robot.anchors[cfg.anchor];
+    const tgt = anchor ? anchor.clone() : new THREE.Vector3(0, 0.05, 0);
+    incl.localToWorld(tgt);
+    const k = canvas.clientWidth < 640 ? 1.35 : 1;
+    const pos = cfg.off.clone().multiplyScalar(k).applyAxisAngle(yaw, est.th).add(tgt);
+    return {pos, tgt};
+  };
   const objetivoVista = (v) => {
+    if (ui.zoomComp) {
+      const z = objetivoZoom(ui.zoomComp);
+      if (z) return z;
+    }
     const c = VISTAS[v];
     if (v === 'general') return {pos: c.pos.clone(), tgt: c.tgt.clone()};
     const tgt = new THREE.Vector3(est.x, c.alto, est.z);
@@ -87,12 +110,14 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     return {pos, tgt};
   };
   const irA = (v, instantaneo = false) => {
+    ui.zoomComp = null;
     ui.vista = v;
+    if (bVistaGen) bVistaGen.hidden = true;
     aro.visible = v === 'general';
     if ($('#b-vista-tx')) $('#b-vista-tx').textContent = NOMBRE_VISTA[v];
     $$('[data-vista]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.vista === v)));
     controls.enablePan = v === 'general';
-    controls.minDistance = v === 'general' ? 1 : 0.25;
+    controls.minDistance = v === 'general' ? 1 : 0.2;
     controls.maxDistance = v === 'general' ? 7 : 3;
     if (instantaneo) {
       const o = objetivoVista(v);
@@ -100,11 +125,22 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       controls.target.copy(o.tgt);
       tween = null;
     } else {
-      tween = {t: 0, p0: camera.position.clone(), t0: controls.target.clone()};
+      tween = {t: 0, dur: 0.8, p0: camera.position.clone(), t0: controls.target.clone()};
     }
   };
+  const enfocarCamara = (comp) => {
+    if (!ZOOM_COMP[comp]) return;
+    ui.zoomComp = comp;
+    aro.visible = false;
+    controls.enablePan = false;
+    controls.minDistance = 0.18;
+    controls.maxDistance = 3;
+    if (bVistaGen) bVistaGen.hidden = false;
+    tween = {t: 0, dur: 0.8, p0: camera.position.clone(), t0: controls.target.clone()};
+    solicitarCuadro();
+  };
   const seguirCamara = (dt) => {
-    if (ui.vista === 'general') {
+    if (ui.vista === 'general' && !ui.zoomComp) {
       if (tween) avanzarTween(dt);
       return;
     }
@@ -118,11 +154,16 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     }
     // seguimiento rígido: la cámara acompaña al robot (traslación y giro), conservando lo que el usuario orbitó
     const off = camera.position.clone().sub(controls.target).applyAxisAngle(yaw, dth);
-    controls.target.set(est.x, VISTAS[ui.vista].alto, est.z);
+    if (ui.zoomComp && ZOOM_COMP[ui.zoomComp]) {
+      const z = objetivoZoom(ui.zoomComp);
+      if (z) controls.target.copy(z.tgt);
+    } else {
+      controls.target.set(est.x, VISTAS[ui.vista].alto, est.z);
+    }
     camera.position.copy(controls.target).add(off);
   };
   const avanzarTween = (dt) => {
-    tween.t = Math.min(1, tween.t + dt / 0.9);
+    tween.t = Math.min(1, tween.t + dt / (tween.dur || 0.8));
     const e = tween.t * tween.t * (3 - 2 * tween.t);
     const o = objetivoVista(ui.vista);
     camera.position.lerpVectors(tween.p0, o.pos, e);
@@ -212,6 +253,42 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       solicitarCuadro();
     });
   });
+  if (bVistaGen) {
+    bVistaGen.addEventListener('click', () => {
+      irA('general');
+      solicitarCuadro();
+    });
+  }
+  const rootSim = $('#hw-inspector-root');
+  const bSensores = $('#b-sensores');
+  const bVerConsolaRapida = $('#b-abrir-consola');
+  const refrescaVerConsolaRapida = () => {
+    if (!bVerConsolaRapida) return;
+    const mostrar = Boolean(ui.panelColapsado && ui.sel && FICHAS[ui.sel]);
+    bVerConsolaRapida.hidden = !mostrar;
+    if (mostrar) bVerConsolaRapida.textContent = `📊 Ver consola ${FICHAS[ui.sel].corto}`;
+  };
+  const ponPanelColapsado = (colapsar) => {
+    ui.panelColapsado = Boolean(colapsar);
+    if (rootSim) {
+      if (ui.panelColapsado) rootSim.dataset.panelColapsado = '1';
+      else delete rootSim.dataset.panelColapsado;
+    }
+    if (bSensores) {
+      bSensores.setAttribute('aria-expanded', String(!ui.panelColapsado));
+      const tx = $('.tx', bSensores);
+      if (tx) tx.textContent = ui.panelColapsado ? '⟨ Sensores' : 'Sensores ⟩';
+    }
+    refrescaVerConsolaRapida();
+    resize();
+    solicitarCuadro();
+    requestAnimationFrame(() => {
+      resize();
+      solicitarCuadro();
+    });
+  };
+  if (bSensores) bSensores.addEventListener('click', () => ponPanelColapsado(!ui.panelColapsado));
+  if (bVerConsolaRapida) bVerConsolaRapida.addEventListener('click', () => ponPanelColapsado(false));
   const dpadEl = $('#dpad');
   const ponMando = (on) => {
     ui.mando = Boolean(on);
@@ -393,6 +470,9 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     const consolaSel = ui.sel ? CONSOLA_COMP[ui.sel] : null;
     if (!desdePanel && S && (S.get().foco !== focoEstado || S.get().seleccion !== consolaSel)) S.set({foco: focoEstado, seleccion: consolaSel}, 'circuito-ui');
     if (ui.sel === 'us' && $('#hw-panel-titulo')) $('#hw-panel-titulo').textContent = 'Enfocado · HC-SR04P · Radar dual';
+    if (ui.sel) enfocarCamara(ui.sel);
+    else if (ui.zoomComp) irA('inspeccion');
+    refrescaVerConsolaRapida();
     dibujarRadarDual();
     solicitarCuadro();
   };
@@ -1007,6 +1087,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ponPausa,
     ponEtiquetas,
     ponMando,
+    ponPanelColapsado,
+    enfocarCamara,
     ponModo,
     estado: S,
     manual: MANUAL,
