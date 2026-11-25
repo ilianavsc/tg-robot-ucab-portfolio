@@ -13,6 +13,11 @@
  *    TG_ROBOT.velocidad.maxMs (0,46 m/s) y crucero TG_ROBOT.velocidad.cruceroMs (0,41 m/s).
  *  ⇒ escaneo lento = 0,40 × 0,57 = 0,228 m/s.
  *
+ * Escaneo ADMINISTRADO en pista despejada: no se simulan obstáculos. Las distancias
+ * de los dos HC-SR04P de cada punto se guardan como PERFIL DE PAREDES DE REFERENCIA
+ * (línea base del entorno fijo) para evitar falsos positivos en la operación normal;
+ * los recorridos sucesivos sobre la misma ruta refinan ese perfil.
+ *
  * Sin DOM: se usa en la página (window.PrimerEscaneo) y en Node (require).
  * No decide el movimiento: el núcleo teach-and-repeat y la planta
  * (simulador_movimiento.js) mueven al robot; aquí solo se registra.
@@ -71,6 +76,8 @@
       x: r(pose.x, 3), y: r(pose.y, 3), angulo: r(pose.angulo, 1),
       tcrt: sens.bin.slice(), tcrt_n: sens.n.map(function (v) { return r(v, 2); }),
       frente_cm: f > 0 ? r(f, 1) : null, atras_cm: r(a, 1),
+      /* línea base: lo que "ven" los HC-SR04P en pista despejada = paredes / entorno fijo */
+      paredes_ref: { frente_cm: f > 0 ? r(f, 1) : null, atras_cm: r(a, 1), linea_base: true },
       yaw_deg: r(S.yawMedido(sim), 1), omega_dps: r(omega, 1),
       v_ms: r(Math.abs(sim.vLineal), 3),
       pwm_izq: r(sim.vIzq, 2), pwm_der: r(sim.vDer, 2),
@@ -114,11 +121,16 @@
     return reg;
   }
 
+  /* Perfil de paredes de referencia (línea base) a lo largo de la ruta: s → distancias de los HC-SR04P */
+  function perfilParedes(reg) {
+    return reg.muestras.map(function (m) { return { s_m: m.s_m, frente_cm: m.paredes_ref.frente_cm, atras_cm: m.paredes_ref.atras_cm }; });
+  }
+
   /* Segundos que faltan para el próximo punto */
   function faltaS(reg, sim) {
     if (!reg.activo) return null;
     return Math.max(0, (reg.proximaMs - tViajeMs(reg, sim)) / 1000);
   }
 
-  return { C: C, velocidades: velocidades, crear: crear, reiniciar: reiniciar, iniciar: iniciar, tick: tick, finalizar: finalizar, faltaS: faltaS, muestra: muestra };
+  return { C: C, velocidades: velocidades, crear: crear, reiniciar: reiniciar, iniciar: iniciar, tick: tick, finalizar: finalizar, faltaS: faltaS, muestra: muestra, perfilParedes: perfilParedes };
 });

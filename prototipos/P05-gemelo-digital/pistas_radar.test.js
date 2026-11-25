@@ -210,14 +210,15 @@ module.exports = async function (ctx) {
     assert.strictEqual(N.CFG.UMBRAL_PARADA_CM, 20); assert.strictEqual(N.CFG.UMBRAL_AVISO_CM, 50);
   });
 
-  await prueba("la página: ranura de alertas de altura fija (sin display:none), selector de las 2 pistas y obstáculo arrastrable", () => {
+  await prueba("la página: ranura de alertas de altura fija (sin display:none), selector de las 2 pistas y SIN obstáculo simulado (escaneo administrado en pista despejada)", () => {
     const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
     const css = html.slice(0, html.indexOf("</style>"));
     assert.ok(/\.alerta-slot\s*\{[^}]*\bheight:\s*62px/.test(css) && /\.alerta\s*\{[^}]*\bheight:\s*46px/.test(css), "la ranura y la alerta tienen altura fija (delta = 0 px)");
     assert.ok(!/\.alerta[^{}]*\{[^}]*display:\s*none/.test(css) && !/id="alerta"[^>]*hidden/.test(html), "la alerta no se oculta con display:none ni hidden");
     assert.ok(/data-pista="A"/.test(html) && /data-pista="B"/.test(html));
-    for (const id of ["lienzo-pista", "velocimetro", "velo-arco", "velo-aguja", "base-obstaculo", "alerta"]) assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
-    assert.ok(/pointerdown/.test(html) && /pointermove/.test(html) && /pointerup/.test(html), "ficha arrastrable con eventos de puntero");
+    for (const id of ["lienzo-pista", "velocimetro", "velo-arco", "velo-aguja", "alerta"]) assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
+    assert.ok(!html.includes('id="base-obstaculo"') && !/obs-base|obs-ficha|modo-colocar/.test(html), "no queda el control de obstáculo");
+    assert.ok(!/colocarObstaculo|forzarFrente|inyectarObstaculo|pointerdown/.test(html), "ningún atajo inyecta obstáculos durante el primer escaneo");
     assert.ok(html.includes("../P04-simulador-1-esp32/codigo/pista.js"), "usa las pistas de SIM1 sin copiarlas");
   });
 
@@ -696,6 +697,10 @@ module.exports = async function (ctx) {
       assert.ok(ms[ms.length - 1].final && ms[ms.length - 1].s_m > m.sim.L - 0.3);
       for (const k of ["n", "t_s", "s_m", "x", "y", "angulo", "tcrt", "tcrt_n", "frente_cm", "atras_cm", "yaw_deg", "omega_dps", "v_ms", "pwm_izq", "pwm_der"]) assert.ok(k in ms[3], "falta " + k);
       assert.strictEqual(ms[3].tcrt.length, 4);
+      assert.ok(ms.every((x) => x.paredes_ref && x.paredes_ref.linea_base === true && x.paredes_ref.atras_cm === x.atras_cm && x.paredes_ref.frente_cm === x.frente_cm), id + ": cada punto guarda las paredes de referencia");
+      const perfil = PE.perfilParedes(reg);
+      assert.strictEqual(perfil.length, ms.length);
+      assert.deepStrictEqual(Object.keys(perfil[0]), ["s_m", "frente_cm", "atras_cm"]);
     }
   });
 
@@ -712,6 +717,10 @@ module.exports = async function (ctx) {
     assert.strictEqual((cajon.match(/<section class="panel"/g) || []).length, 2, "Ingeniería / Datos tiene exactamente 2 bloques");
     assert.ok(cajon.includes("Registro del primer viaje") && cajon.includes("Consola de sensores en vivo"));
     assert.ok(!/data-tab=|<details/.test(html), "sin pestañas ni paneles extra");
-    for (const id of ["reg-filas", "btn-limpiar-viaje", "tcrt-bin", "us-frente", "us-atras", "mpu-rumbo", "mpu-omega", "mov-vel", "mov-pwm"]) assert.ok(cajon.includes('id="' + id + '"'), "falta #" + id);
+    assert.ok(cajon.includes('id="nota-paredes"') && cajon.includes("Escaneo administrado (pista despejada):") &&
+      cajon.includes("se guardan como paredes de referencia para evitar falsos positivos durante la operación normal") &&
+      cajon.includes("el robot refina progresivamente su comprensión del entorno fijo"), "nota técnica de paredes de referencia");
+    assert.ok(/Paredes ref\. F \/ A/.test(cajon) && /línea base/.test(cajon), "el registro etiqueta los HC-SR04P como línea base de paredes");
+    for (const id of ["nota-paredes", "reg-filas", "btn-limpiar-viaje", "tcrt-bin", "us-frente", "us-atras", "mpu-rumbo", "mpu-omega", "mov-vel", "mov-pwm"]) assert.ok(cajon.includes('id="' + id + '"'), "falta #" + id);
   });
 };

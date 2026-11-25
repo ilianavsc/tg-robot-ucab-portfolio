@@ -310,7 +310,7 @@ prueba("el script en línea de index.html compila sin errores de sintaxis", () =
 prueba("index.html trae pista, controles del primer escaneo y la consola de sensores con sus elementos", () => {
   for (const id of ["lienzo-pista", "btn-encender", "btn-principal-ctx", "btn-freno", "btn-ing", "cajon-ing", "estado-activo",
     "tcrt-bin", "mpu-rumbo", "mpu-omega", "us-frente", "us-atras", "mov-vel", "mov-pwm", "reg-filas", "btn-limpiar-viaje",
-    "hud-t", "hud-s", "hud-n", "hud-prox", "nota-app", "base-obstaculo"]) {
+    "hud-t", "hud-s", "hud-n", "hud-prox", "nota-app", "nota-paredes"]) {
     assert.ok(htmlSrc.includes('id="' + id + '"'), "falta #" + id);
   }
 });

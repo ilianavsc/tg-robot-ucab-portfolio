@@ -10,7 +10,8 @@ Las torretas / Torres de Control quedan **fuera de esta pantalla**. Se integran 
    - El trazado se dibuja **solo con esos puntos**, sin una línea continua ni punteada.
    - Cada punto guarda la lectura instantánea de los sensores.
 3. **Freno Remoto / Pausa** conservan el registro. **♻ Limpiar y reiniciar viaje** lo borra.
-4. **Nota de integración App:** durante este escaneo, la app móvil (`tg-robot-ucab-app`) solo muestra **"Cargando..."**. El registro punto a punto es solo del gemelo.
+4. **Escaneo administrado en pista despejada:** no hay control para simular obstáculos durante el primer escaneo. Las distancias de los dos HC-SR04P de cada punto (`paredes_ref`, `perfilParedes()`) se guardan como **perfil de paredes de referencia (línea base)**. Así se evitan falsos positivos en la operación normal, y los recorridos sucesivos sobre la misma ruta refinan ese perfil del entorno fijo.
+5. **Nota de integración App:** durante este escaneo, la app móvil (`tg-robot-ucab-app`) solo muestra **"Cargando..."**. El registro punto a punto es solo del gemelo.
 
 ## Velocidad de referencia (valores reales, sin inventar)
 | Valor | Origen |
@@ -27,7 +28,7 @@ Las torretas / Torres de Control quedan **fuera de esta pantalla**. Se integran 
    - `s` (distancia recorrida);
    - pose `x, y, θ`;
    - 4 × TCRT5000;
-   - HC-SR04P frontal y trasero;
+   - HC-SR04P frontal y trasero como **paredes de referencia (línea base)**;
    - yaw de la MPU-6050;
    - velocidad.
 2. **Consola de sensores en vivo:**
@@ -49,7 +50,7 @@ Las torretas / Torres de Control quedan **fuera de esta pantalla**. Se integran 
 |---|---|
 | `index.html` | Interfaz del primer escaneo (canvas, nota App, cajón Ingeniería / Datos) |
 | `primer_escaneo.js` | Velocidades de referencia y registro de un punto cada 2000 ms (sin DOM) |
-| `simulador_movimiento.js` | Planta: Frenet con curvatura, sensores, enseñanza, limitador, obstáculos |
+| `simulador_movimiento.js` | Planta: Frenet con curvatura, sensores, enseñanza, limitador (la página no inyecta obstáculos) |
 | `pistas_sim1.js` | Adaptador de las pistas de SIM1 (κ(s), pose, rectitud) |
 | `radar_us.js` | Lógica del radar de P03 (cono, rampa, velocímetro) |
 | `gemelo_estado.js`, `aprendizaje_gemelo.js`, `capa3_operacional.js` | Módulos de fases posteriores (estado para la app, viajes de ajuste, Capa 3). La página no los carga; se conservan con sus pruebas. |
