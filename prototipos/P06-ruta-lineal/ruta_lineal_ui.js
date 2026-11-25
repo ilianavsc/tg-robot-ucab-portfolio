@@ -147,6 +147,16 @@
     etiqueta(ctx, estrecho ? 'BASE' : 'BASE · INICIO', eb[0] - 4, eb[1] - pared - 14, COL.verde, COL.blanco);
     var ed = pr(G.largo - 0.05, semi);
     etiqueta(ctx, estrecho ? 'DESTINO' : 'PARADA · DESTINO', ed[0] + 4, ed[1] - pared - 14, e.ruta.estado === 'ESPERA_REPOSICION' ? COL.violeta : COL.coral, COL.blanco, 'der');
+    // puntos de control (pendiente · cruzado en la ida · cruzado en el retorno)
+    (e.puntosControl || []).forEach(function (pc) {
+      var a1 = pr(pc.x, semi * 0.92), a2 = pr(pc.x, -semi * 0.92);
+      ctx.strokeStyle = pc.retorno ? COL.ok : pc.ida ? COL.cian : COL.apagado;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke();
+      ctx.setLineDash([]);
+      etiqueta(ctx, pc.id, a1[0] - 14, a1[1] - 12, pc.retorno ? COL.ok : pc.ida ? COL.cian : COL.apagado, COL.tinta, 'centro');
+    });
     // obstáculo
     if (e.obstaculo) {
       var po = pr(e.obstaculo.x, 0);
@@ -392,6 +402,7 @@
   var signo = function (v, d) { return (v >= 0 ? '+' : '') + v.toFixed(d); };
   var fmtDist = function (m) { return !isFinite(m) ? 'sin eco' : m < 1 ? Math.round(m * 100) + ' cm' : m.toFixed(2) + ' m'; };
   var ultimoLog = '';
+  var ultimoPc = '';
 
   // Un solo estado (SimulationState) y una sola función de pintado: lo común siempre;
   // cada pestaña solo cuando se ve (la oculta se pinta completa al abrirla).
@@ -428,6 +439,16 @@
 
   // Pestaña Operación: máquina de estados, datos y registro
   function renderOperacion(e, est) {
+    // puntos de control: el mismo estado que pinta el gemelo 3D
+    var clavePc = (e.puntosControl || []).map(function (p) { return p.id + (p.retorno ? 'R' : p.ida ? 'I' : '-'); }).join('|');
+    if (clavePc !== ultimoPc) {
+      ultimoPc = clavePc;
+      $('rl-pcs').innerHTML = (e.puntosControl || []).map(function (p) {
+        var est = p.retorno ? 'retorno' : p.ida ? 'ida' : 'pendiente';
+        var txtEst = p.retorno ? 'ida ✓ · retorno ✓' : p.ida ? 'ida ✓' : 'pendiente';
+        return '<li class="' + est + '"><b>' + p.id + '</b><span>' + p.x.toFixed(2) + ' m</span><small>' + txtEst + '</small></li>';
+      }).join('');
+    }
     todos('[data-fsm]').forEach(function (li) { li.classList.toggle('activo', li.getAttribute('data-fsm') === est); });
     txt('rl-ciclo', String(e.ruta.ciclo));
     txt('rl-pos', e.robot.x.toFixed(2) + ' m');
@@ -596,7 +617,7 @@
     var pasos = Math.max(1, Math.round(dt / (1 / 60)));
     for (var i = 0; i < pasos; i++) S.paso(dt / pasos);
     var e = S.get();
-    dibujarEscena(e);
+    pintarEscena(e, dt);
     acDom += dt;
     if (acDom > (reducido ? 0.15 : 0.08)) {
       acDom = 0;
@@ -604,7 +625,12 @@
     }
     if (e.alarma.activa && !e.alarma.silenciada && !e.ruta.sub) pitido(ahora);
   }
-  if (window.ResizeObserver) new ResizeObserver(function () { dibujarEscena(S.get()); renderPanel(S.get()); }).observe($('rl-sim'));
+  function pintarEscena(e, dt) {
+    var g = window.GemeloP06;
+    if (g && g.activo) g.cuadro(e, dt || 0);
+    else dibujarEscena(e);
+  }
+  if (window.ResizeObserver) new ResizeObserver(function () { pintarEscena(S.get(), 0); renderPanel(S.get()); }).observe($('rl-sim'));
   renderPanel(S.get());
   dibujarEscena(S.get());
   idCuadro = requestAnimationFrame(bucle);

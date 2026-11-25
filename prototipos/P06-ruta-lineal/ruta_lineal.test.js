@@ -72,6 +72,12 @@ prueba('ciclo completo: EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → giro 1
   assert.strictEqual(e.tcrt5000.patron, '1111', 'marca de la base');
   assert.ok(Math.abs(e.robot.x - R.GEO.tcrtAdelante - R.GEO.marcaBase) < 0.03);
   assert.deepStrictEqual(vistos.filter((v, i) => vistos.indexOf(v) === i), ['EN_RUTA_IDA', 'ESPERA_REPOSICION', 'EN_RUTA_RETORNO', 'EN_BASE']);
+  // puntos de control del gemelo digital: PC1–PC3 cruzados en la ida y luego en el retorno, en orden
+  assert.deepStrictEqual(e.puntosControl.map((p) => p.id), ['PC1', 'PC2', 'PC3']);
+  assert.ok(e.puntosControl.every((p) => p.ida && p.retorno), 'todos cruzados en ida y retorno');
+  assert.ok(e.puntosControl.every((p, i, a) => p.x > R.GEO.marcaBase && p.x < R.GEO.marcaParada && (i === 0 || p.x > a[i - 1].x)));
+  const pcLog = e.eventos.filter((ev) => /Punto de control/.test(ev.texto)).map((ev) => ev.texto.slice(17, 26)).reverse();
+  assert.deepStrictEqual(pcLog, ['PC1 (ida)', 'PC2 (ida)', 'PC3 (ida)', 'PC3 (reto', 'PC2 (reto', 'PC1 (reto']);
   assert.strictEqual(e.ruta.ciclo, 1);
 });
 
@@ -84,6 +90,7 @@ prueba('queda listo para un nuevo ciclo: gira solo en la base y repite la ida', 
   hasta(S, 'EN_BASE');
   assert.ok(S.iniciarIda(), 'segundo ciclo');
   assert.strictEqual(e.ruta.ciclo, 2);
+  assert.ok(e.puntosControl.every((p) => !p.ida && !p.retorno), 'cada ciclo empieza con los puntos de control sin cruzar');
   assert.strictEqual(e.ruta.sub, 'alineando');
   hasta(S, 'EN_RUTA_IDA', 5);
   assert.ok(e.mpu6050.yawDeg < 5 || e.mpu6050.yawDeg > 355, `mira al destino (yaw ${e.mpu6050.yawDeg})`);
@@ -200,7 +207,15 @@ prueba('alarma silenciable y estado central único para la página (escena, alar
   assert.ok(!/<iframe/i.test(html));
   assert.ok(html.indexOf('ruta_lineal.js') < html.indexOf('ruta_lineal_ui.js'));
   assert.ok(/role="tablist"/.test(html) && html.includes('id="rl-tab-op"') && html.includes('id="rl-tab-sen"'));
-  for (const id of ['rl-card-tcrt', 'rl-card-us', 'rl-card-mot', 'rl-card-imu', 'rl-alarma', 'rl-canvas', 'rl-log', 'rl-mute']) assert.ok(html.includes(`id="${id}"`), `#${id}`);
+  for (const id of ['rl-card-tcrt', 'rl-card-us', 'rl-card-mot', 'rl-card-imu', 'rl-alarma', 'rl-canvas3d', 'rl-canvas', 'rl-vista', 'rl-pcs', 'rl-log', 'rl-mute']) assert.ok(html.includes(`id="${id}"`), `#${id}`);
+  // gemelo digital 3D: robot oficial de P02/P04 importado (no copiado), sin bucle propio y con respaldo 2D
+  const gemelo = readFileSync(join(__dirname, 'codigo', 'gemelo3d.js'), 'utf8');
+  assert.ok(/from '\.\.\/\.\.\/P04-simulador-1-esp32\/codigo\/robot\.js'/.test(gemelo), 'usa buildRobot de P04 (= modelo de P02)');
+  assert.ok(gemelo.includes('window.SimulationState') && !/requestAnimationFrame\s*\(/.test(gemelo), 'lee el estado central y no tiene bucle propio');
+  assert.ok(html.indexOf('ruta_lineal_ui.js') < html.indexOf('gemelo3d.js'), 'el gemelo carga después de la interfaz');
+  const bundle = readFileSync(join(__dirname, 'gemelo3d.js'), 'utf8');
+  assert.ok(bundle.includes('GemeloP06') && bundle.includes('rl-canvas3d'), 'bundle generado y vigente');
+  assert.ok(ui.includes('GemeloP06') && /if \(document\.hidden\) return;/.test(ui), 'un solo bucle, pausado con la pestaña oculta');
   for (const a of ['iniciar', 'obstaculo', 'girar', 'reiniciar']) assert.ok(html.includes(`data-accion="${a}"`), `botón ${a}`);
   assert.ok(html.includes('Girar robot 180° y confirmar'));
   assert.ok(/id="rl-in-dist" min="5" max="80"/.test(html) && /id="rl-in-vel" min="0\.1" max="0\.46"/.test(html));

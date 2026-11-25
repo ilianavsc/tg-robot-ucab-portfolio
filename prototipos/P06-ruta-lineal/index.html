@@ -32,7 +32,9 @@
     </header>
 
     <div class="rl-escena" id="rl-escena">
-      <canvas id="rl-canvas" role="img" aria-label="Pasillo lineal visto en perspectiva: base de inicio, línea guía negra, marca de parada en el destino y el robot. Abajo, vista de detalle del robot sobre la línea con sus 4 sensores."></canvas>
+      <canvas id="rl-canvas3d" tabindex="0" role="img" hidden aria-label="Gemelo digital 3D de la ruta lineal: el robot oficial de P02/P04 recorre el pasillo desde la base, cruza los puntos de control PC1 a PC3 y llega a la parada. Arrastra para rotar y usa la rueda o dos dedos para hacer zoom."></canvas>
+      <canvas id="rl-canvas" role="img" aria-label="Vista 2D de respaldo (si el navegador no tiene WebGL): pasillo, base, línea guía, puntos de control, marca de parada y robot."></canvas>
+      <button type="button" class="rl-vista" id="rl-vista" aria-pressed="false" hidden>🗺️ Vista completa</button>
       <div class="rl-alarma" id="rl-alarma" role="alert" hidden>
         <p class="rl-alarma-tit"><span aria-hidden="true">🚨</span> Destino alcanzado — reposicionar robot 180° para retorno</p>
         <p class="rl-alarma-sub">Motores bloqueados. Gira el robot sobre la línea y confirma.</p>
@@ -66,6 +68,8 @@
           <button type="button" class="rl-btn rl-btn-giro" data-accion="girar">⟲ Girar 180° y confirmar</button>
           <button type="button" class="rl-btn" data-accion="reiniciar">↺ Reiniciar</button>
         </div>
+        <h3 class="rl-h3">Puntos de control</h3>
+        <ol class="rl-pcs" id="rl-pcs" aria-label="Puntos de control de la ruta lineal"></ol>
         <h3 class="rl-h3">Registro del recorrido</h3>
         <ol class="rl-log" id="rl-log" aria-live="polite"></ol>
       </div>
@@ -130,6 +134,7 @@
   <details class="curiosos">
     <summary>Para los curiosos</summary>
     <ul>
+      <li><b>Gemelo digital 3D:</b> el robot es el mismo modelo 3D de P02 y P04. Los puntos de control PC1–PC3 se ven grises hasta que el robot los cruza: cian en la ida y verde en el retorno. El botón de la escena alterna entre <b>Seguir robot</b> y <b>Vista completa</b> (arrastra para rotar, rueda o dos dedos para hacer zoom).</li>
       <li><b>Máquina de estados:</b> <code>EN_BASE → EN_RUTA_IDA → ESPERA_REPOSICION → (giro 180° + confirmación) → EN_RUTA_RETORNO → EN_BASE</code>. Iniciar ida solo se acepta en la base y el giro solo en la espera de reposición.</li>
       <li><b>Llegada:</b> la regleta de 4 TCRT5000 (S1…S4, 18 mm entre sí) sigue la cinta negra de 19 mm; al pisar la marca transversal del destino lee <code>1111</code>, frena y bloquea los motores. Los últimos 40 cm antes de cada marca se recorren despacio (0,12 m/s, por odometría).</li>
       <li><b>Reposicionamiento:</b> el operador gira el robot 180° a mano sobre la línea; la confirmación se valida con el rumbo de la MPU-6050 (180° ± 5°) y con la regleta viendo la cinta. En la base, el robot gira solo sobre la marca de inicio antes de la siguiente ida [supuesto de simulación].</li>
@@ -149,5 +154,6 @@
 <script src="../../assets/js/tokens_canvas.js"></script>
 <script src="ruta_lineal.js"></script>
 <script src="ruta_lineal_ui.js"></script>
+<script src="gemelo3d.js"></script>
 </body>
 </html>

@@ -33,6 +33,11 @@
     radioObstaculo: 0.05,
     zonaLenta: 0.4 // últimos 40 cm antes de una marca: aproximación lenta (odometría)
   };
+  // Puntos de control intermedios del gemelo digital: repartidos en cuartos entre la marca de la base y la de parada.
+  // Son marcadores de seguimiento (no cambian la máquina de estados ni la lectura de la regleta).
+  GEO.puntosControl = [1, 2, 3].map(function (k) {
+    return {id: 'PC' + k, x: Math.round((GEO.marcaBase + ((GEO.marcaParada - GEO.marcaBase) * k) / 4) * 1000) / 1000};
+  });
   var LIM = {
     vMax: P.velocidad.maxMs, // m/s (PWM 0,8 × 0,57 m/s, como el Simulador 1)
     vPwm100: P.velocidad.pwm100Ms, // m/s al 100 % de PWM
@@ -78,6 +83,8 @@
       },
       robot: {x: 0.6, y: 0, dir: 1, psi: 0, yawGiro: 0, v: 0, w: 0, odometro: 0},
       obstaculo: null, // {x} en el pasillo, o null
+      // puntos de control: ida = cruzado en la ida del ciclo actual; retorno = cruzado de vuelta
+      puntosControl: GEO.puntosControl.map(function (p) { return {id: p.id, x: p.x, ida: false, retorno: false}; }),
       consigna: LIM.vNominal,
       hcsr04: {distanciaM: Infinity, zona: 'libre'},
       tcrt5000: {canales: [0, 1, 1, 0], patron: '0110', lectura: 'siguiendo', errorMm: 0},
@@ -259,6 +266,7 @@
         rb.v = 0;
         if (e.ruta.giro >= 1) terminarGiro();
       } else {
+        var xAntes = rb.x;
         var obj = vObjetivo();
         var a = obj > rb.v ? LIM.acel : LIM.freno;
         rb.v = rb.v + clamp(obj - rb.v, -a * dt, a * dt);
@@ -273,6 +281,7 @@
         rb.x += rb.dir * rb.v * Math.cos(rb.psi) * dt;
         rb.x = clamp(rb.x, GEO.largoRobot / 2, GEO.largo - GEO.largoRobot / 2);
         rb.odometro += rb.v * dt;
+        cruzarPuntos(xAntes, rb.x);
       }
       medir();
       llegada();
@@ -281,6 +290,20 @@
       prevV = rb.v;
       emitir('paso');
       return e;
+    }
+
+    // el centro del robot cruza un punto de control en el sentido del tramo actual
+    function cruzarPuntos(x0, x1) {
+      var est = e.ruta.estado;
+      e.puntosControl.forEach(function (p) {
+        if (est === 'EN_RUTA_IDA' && !p.ida && x0 < p.x && x1 >= p.x) {
+          p.ida = true;
+          registrar('Punto de control ' + p.id + ' (ida) a ' + p.x.toFixed(2) + ' m', 'ok');
+        } else if (est === 'EN_RUTA_RETORNO' && !p.retorno && x0 > p.x && x1 <= p.x) {
+          p.retorno = true;
+          registrar('Punto de control ' + p.id + ' (retorno) a ' + p.x.toFixed(2) + ' m', 'ok');
+        }
+      });
     }
 
     function actualizarMotores() {
@@ -346,6 +369,7 @@
           return false;
         }
         e.ruta.ciclo++;
+        e.puntosControl.forEach(function (p) { p.ida = false; p.retorno = false; }); // ciclo nuevo: puntos sin cruzar
         registrar('Ciclo ' + e.ruta.ciclo + ': inicio de ida', 'estado');
         if (!e.ruta.listoParaIda) {
           // al volver quedó mirando a la base: gira solo sobre la marca de inicio antes de salir

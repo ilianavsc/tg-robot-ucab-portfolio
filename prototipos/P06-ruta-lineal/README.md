@@ -35,6 +35,14 @@ EN_BASE ──Iniciar ida──▶ EN_RUTA_IDA ──regleta 1111 en la parada�
 ```
 Desde la base, la siguiente ida empieza con un giro automático de 180° sobre la marca de inicio [supuesto de simulación].
 
+### Gemelo digital 3D
+La escena es un gemelo digital 3D ([`codigo/gemelo3d.js`](codigo/gemelo3d.js) → `gemelo3d.js`) con el **mismo robot 3D oficial de P02/P04**: se importa `buildRobot` de `prototipos/P04-simulador-1-esp32/codigo/robot.js` (el modelo de P02 con opciones) sin copiarlo ni modificarlo. Muestra la base, la cinta guía, los **puntos de control PC1–PC3** (gris pendiente, cian cruzado en la ida, verde cruzado en el retorno; el estado vive en `SimulationState.puntosControl`), la marca de parada/destino, el obstáculo inyectado y el aro violeta de la alarma. La cámara **sigue al robot** o muestra la **vista completa de la pista** (botón en la escena; en ambas se puede rotar y hacer zoom). No tiene bucle propio: `ruta_lineal_ui.js` lo dibuja desde su único `requestAnimationFrame`, que se pausa con la pestaña oculta. Sin WebGL se usa la vista 2D de respaldo.
+```bash
+cd prototipos/P06-ruta-lineal/codigo
+npm install --no-save three@0.187.0 esbuild   # una sola vez
+node construir.mjs                            # genera ../gemelo3d.js
+```
+
 ## 4. Cómo se prueba
 ```bash
 node prototipos/P06-ruta-lineal/ruta_lineal.test.js   # 10 pruebas, sin navegador

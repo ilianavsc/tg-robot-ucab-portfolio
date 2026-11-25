@@ -1,0 +1,6 @@
+{
+  "name": "p06-gemelo-ruta-lineal",
+  "private": true,
+  "type": "module",
+  "description": "Gemelo digital 3D de P06 (ruta lineal). Para regenerar ../gemelo3d.js: npm install --no-save three@0.187.0 esbuild && node construir.mjs"
+}
