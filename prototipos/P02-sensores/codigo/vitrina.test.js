@@ -2,14 +2,14 @@
  * Uso:  node prototipos/P02-sensores/codigo/vitrina.test.js
  * No necesita navegador ni dependencias: solo prueba la parte sin three.js. */
 import assert from 'node:assert';
-import {readFileSync, readdirSync} from 'node:fs';
-import {dirname, join} from 'node:path';
-import {fileURLToPath} from 'node:url';
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
-import {LIMITES, MANUAL, crearDemo} from './demo.js';
-import {R, VMAX, dutyPara, encoderHz} from './model.js';
-import {CINTA, GEO, OBSTACULOS, crearRuta, lineaSensores, ultrasonido, zonaDe} from './ruta.js';
-import {FICHAS, ORDEN, ORDEN_TIRA} from './fichas.js';
+import { LIMITES, MANUAL, crearDemo } from './demo.js';
+import { R, VMAX, dutyPara, encoderHz } from './model.js';
+import { CINTA, GEO, OBSTACULOS, crearRuta, lineaSensores, ultrasonido, zonaDe } from './ruta.js';
+import { FICHAS, ORDEN, ORDEN_TIRA } from './fichas.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 let ok = 0;
@@ -21,7 +21,7 @@ const prueba = (nombre, f) => {
 
 // Corre la demo y junta lo que pasa en la vuelta
 function correr(seg, alPaso) {
-  const d = crearDemo({encendido: true});
+  const d = crearDemo({ encendido: true });
   for (let t = 0; t < seg; t += 1 / 120) {
     d.paso(1 / 120);
     alPaso && alPaso(d, t);
@@ -82,16 +82,16 @@ prueba('las zonas del HC-SR04P: < 20 cm crítica, 20–50 cm precaución, > 50 c
 });
 
 prueba('el ultrasonido mide la distancia a un bidón desde la cara del sensor', () => {
-  const o = {x: 0, z: GEO.usF.z + 0.4 + 0.045, r: 0.045};
+  const o = { x: 0, z: GEO.usF.z + 0.4 + 0.045, r: 0.045 };
   const d = ultrasonido(0, 0, 0, 'frente', [o]);
   assert.ok(Math.abs(d - 0.4) < 0.005, `d ${d}`);
   assert.strictEqual(ultrasonido(0, 0, 0, 'atras', [o]), Infinity); // el de atrás mira al otro lado
-  const o2 = {x: 0, z: GEO.usR.z - 0.3 - 0.045, r: 0.045};
+  const o2 = { x: 0, z: GEO.usR.z - 0.3 - 0.045, r: 0.045 };
   assert.ok(Math.abs(ultrasonido(0, 0, 0, 'atras', [o2]) - 0.3) < 0.005);
 });
 
 prueba('en el recorrido los dos HC-SR04P pasan por precaución y el frontal también por crítica', () => {
-  const z = {f: new Set(), a: new Set()};
+  const z = { f: new Set(), a: new Set() };
   correr(40, (d) => {
     z.f.add(d.zonaFrente());
     z.a.add(d.zonaAtras());
@@ -118,7 +118,7 @@ prueba('la demo no copia la máquina de estados de teach-and-repeat', () => {
 
 // ---- manejo manual con la modalidad del Simulador 1 (P04)
 const manejar = (d, f, t, seg, freno = false) => {
-  d.est.entrada = {f, t, freno};
+  d.est.entrada = { f, t, freno };
   for (let k = 0; k < seg * 120; k++) d.paso(1 / 120);
 };
 
@@ -127,7 +127,7 @@ prueba('manual: usa los mismos valores del Simulador 1 y avanza recto a ≈ 0,46
   const m = /MANUAL = \{avance: ([\d.]+), giro: ([\d.]+), suavizado: ([\d.]+)\}/.exec(sim1);
   assert.ok(m, 'el Simulador 1 define MANUAL');
   assert.deepStrictEqual([MANUAL.avance, MANUAL.giro, MANUAL.suavizado], [+m[1], +m[2], +m[3]]);
-  const d = crearDemo({encendido: true});
+  const d = crearDemo({ encendido: true });
   d.est.x = 0;
   d.est.z = -2.4; // lejos de la cinta y de los bidones
   d.est.th = 0;
@@ -140,7 +140,7 @@ prueba('manual: usa los mismos valores del Simulador 1 y avanza recto a ≈ 0,46
 });
 
 prueba('manual: gira a la izquierda, retrocede y Espacio frena; no sale del piso', () => {
-  const d = crearDemo({encendido: true});
+  const d = crearDemo({ encendido: true });
   d.est.x = 0;
   d.est.z = -2.4;
   d.est.th = 0;
@@ -156,7 +156,7 @@ prueba('manual: gira a la izquierda, retrocede y Espacio frena; no sale del piso
 });
 
 prueba('manual: con un obstáculo a < 20 cm no deja avanzar ni girar, solo retroceder (como el firmware)', () => {
-  const d = crearDemo({encendido: true});
+  const d = crearDemo({ encendido: true });
   const o = OBSTACULOS[0];
   d.est.x = o.x;
   d.est.z = o.z - 0.42;
@@ -173,7 +173,7 @@ prueba('manual: con un obstáculo a < 20 cm no deja avanzar ni girar, solo retro
 });
 
 prueba('manual en la cinta: los 4 sensores de línea se encienden en vivo y al volver a automático sigue la ruta', () => {
-  const d = crearDemo({encendido: true});
+  const d = crearDemo({ encendido: true });
   for (let k = 0; k < 240; k++) d.paso(1 / 120);
   d.setModo('manual');
   manejar(d, 0, 0, 0.5);
@@ -301,7 +301,7 @@ prueba('inicio apagado (encendido=false) y transición ⚡ Encender / ⏹ Detene
 prueba('consolas → circuito: obstáculo, desvío, consigna, paro y atasco inyectados mueven la física', () => {
   const avanzar = (d, seg) => { for (let k = 0; k < seg * 120; k++) d.paso(1 / 120); };
   // obstáculo inyectado a 12 cm + paro: el robot se detiene en el circuito
-  const d = crearDemo({encendido: true});
+  const d = crearDemo({ encendido: true });
   avanzar(d, 1);
   d.est.iny.frente = 0.12;
   d.est.iny.paro = 'Obstáculo a 12 cm';
@@ -313,7 +313,7 @@ prueba('consolas → circuito: obstáculo, desvío, consigna, paro y atasco inye
   assert.ok(Math.abs(d.est.frente - 0.12) < 1e-9, 'el HC-SR04 lee la distancia inyectada');
   // a mano y con paro por obstáculo deja retroceder
   d.setModo('manual');
-  d.est.entrada = {f: -1, t: 0, freno: false};
+  d.est.entrada = { f: -1, t: 0, freno: false };
   avanzar(d, 1);
   assert.ok(d.est.v < -0.2, 'retrocede');
   // con impacto (paroAtras = false) no se mueve ni hacia atrás
@@ -323,13 +323,13 @@ prueba('consolas → circuito: obstáculo, desvío, consigna, paro y atasco inye
   d.est.iny.paro = null;
   d.est.iny.frente = null;
   // consigna de velocidad en Auto
-  const e = crearDemo({encendido: true});
+  const e = crearDemo({ encendido: true });
   e.est.iny.vConsigna = 0.2;
   let vmax = 0;
   for (let k = 0; k < 4 * 120; k++) { e.paso(1 / 120); vmax = Math.max(vmax, e.est.v); }
   assert.ok(vmax < 0.21 && vmax > 0.12, `consigna 0,2 m/s (vmax ${vmax})`);
   // desvío inyectado: en Auto el robot sigue la cinta corrido y la regleta lo lee
-  const f = crearDemo({encendido: true});
+  const f = crearDemo({ encendido: true });
   f.est.iny.desvio = 0.024; // cinta 24 mm a la derecha
   const vistos = new Set();
   for (let k = 0; k < 8 * 120; k++) { f.paso(1 / 120); if (k > 4 * 120) vistos.add(f.est.sens.join('')); }
@@ -352,7 +352,7 @@ prueba('consolas → circuito: obstáculo, desvío, consigna, paro y atasco inye
 
 const cargarEstado = (conDom = null) => {
   const src = readFileSync(join(aqui, '../../../assets/inspector_hw.js'), 'utf8');
-  const sandbox = {Math, Number, String, console};
+  const sandbox = { Math, Number, String, console };
   if (conDom) Object.assign(sandbox, conDom);
   sandbox.window = sandbox;
   // igual que en el navegador: primero los parámetros reales del robot (window.TG_ROBOT) y luego el estado central
@@ -363,43 +363,43 @@ const cargarEstado = (conDom = null) => {
 };
 
 prueba('límites técnicos exactos: 4 canales TCRT5000, 0,46 m/s y HC-SR04 de 5 a 80 cm', () => {
-  const {SimulationState: S} = cargarEstado();
+  const { SimulationState: S } = cargarEstado();
   assert.strictEqual(S.LIMITES.canalesTcrt, 4);
   assert.strictEqual(S.LIMITES.vMax, 0.46);
   assert.strictEqual(S.LIMITES.distMinCm, 5);
   assert.strictEqual(S.LIMITES.distMaxCm, 80);
-  S.set({hcsr04: {distanciaCm: 200}, motores: {velocidadMs: 1}});
+  S.set({ hcsr04: { distanciaCm: 200 }, motores: { velocidadMs: 1 } });
   assert.strictEqual(S.get().hcsr04.distanciaCm, 80);
   assert.strictEqual(S.get().motores.velocidadMs, 0.46);
-  S.set({hcsr04: {distanciaCm: 1}});
+  S.set({ hcsr04: { distanciaCm: 1 } });
   assert.strictEqual(S.get().hcsr04.distanciaCm, 5);
   assert.strictEqual(S.get().tcrt5000.canales.length, 4);
   assert.ok(Math.abs(MANUAL.avance * VMAX - 0.46) < 0.005, 'coincide con el manejo del Simulador 1');
 });
 
 prueba('SimulationState local: distancia, línea, velocidad/PWM, IMU y seguridad en un solo estado', () => {
-  const {SimulationState: S} = cargarEstado();
+  const { SimulationState: S } = cargarEstado();
   let avisos = 0;
   S.subscribe(() => avisos++);
   const s = S.get();
   assert.strictEqual(s.seguridad.estado, 'NOMINAL');
   assert.strictEqual(s.tcrt5000.patron, '0110');
-  S.set({hcsr04: {distanciaCm: 12}});
+  S.set({ hcsr04: { distanciaCm: 12 } });
   assert.strictEqual(s.seguridad.estado, 'PARADA');
   assert.ok(s.seguridad.paroForzado && s.seguridad.permiteAtras);
   assert.strictEqual(s.motores.velEfectivaMs, 0);
-  S.set({motores: {direccion: 'ATRÁS'}});
+  S.set({ motores: { direccion: 'ATRÁS' } });
   assert.ok(s.motores.velEfectivaMs < 0, 'retrocede');
-  S.set({hcsr04: {distanciaCm: 70}, tcrt5000: {desvioMm: 27}, motores: {direccion: 'ADELANTE'}});
+  S.set({ hcsr04: { distanciaCm: 70 }, tcrt5000: { desvioMm: 27 }, motores: { direccion: 'ADELANTE' } });
   assert.strictEqual(s.tcrt5000.patron, '0001');
-  S.set({tcrt5000: {desvioMm: 0}});
+  S.set({ tcrt5000: { desvioMm: 0 } });
   S.eventoMpu('impacto');
   assert.strictEqual(s.seguridad.estado, 'PARADA');
   assert.ok(s.seguridad.paroForzado && !s.seguridad.permiteAtras, 'impacto: parada total');
   S.eventoMpu('normal');
-  S.set({mpu6050: {pitchDeg: 25}});
+  S.set({ mpu6050: { pitchDeg: 25 } });
   assert.strictEqual(s.seguridad.estado, 'PRECAUCION');
-  S.set({mpu6050: {pitchDeg: 40}});
+  S.set({ mpu6050: { pitchDeg: 40 } });
   assert.strictEqual(s.seguridad.estado, 'PARADA');
   S.reset();
   assert.strictEqual(s.seguridad.estado, 'NOMINAL');
@@ -407,8 +407,8 @@ prueba('SimulationState local: distancia, línea, velocidad/PWM, IMU y seguridad
 });
 
 prueba('circuito → consolas: lecturas en vivo, inyección por consola, liberar y órdenes de dirección', () => {
-  const {SimulationState: S} = cargarEstado();
-  const vivo = {encendido: true, modo: 'auto', distanciaCm: 140, atrasCm: Infinity, canales: [0, 1, 0, 0], desvioMm: -6, velEfectivaMs: 0.38, pwmIzq: 66, pwmDer: 70, direccion: 'ADELANTE', bloqueado: false, pitchDeg: 0.4, rollDeg: -1.2, acelG: 1.01};
+  const { SimulationState: S } = cargarEstado();
+  const vivo = { encendido: true, modo: 'auto', distanciaCm: 140, atrasCm: Infinity, canales: [0, 1, 0, 0], desvioMm: -6, velEfectivaMs: 0.38, pwmIzq: 66, pwmDer: 70, direccion: 'ADELANTE', bloqueado: false, pitchDeg: 0.4, rollDeg: -1.2, acelG: 1.01 };
   const s = S.publicarCircuito(vivo);
   assert.strictEqual(s.fuente, 'circuito');
   assert.strictEqual(s.hcsr04.distanciaCm, 140, 'en vivo no se recorta a 80');
@@ -417,7 +417,7 @@ prueba('circuito → consolas: lecturas en vivo, inyección por consola, liberar
   assert.strictEqual(s.motores.velEfectivaMs, 0.38);
   assert.strictEqual(s.seguridad.estado, 'NOMINAL');
   // la consola inyecta 12 cm: el circuito ya no la pisa y se fuerza la parada
-  S.set({hcsr04: {distanciaCm: 12}, inyeccion: {hcsr04: true}}, 'consola');
+  S.set({ hcsr04: { distanciaCm: 12 }, inyeccion: { hcsr04: true } }, 'consola');
   S.publicarCircuito(vivo);
   assert.strictEqual(s.hcsr04.distanciaCm, 12);
   assert.ok(s.seguridad.paroForzado && s.seguridad.permiteAtras);
@@ -425,9 +425,9 @@ prueba('circuito → consolas: lecturas en vivo, inyección por consola, liberar
   S.publicarCircuito(vivo);
   assert.strictEqual(s.hcsr04.distanciaCm, 140, 'vuelve a la lectura en vivo');
   // obstáculo real < 20 cm en Auto: precaución (la demo reduce la velocidad); bloqueado a mano: parada sin forzar
-  S.publicarCircuito({...vivo, distanciaCm: 15});
+  S.publicarCircuito({ ...vivo, distanciaCm: 15 });
   assert.strictEqual(s.seguridad.estado, 'PRECAUCION');
-  S.publicarCircuito({...vivo, distanciaCm: 15, bloqueado: true, modo: 'manual'});
+  S.publicarCircuito({ ...vivo, distanciaCm: 15, bloqueado: true, modo: 'manual' });
   assert.strictEqual(s.seguridad.estado, 'PARADA');
   assert.ok(!s.seguridad.paroForzado);
   // órdenes de dirección van al circuito
@@ -436,24 +436,24 @@ prueba('circuito → consolas: lecturas en vivo, inyección por consola, liberar
   S.comando('direccion', 'IZQUIERDA');
   assert.deepStrictEqual(ordenes, [['direccion', 'IZQUIERDA']]);
   // foco desde la tira/3D → consola
-  S.set({foco: 'us_rear', seleccion: S.CONSOLA_DE.us_rear});
+  S.set({ foco: 'us_rear', seleccion: S.CONSOLA_DE.us_rear });
   assert.strictEqual(s.seleccion, 'hcsr04');
 });
 
 prueba('consolas (DOM simulado): controles escriben en el estado, foco sube la consola y muestra la ficha, sin errores', () => {
   const app = leerAqui('app.html');
-  const noop = () => {};
-  const ctx = new Proxy({}, {get: (t, k) => (k in t ? t[k] : noop), set: (t, k, v) => ((t[k] = v), true)});
+  const noop = () => { };
+  const ctx = new Proxy({}, { get: (t, k) => (k in t ? t[k] : noop), set: (t, k, v) => ((t[k] = v), true) });
   const mk = (id, attrs = {}) => {
     const clases = new Set();
     const oy = {};
     return {
       id, attrs, value: '0', textContent: '', className: '', style: {}, width: 260, height: 100, hidden: false,
-      classList: {toggle: (c, f) => (f ? clases.add(c) : clases.delete(c)), contains: (c) => clases.has(c)},
+      classList: { toggle: (c, f) => (f ? clases.add(c) : clases.delete(c)), contains: (c) => clases.has(c) },
       getAttribute: (k) => attrs[k] ?? null,
       setAttribute: (k, v) => { attrs[k] = String(v); },
       addEventListener: (ev, fn) => (oy[ev] ||= []).push(fn),
-      disparar(ev, e = {}) { (oy[ev] || []).forEach((fn) => fn({target: this, ...e})); },
+      disparar(ev, e = {}) { (oy[ev] || []).forEach((fn) => fn({ target: this, ...e })); },
       getContext: () => ctx,
     };
   };
@@ -478,7 +478,7 @@ prueba('consolas (DOM simulado): controles escriben en el estado, foco sube la c
   };
   let tick = null;
   const sb = cargarEstado({
-    document: {readyState: 'complete', getElementById: (id) => byId[id] || null, querySelectorAll: (s) => sel[s] || [], addEventListener: noop},
+    document: { readyState: 'complete', getElementById: (id) => byId[id] || null, querySelectorAll: (s) => sel[s] || [], addEventListener: noop },
     setInterval: (fn) => { tick = fn; return 1; },
     setTimeout: noop,
     addEventListener: noop,
@@ -541,13 +541,31 @@ prueba('UX P02: barra superior limpia, menús agrupados, D-pad solo en manual, p
   assert.ok(simTop.includes('id="b-ajustes"') && simTop.includes('id="menu-ajustes"') && simTop.includes('id="hw-btn-reset"'), 'Restablecer nominal en menú ⚙');
   assert.ok(/id="hw-fuente"[^>]*hidden/.test(simTop), 'texto redundante CIRCUITO · AUTO oculto');
   assert.ok(!barra.includes('id="b-pausa"') && barra.includes('id="b-herramientas"') && barra.includes('id="b-vista"'), 'Herramientas y Vista agrupados en .barra');
-  // 2. D-pad oculto por defecto y condicionado a modo MANUAL
-  assert.ok(/<div class="dpad" id="dpad"[^>]*\shidden>/.test(app), '#dpad oculto por defecto');
-  assert.ok(css.includes('.p02-sim .dpad[hidden]{display:none}'), 'regla CSS para ocultar D-pad');
-  assert.ok(main.includes("ponMando(m === 'manual')") && main.includes('ponMando(false)'), 'D-pad visible solo en MANUAL');
+  // 2. Un único D-pad integrado dentro de Velocidad · Dir. (sin D-pad flotante en #app)
+  const zonaApp = app.slice(app.indexOf('<div class="app"'), app.indexOf('<aside class="hw-panel"'));
+  const tarjetaMot = app.slice(app.indexOf('id="hw-card-motores"'), app.indexOf('</article>', app.indexOf('id="hw-card-motores"')));
+  assert.ok(!zonaApp.includes('id="dpad"') && !zonaApp.includes('class="dpad"'), 'sin D-pad flotante sobre el visor 3D');
+  assert.ok(tarjetaMot.includes('id="dpad"') && tarjetaMot.includes('hw-dpad-grid'), 'D-pad único dentro de Velocidad · Dir.');
+  assert.ok(main.includes("abrirFicha('traccion')") && main.includes('ponPanelColapsado(false)'), 'modo MANUAL abre y enfoca Velocidad · Dir.');
+  // 2b. Botón Posición inicial + reposicionarInicio() en demo.js
+  assert.ok(barra.includes('id="b-pos-inicial"') && tarjetaMot.includes('id="b-pos-inicial-card"'), 'botón Posición inicial en barra y consola');
+  const dRep = crearDemo({ encendido: true });
+  const sensInicial = dRep.est.sens.join('');
+  assert.notStrictEqual(sensInicial, '0000', 'inicio sobre la línea');
+  dRep.setModo('manual');
+  dRep.est.x = 1.8;
+  dRep.est.z = 1.5;
+  dRep.est.th = 1.2;
+  dRep.medir();
+  assert.strictEqual(dRep.est.sens.join(''), '0000', 'fuera de la línea lee 0000');
+  dRep.reposicionarInicio();
+  assert.strictEqual(dRep.est.v, 0, 'velocidad 0 al reposicionar');
+  assert.strictEqual(dRep.est.modo, 'manual', 'conserva modo elegido');
+  assert.strictEqual(dRep.est.encendido, true, 'conserva encendido');
+  assert.strictEqual(dRep.est.sens.join(''), sensInicial, `vuelve sobre la línea (${dRep.est.sens.join('')})`);
   // 3. Panel enfocado por componente + botón Ver todas (4)
   assert.ok(app.includes('id="hw-foco-cerrar"') && app.includes('Ver todas (4)'), 'botón Ver todas (4) en encabezado del panel');
-  assert.ok(css.includes('.hw-panel[data-foco-activo="1"] .hw-card{display:none}'), 'oculta las demás consolas al enfocar');
+  assert.ok(/\.hw-panel\[data-foco-activo="1"\]\s+\.hw-card\s*\{\s*display\s*:\s*none/.test(css), 'oculta las demás consolas al enfocar');
   assert.ok(main.includes("esp32: 'motores'") && main.includes('bateria: null') && main.includes('sincronizarFocoPanel'), 'mapeo de consolas incluyendo ESP32 y Batería');
   // 4. Tarjeta unificada HC-SR04P · Radar + consola de radar dual (frontal + trasero)
   assert.deepStrictEqual(ORDEN_TIRA, ['tcrt', 'us', 'esp32', 'mpu', 'traccion', 'bateria'], 'tira inferior unifica HC-SR04P en una sola tarjeta');

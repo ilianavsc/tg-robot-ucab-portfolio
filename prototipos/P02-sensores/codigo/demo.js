@@ -187,6 +187,26 @@ export function crearDemo({encendido = false} = {}) {
     medir();
   };
 
+  // devuelve el robot al inicio de la pista sobre la línea negra sin alterar modo ni encendido
+  const reposicionarInicio = () => {
+    est.x = p0.x;
+    est.z = p0.z;
+    est.th = th0;
+    est.vIzq = 0;
+    est.vDer = 0;
+    est.v = 0;
+    est.w = 0;
+    est.hint = 0;
+    est.sPrev = 0;
+    est.eLat = 0;
+    est.bloqueado = false;
+    est.cmd = {f: 0, t: 0};
+    est.entrada = {f: 0, t: 0, freno: false};
+    est.pwm = {izq: 0, der: 0};
+    medir();
+    return est;
+  };
+
   // lo que se ve de los motores (para las fichas y la animación)
   const motores = () => {
     const dI = dutyPara(est.vIzq);
@@ -206,7 +226,7 @@ export function crearDemo({encendido = false} = {}) {
     };
   };
 
-  return {ruta, obstaculos, est, paso, medir, desplazarLateral, motores, setModo, encender, detener, alternarEncendido, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
+  return {ruta, obstaculos, est, paso, medir, desplazarLateral, reposicionarInicio, motores, setModo, encender, detener, alternarEncendido, zonaFrente: () => zonaDe(est.frente), zonaAtras: () => zonaDe(est.atras)};
 }
 
 export {GEO};

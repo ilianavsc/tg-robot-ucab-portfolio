@@ -26,9 +26,11 @@
 
   <!-- Generado por codigo/construir.mjs desde codigo/app.html: no editar a mano entre los marcadores -->
 <!--APP:inicio-->
-<section class="p02-sim" id="hw-inspector-root" data-seguridad="nominal" aria-label="Inspector de hardware: circuito 3D con consolas interactivas">
+<section class="p02-sim" id="hw-inspector-root" data-seguridad="nominal"
+  aria-label="Inspector de hardware: circuito 3D con consolas interactivas">
   <header class="sim-top">
-    <span class="tg-ejec tg-ejec--sil" id="hw-sim-badge" role="note" title="SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS"><i aria-hidden="true"></i>SIL · LOCAL</span>
+    <span class="tg-ejec tg-ejec--sil" id="hw-sim-badge" role="note"
+      title="SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS"><i aria-hidden="true"></i>SIL · LOCAL</span>
     <div class="hw-seguridad" id="hw-seguridad" role="status" aria-live="polite">
       <span class="hw-seguridad-k">Seguridad</span>
       <b id="hw-seguridad-estado">NOMINAL</b>
@@ -37,70 +39,91 @@
     <span class="hw-fuente" id="hw-fuente" hidden>CIRCUITO · APAGADO</span>
     <div class="sim-top-acciones">
       <div class="grupo sim-top-modo" role="group" aria-label="Modo de manejo">
-        <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span> Auto</button>
-        <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span> Manual</button>
+        <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span aria-hidden="true">🤖</span>
+          Auto</button>
+        <button class="btn" type="button" data-modo="manual" aria-pressed="false"><span aria-hidden="true">🎮</span>
+          Manual</button>
       </div>
-      <button class="btn pri en-pausa sim-top-pausa" id="b-pausa" type="button" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
+      <button class="btn pri en-pausa sim-top-pausa" id="b-pausa" type="button" aria-pressed="false"
+        aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span class="tx">⚡ Encender</span></button>
       <div class="p02-menu-wrap" id="wrap-ajustes">
-        <button type="button" class="hw-btn-reset p02-gear-btn" id="b-ajustes" aria-haspopup="true" aria-expanded="false" aria-controls="menu-ajustes" aria-label="Ajustes secundarios" title="Ajustes">⚙</button>
+        <button type="button" class="hw-btn-reset p02-gear-btn" id="b-ajustes" aria-haspopup="true"
+          aria-expanded="false" aria-controls="menu-ajustes" aria-label="Ajustes secundarios" title="Ajustes">⚙</button>
         <div class="p02-dropdown p02-dropdown-der" id="menu-ajustes" role="menu" hidden>
           <button type="button" class="p02-drop-item" id="hw-btn-reset" role="menuitem">↺ Restablecer nominal</button>
         </div>
       </div>
       <div class="p02-menu-wrap p02-solo-movil" id="wrap-mas-movil">
-        <button type="button" class="hw-btn-reset p02-gear-btn" id="b-mas-movil" aria-haspopup="true" aria-expanded="false" aria-controls="menu-mas-movil" aria-label="Más herramientas" title="Más herramientas">⋯</button>
+        <button type="button" class="hw-btn-reset p02-gear-btn" id="b-mas-movil" aria-haspopup="true"
+          aria-expanded="false" aria-controls="menu-mas-movil" aria-label="Más herramientas"
+          title="Más herramientas">⋯</button>
         <div class="p02-dropdown p02-dropdown-der" id="menu-mas-movil" role="menu" hidden>
           <button type="button" class="p02-drop-item" data-movil-act="xray" role="menuitem">🩻 Rayos X</button>
           <button type="button" class="p02-drop-item" data-movil-act="etiq" role="menuitem">🏷️ Etiquetas 3D</button>
-          <button type="button" class="p02-drop-item" data-movil-act="v-inspeccion" role="menuitem">🔍 Vista Inspección</button>
+          <button type="button" class="p02-drop-item" data-movil-act="v-inspeccion" role="menuitem">🔍 Vista
+            Inspección</button>
           <button type="button" class="p02-drop-item" data-movil-act="v-seguir" role="menuitem">🎯 Seguir robot</button>
           <button type="button" class="p02-drop-item" data-movil-act="v-general" role="menuitem">🗺️ Panorámica</button>
-          <button type="button" class="p02-drop-item" data-movil-act="reset" role="menuitem">↺ Restablecer nominal</button>
+          <button type="button" class="p02-drop-item" data-movil-act="pos-inicial" role="menuitem">↺ Posición
+            inicial</button>
+          <button type="button" class="p02-drop-item" data-movil-act="reset" role="menuitem">↺ Restablecer
+            nominal</button>
         </div>
       </div>
     </div>
   </header>
 
   <div class="app" id="app">
-    <canvas id="lienzo" tabindex="0" aria-label="Inspector 3D del robot en el circuito ovalado: toca una pieza para enfocar su consola; se maneja con W A S D, las flechas o el D-Pad" role="img"></canvas>
+    <canvas id="lienzo" tabindex="0"
+      aria-label="Inspector 3D del robot en el circuito ovalado: toca una pieza para enfocar su consola; se maneja con W A S D, las flechas o el D-Pad"
+      role="img"></canvas>
     <svg id="guias" aria-hidden="true"></svg>
     <div id="etiquetas"></div>
 
     <div class="barra" role="toolbar" aria-label="Controles del visor 3D">
       <div class="p02-menu-wrap">
-        <button class="btn" id="b-herramientas" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu-herramientas"><span aria-hidden="true">🧰</span><span class="largo"> Herramientas ▾</span></button>
+        <button class="btn" id="b-herramientas" type="button" aria-haspopup="true" aria-expanded="false"
+          aria-controls="menu-herramientas"><span aria-hidden="true">🧰</span><span class="largo"> Herramientas
+            ▾</span></button>
         <div class="p02-dropdown" id="menu-herramientas" role="menu" hidden>
-          <button class="p02-drop-item" id="b-xray" type="button" role="menuitemcheckbox" aria-checked="false" aria-pressed="false"><span aria-hidden="true">🩻</span> Rayos X</button>
-          <button class="p02-drop-item" id="b-etiq" type="button" role="menuitemcheckbox" aria-checked="true" aria-pressed="true"><span aria-hidden="true">🏷️</span> Etiquetas 3D</button>
+          <button class="p02-drop-item" id="b-xray" type="button" role="menuitemcheckbox" aria-checked="false"
+            aria-pressed="false"><span aria-hidden="true">🩻</span> Rayos X</button>
+          <button class="p02-drop-item" id="b-etiq" type="button" role="menuitemcheckbox" aria-checked="true"
+            aria-pressed="true"><span aria-hidden="true">🏷️</span> Etiquetas 3D</button>
         </div>
       </div>
       <div class="p02-menu-wrap">
-        <button class="btn" id="b-vista" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu-vista"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Vista</span> ▾</button>
+        <button class="btn" id="b-vista" type="button" aria-haspopup="true" aria-expanded="false"
+          aria-controls="menu-vista"><span aria-hidden="true">🎥</span> <span id="b-vista-tx">Vista</span> ▾</button>
         <div class="p02-dropdown" id="menu-vista" role="menu" hidden>
-          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="inspeccion" aria-checked="true">🔍 Inspección</button>
-          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="seguir" aria-checked="false">🎯 Seguir robot</button>
-          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="general" aria-checked="false">🗺️ Panorámica</button>
+          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="inspeccion"
+            aria-checked="true">🔍 Inspección</button>
+          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="seguir" aria-checked="false">🎯
+            Seguir robot</button>
+          <button class="p02-drop-item" type="button" role="menuitemradio" data-vista="general" aria-checked="false">🗺️
+            Panorámica</button>
         </div>
       </div>
-      <button class="btn p02-btn-vista-gen" id="b-vista-general" type="button" hidden><span aria-hidden="true">🗺️</span> Vista general</button>
-      <button class="btn p02-btn-sensores" id="b-sensores" type="button" aria-expanded="true" aria-controls="hw-panel" aria-label="Colapsar o expandir panel de sensores"><span aria-hidden="true">📟</span> <span class="tx">Sensores ⟩</span></button>
+      <button class="btn p02-btn-vista-gen" id="b-vista-general" type="button" hidden><span
+          aria-hidden="true">🗺️</span> Vista general</button>
+      <button class="btn p02-btn-inicio" id="b-pos-inicial" type="button"
+        title="Devolver el robot a la posición inicial sobre la línea"><span aria-hidden="true">↺</span><span
+          class="largo"> Posición inicial</span></button>
+      <button class="btn p02-btn-sensores" id="b-sensores" type="button" aria-expanded="true" aria-controls="hw-panel"
+        aria-label="Colapsar o expandir panel de sensores"><span aria-hidden="true">📟</span> <span class="tx">Sensores
+          ⟩</span></button>
     </div>
-    <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para enfocar su consola</p>
+    <p class="pista-tocar" id="pista-tocar" role="note"><span aria-hidden="true">🔍</span> Toca una pieza para enfocar
+      su consola</p>
     <button type="button" class="btn p02-ver-consola" id="b-abrir-consola" hidden>📊 Ver consola</button>
 
-    <div class="dpad" id="dpad" role="group" aria-label="Manejo: avanzar, girar, frenar y retroceder" hidden>
-      <button type="button" class="dp" data-dp="arriba" aria-label="Avanzar" style="grid-area:u">▲</button>
-      <button type="button" class="dp" data-dp="izq" aria-label="Girar a la izquierda" style="grid-area:l">◄</button>
-      <button type="button" class="dp stop" data-dp="stop" aria-label="Frenar" style="grid-area:s">■</button>
-      <button type="button" class="dp" data-dp="der" aria-label="Girar a la derecha" style="grid-area:r">►</button>
-      <button type="button" class="dp" data-dp="abajo" aria-label="Retroceder" style="grid-area:d">▼</button>
-    </div>
-
-    <nav class="tira" id="tira" aria-label="Componentes del robot (toca uno para enfocar su consola y su ficha técnica)"></nav>
+    <nav class="tira" id="tira"
+      aria-label="Componentes del robot (toca uno para enfocar su consola y su ficha técnica)"></nav>
   </div>
 
   <aside class="hw-panel" id="hw-panel" data-sheet="cerrado" aria-label="Consolas interactivas y ficha técnica">
-    <button type="button" class="p02-sheet-handle" id="sheet-handle" aria-label="Cambiar altura del panel de sensores (cerrado, vista previa, expandido)" aria-expanded="false">
+    <button type="button" class="p02-sheet-handle" id="sheet-handle"
+      aria-label="Cambiar altura del panel de sensores (cerrado, vista previa, expandido)" aria-expanded="false">
       <span class="p02-sheet-bar" aria-hidden="true"></span>
       <span class="p02-sheet-lbl" id="sheet-handle-lbl">Sensores · Toca para abrir ▲</span>
     </button>
@@ -114,24 +137,32 @@
     </div>
     <div class="hw-consolas" id="hw-consolas">
       <!-- 1 · HC-SR04P Radar Dual (frente y atrás) -->
-      <article class="hw-card" id="hw-card-hcsr04" data-card="hcsr04" data-estado="normal" aria-labelledby="hw-tit-hcsr04">
+      <article class="hw-card" id="hw-card-hcsr04" data-card="hcsr04" data-estado="normal"
+        aria-labelledby="hw-tit-hcsr04">
         <div class="hw-card-head">
-          <button type="button" class="hw-card-title" id="hw-tit-hcsr04" data-foco="us_front">HC-SR04P · Radar dual</button>
+          <button type="button" class="hw-card-title" id="hw-tit-hcsr04" data-foco="us_front">HC-SR04P · Radar
+            dual</button>
           <span class="hw-badge ok" id="hw-badge-hcsr04">DESPEJADO</span>
         </div>
-        <canvas class="hw-cv hw-cv-radar" id="hw-canvas-radar" width="260" height="92" aria-hidden="true" hidden></canvas>
-        <canvas class="hw-cv hw-cv-radar-dual" id="hw-canvas-radar-dual" width="260" height="164" role="img" aria-label="Radar dual HC-SR04P: sector superior frontal y sector inferior trasero con anillos a 20, 50 y 80 cm"></canvas>
+        <canvas class="hw-cv hw-cv-radar" id="hw-canvas-radar" width="260" height="92" aria-hidden="true"
+          hidden></canvas>
+        <canvas class="hw-cv hw-cv-radar-dual" id="hw-canvas-radar-dual" width="260" height="164" role="img"
+          aria-label="Radar dual HC-SR04P: sector superior frontal y sector inferior trasero con anillos a 20, 50 y 80 cm"></canvas>
         <div class="hw-metrics-row">
-          <div class="hw-metric"><span class="hw-metric-k">FRENTE</span><span class="hw-metric-v" id="hw-val-dist">—</span></div>
-          <div class="hw-metric"><span class="hw-metric-k">ATRÁS</span><span class="hw-metric-v" id="hw-val-atras">—</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">FRENTE</span><span class="hw-metric-v"
+              id="hw-val-dist">—</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">ATRÁS</span><span class="hw-metric-v"
+              id="hw-val-atras">—</span></div>
         </div>
         <div class="hw-ctrl-2">
           <label class="hw-ctrl" for="hw-in-dist">
-            <span class="hw-ctrl-lbl"><span>Frente <small id="hw-val-zona">LIBRE</small></span><span class="hw-ctrl-val" id="hw-lbl-dist">60 cm</span></span>
+            <span class="hw-ctrl-lbl"><span>Frente <small id="hw-val-zona">LIBRE</small></span><span class="hw-ctrl-val"
+                id="hw-lbl-dist">60 cm</span></span>
             <input id="hw-in-dist" type="range" min="5" max="80" step="1" value="60">
           </label>
           <label class="hw-ctrl" for="hw-in-dist-atras">
-            <span class="hw-ctrl-lbl"><span>Atrás</span><span class="hw-ctrl-val" id="hw-lbl-dist-atras">Vivo</span></span>
+            <span class="hw-ctrl-lbl"><span>Atrás</span><span class="hw-ctrl-val"
+                id="hw-lbl-dist-atras">Vivo</span></span>
             <input id="hw-in-dist-atras" type="range" min="5" max="80" step="1" value="60">
           </label>
         </div>
@@ -144,7 +175,8 @@
       </article>
 
       <!-- 2 · TCRT5000 (4 canales) -->
-      <article class="hw-card" id="hw-card-tcrt5000" data-card="tcrt5000" data-estado="normal" aria-labelledby="hw-tit-tcrt5000">
+      <article class="hw-card" id="hw-card-tcrt5000" data-card="tcrt5000" data-estado="normal"
+        aria-labelledby="hw-tit-tcrt5000">
         <div class="hw-card-head">
           <button type="button" class="hw-card-title" id="hw-tit-tcrt5000" data-foco="tcrt">TCRT5000 · Línea</button>
           <span class="hw-badge ok" id="hw-badge-tcrt5000">LÍNEA OK</span>
@@ -155,14 +187,20 @@
           <div class="hw-tcrt-ch"><span class="hw-tcrt-led on" id="hw-tcrt-s3"></span><span>S3</span></div>
           <div class="hw-tcrt-ch"><span class="hw-tcrt-led" id="hw-tcrt-s4"></span><span>S4</span></div>
         </div>
-        <div class="hw-pid-track" aria-hidden="true"><div class="hw-pid-center"></div><div class="hw-pid-marker" id="hw-pid-marker" style="left:50%"></div></div>
+        <div class="hw-pid-track" aria-hidden="true">
+          <div class="hw-pid-center"></div>
+          <div class="hw-pid-marker" id="hw-pid-marker" style="left:50%"></div>
+        </div>
         <canvas class="hw-cv hw-cv-osc" id="hw-canvas-osc" width="260" height="34" aria-hidden="true"></canvas>
         <div class="hw-metrics-row">
-          <div class="hw-metric"><span class="hw-metric-k">Error</span><span class="hw-metric-v" id="hw-val-linea">+0.0 mm</span></div>
-          <div class="hw-metric"><span class="hw-metric-k">S1–S4</span><span class="hw-metric-v" id="hw-val-patron">0110</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">Error</span><span class="hw-metric-v" id="hw-val-linea">+0.0
+              mm</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">S1–S4</span><span class="hw-metric-v"
+              id="hw-val-patron">0110</span></div>
         </div>
         <label class="hw-ctrl" for="hw-in-linea">
-          <span class="hw-ctrl-lbl"><span>Desvío de línea</span><span class="hw-ctrl-val" id="hw-lbl-linea">+0 mm</span></span>
+          <span class="hw-ctrl-lbl"><span>Desvío de línea</span><span class="hw-ctrl-val" id="hw-lbl-linea">+0
+              mm</span></span>
           <input id="hw-in-linea" type="range" min="-30" max="30" step="1" value="0">
         </label>
         <div class="hw-seg hw-seg-4" role="group" aria-label="Salud TCRT5000">
@@ -174,7 +212,8 @@
       </article>
 
       <!-- 3 · Velocidad y dirección -->
-      <article class="hw-card" id="hw-card-motores" data-card="motores" data-estado="normal" aria-labelledby="hw-tit-motores">
+      <article class="hw-card" id="hw-card-motores" data-card="motores" data-estado="normal"
+        aria-labelledby="hw-tit-motores">
         <div class="hw-card-head">
           <button type="button" class="hw-card-title" id="hw-tit-motores" data-foco="traccion">Velocidad · Dir.</button>
           <span class="hw-badge ok" id="hw-badge-motores">DETENIDO</span>
@@ -182,25 +221,44 @@
         <div class="hw-motor-top">
           <canvas class="hw-cv hw-cv-vel" id="hw-canvas-vel" width="150" height="76" aria-hidden="true"></canvas>
           <div class="hw-diff-bars">
-            <div class="hw-diff-row"><span>IZQ</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-izq"></div></div><span id="hw-txt-izq">0%</span></div>
-            <div class="hw-diff-row"><span>DER</span><div class="hw-diff-track"><div class="hw-diff-fill" id="hw-bar-der"></div></div><span id="hw-txt-der">0%</span></div>
+            <div class="hw-diff-row"><span>IZQ</span>
+              <div class="hw-diff-track">
+                <div class="hw-diff-fill" id="hw-bar-izq"></div>
+              </div><span id="hw-txt-izq">0%</span>
+            </div>
+            <div class="hw-diff-row"><span>DER</span>
+              <div class="hw-diff-track">
+                <div class="hw-diff-fill" id="hw-bar-der"></div>
+              </div><span id="hw-txt-der">0%</span>
+            </div>
           </div>
         </div>
         <div class="hw-metrics-row">
-          <div class="hw-metric"><span class="hw-metric-k">Vel.</span><span class="hw-metric-v" id="hw-val-vel">0.00 m/s</span></div>
-          <div class="hw-metric"><span class="hw-metric-k">PWM</span><span class="hw-metric-v" id="hw-val-pwm">0 %</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">Vel.</span><span class="hw-metric-v" id="hw-val-vel">0.00
+              m/s</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">PWM</span><span class="hw-metric-v" id="hw-val-pwm">0
+              %</span></div>
         </div>
         <label class="hw-ctrl" for="hw-in-vel">
-          <span class="hw-ctrl-lbl"><span>Consigna (máx. 0.46)</span><span class="hw-ctrl-val" id="hw-lbl-vel">0.40 m/s</span></span>
+          <span class="hw-ctrl-lbl"><span>Consigna (máx. 0.46)</span><span class="hw-ctrl-val" id="hw-lbl-vel">0.40
+              m/s</span></span>
           <input id="hw-in-vel" type="range" min="0" max="0.46" step="0.01" value="0.40">
         </label>
-        <div class="hw-dirs" role="group" aria-label="Dirección (toma el mando en Manual)">
-          <button type="button" class="hw-mini-btn" data-dir="IZQUIERDA" aria-label="Izquierda">◀</button>
-          <button type="button" class="hw-mini-btn" data-dir="ADELANTE" aria-label="Adelante">▲</button>
-          <button type="button" class="hw-mini-btn" data-dir="DETENIDO" aria-label="Detenido">■</button>
-          <button type="button" class="hw-mini-btn" data-dir="ATRÁS" aria-label="Atrás">▼</button>
-          <button type="button" class="hw-mini-btn" data-dir="DERECHA" aria-label="Derecha">▶</button>
+        <div class="hw-dpad-grid" id="dpad" role="group"
+          aria-label="Control direccional manual (mantén pulsado o usa WASD/flechas)">
+          <button type="button" class="hw-mini-btn dp" data-dp="arriba" data-dir="ADELANTE" aria-label="Avanzar"
+            style="grid-area:u">▲</button>
+          <button type="button" class="hw-mini-btn dp" data-dp="izq" data-dir="IZQUIERDA"
+            aria-label="Girar a la izquierda" style="grid-area:l">◀</button>
+          <button type="button" class="hw-mini-btn dp stop" data-dp="stop" data-dir="DETENIDO" aria-label="Frenar"
+            style="grid-area:s">■</button>
+          <button type="button" class="hw-mini-btn dp" data-dp="der" data-dir="DERECHA" aria-label="Girar a la derecha"
+            style="grid-area:r">▶</button>
+          <button type="button" class="hw-mini-btn dp" data-dp="abajo" data-dir="ATRÁS" aria-label="Retroceder"
+            style="grid-area:d">▼</button>
         </div>
+        <button type="button" class="hw-mini-btn p02-btn-inicio-card" id="b-pos-inicial-card" data-pos-inicial="1">↺
+          Posición inicial</button>
         <div class="hw-seg hw-seg-4" role="group" aria-label="Salud motores">
           <button type="button" class="hw-vivo" id="hw-vivo-motores" data-vivo="motores">● Vivo</button>
           <button type="button" class="hw-st-btn" data-st-card="motores" data-st-val="normal">OK</button>
@@ -210,7 +268,8 @@
       </article>
 
       <!-- 4 · MPU-6050 -->
-      <article class="hw-card" id="hw-card-mpu6050" data-card="mpu6050" data-estado="normal" aria-labelledby="hw-tit-mpu6050">
+      <article class="hw-card" id="hw-card-mpu6050" data-card="mpu6050" data-estado="normal"
+        aria-labelledby="hw-tit-mpu6050">
         <div class="hw-card-head">
           <button type="button" class="hw-card-title" id="hw-tit-mpu6050" data-foco="mpu">MPU-6050 · IMU</button>
           <span class="hw-badge ok" id="hw-badge-mpu6050">ESTABILIDAD OK</span>
@@ -218,9 +277,12 @@
         <div class="hw-imu-top">
           <canvas class="hw-cv hw-cv-imu" id="hw-canvas-imu" width="76" height="76" aria-hidden="true"></canvas>
           <div class="hw-metrics-col">
-            <div class="hw-metric"><span class="hw-metric-k">Pitch</span><span class="hw-metric-v" id="hw-val-pitch">+0.0°</span></div>
-            <div class="hw-metric"><span class="hw-metric-k">Roll</span><span class="hw-metric-v" id="hw-val-roll">+0.0°</span></div>
-            <div class="hw-metric"><span class="hw-metric-k">Acel.</span><span class="hw-metric-v" id="hw-val-acel">1.00 g</span></div>
+            <div class="hw-metric"><span class="hw-metric-k">Pitch</span><span class="hw-metric-v"
+                id="hw-val-pitch">+0.0°</span></div>
+            <div class="hw-metric"><span class="hw-metric-k">Roll</span><span class="hw-metric-v"
+                id="hw-val-roll">+0.0°</span></div>
+            <div class="hw-metric"><span class="hw-metric-k">Acel.</span><span class="hw-metric-v" id="hw-val-acel">1.00
+                g</span></div>
           </div>
         </div>
         <div class="hw-ctrl-2">

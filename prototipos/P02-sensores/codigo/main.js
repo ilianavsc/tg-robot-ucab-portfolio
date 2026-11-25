@@ -292,6 +292,22 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   if (bVerConsolaRapida) bVerConsolaRapida.addEventListener('click', () => ponPanelColapsado(false));
 
   // Menú móvil ⋯ y Bottom Sheet de 3 estados (cerrado | preview | expandido)
+  const reposicionarInicio = () => {
+    teclas.clear();
+    botones.clear();
+    candado = null;
+    desvioAplicado = 0;
+    demo.reposicionarInicio();
+    thPrev = est.th;
+    aplicaEntrada();
+    publicar(true);
+    refrescaTira();
+    refrescaFicha();
+    refrescaSheetPreview();
+    dibujarRadarDual();
+    solicitarCuadro();
+  };
+  $$('#b-pos-inicial, #b-pos-inicial-card').forEach((b) => b.addEventListener('click', reposicionarInicio));
   $$('[data-movil-act]').forEach((b) => {
     b.addEventListener('click', () => {
       const a = b.dataset.movilAct;
@@ -300,6 +316,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       else if (a === 'v-inspeccion') irA('inspeccion');
       else if (a === 'v-seguir') irA('seguir');
       else if (a === 'v-general') irA('general');
+      else if (a === 'pos-inicial') reposicionarInicio();
       else if (a === 'reset' && $('#hw-btn-reset')) $('#hw-btn-reset').click();
       cerrarMenus();
       solicitarCuadro();
@@ -354,10 +371,8 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     });
   }
   if (sheetPreview) sheetPreview.addEventListener('click', () => ponSheet('expandido'));
-  const dpadEl = $('#dpad');
   const ponMando = (on) => {
     ui.mando = Boolean(on);
-    if (dpadEl) dpadEl.hidden = !ui.mando;
     if (!ui.mando) {
       botones.clear();
       aplicaEntrada();
@@ -388,6 +403,11 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     document.body.dataset.modo = m;
     $$('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === m)));
     ponMando(m === 'manual');
+    if (m === 'manual') {
+      if (ui.panelColapsado) ponPanelColapsado(false);
+      abrirFicha('traccion');
+      if (esMovil()) ponSheet('expandido');
+    }
     aplicaEntrada();
   };
   // tocar un control toma el mando (pasa a manual) cuando está encendido
@@ -450,9 +470,11 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       solicitarCuadro(); // reinicia `ultimo`: sin salto de física por el tiempo que estuvo oculta
     }
   });
-  // D-Pad: pulsación sostenida (pointer) y touch como respaldo, igual que el Simulador 1
+  // D-Pad único integrado en Velocidad · Dir.: pulsación sostenida (pointer/touch), igual que el Simulador 1
+  let ultimoDpadMs = 0;
   const pulsa = (k) => {
-    if (!ui.encendido) return;
+    ultimoDpadMs = performance.now();
+    if (!ui.encendido && k !== 'stop') ponEncendido(true);
     if (botones.has(k)) return;
     botones.add(k);
     tomaControl();
@@ -832,6 +854,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   };
   const ejecutarOrden = (tipo, valor) => {
     if (tipo !== 'direccion') return;
+    if (performance.now() - ultimoDpadMs < 400) return; // evita enganchar candado tras soltar el D-pad táctil
     const MAPA_DIR = {ADELANTE: {f: 1, t: 0}, 'ATRÁS': {f: -1, t: 0}, IZQUIERDA: {f: 0, t: 1}, DERECHA: {f: 0, t: -1}, DETENIDO: {f: 0, t: 0, freno: true}};
     const o = MAPA_DIR[valor];
     if (!o) return;
@@ -1159,6 +1182,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ponPanelColapsado,
     enfocarCamara,
     ponSheet,
+    reposicionarInicio,
     ponModo,
     estado: S,
     manual: MANUAL,
