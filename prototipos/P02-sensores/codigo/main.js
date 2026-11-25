@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import {SIN_WEBGL, crearAviso, vigilarContexto} from './arranque.js';
 import {crearDemo} from './demo.js';
-import {ETIQUETAS, FICHAS, ORDEN, ORDEN_TIRA, fmtDist, fmtDistCorta} from './fichas.js';
+import {ETIQUETAS, FICHAS, MOVIL_CHIP, ORDEN, ORDEN_TIRA, fmtDist, fmtDistCorta} from './fichas.js';
 import {crearMundo} from './mundo.js';
 import {R, VMAX} from './model.js';
 import {MANUAL} from './demo.js';
@@ -221,11 +221,12 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   };
   bE.addEventListener('click', () => ponEtiquetas(!ui.etiquetas));
 
-  // Menús desplegables (Herramientas ▾, Vista ▾, Ajustes ⚙)
+  // Menús desplegables (Herramientas ▾, Vista ▾, Ajustes ⚙, Más móvil ⋯)
   const menus = [
     [$('#b-herramientas'), $('#menu-herramientas')],
     [$('#b-vista'), $('#menu-vista')],
     [$('#b-ajustes'), $('#menu-ajustes')],
+    [$('#b-mas-movil'), $('#menu-mas-movil')],
   ].filter(([b, m]) => b && m);
   const cerrarMenus = (excepto = null) => {
     menus.forEach(([b, m]) => {
@@ -289,6 +290,70 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   };
   if (bSensores) bSensores.addEventListener('click', () => ponPanelColapsado(!ui.panelColapsado));
   if (bVerConsolaRapida) bVerConsolaRapida.addEventListener('click', () => ponPanelColapsado(false));
+
+  // Menú móvil ⋯ y Bottom Sheet de 3 estados (cerrado | preview | expandido)
+  $$('[data-movil-act]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const a = b.dataset.movilAct;
+      if (a === 'xray') bX.click();
+      else if (a === 'etiq') bE.click();
+      else if (a === 'v-inspeccion') irA('inspeccion');
+      else if (a === 'v-seguir') irA('seguir');
+      else if (a === 'v-general') irA('general');
+      else if (a === 'reset' && $('#hw-btn-reset')) $('#hw-btn-reset').click();
+      cerrarMenus();
+      solicitarCuadro();
+    });
+  });
+  const sheetHandle = $('#sheet-handle');
+  const sheetHandleLbl = $('#sheet-handle-lbl');
+  const sheetPreview = $('#sheet-preview');
+  const sheetPrevTit = $('#sheet-prev-tit');
+  const sheetPrevVal = $('#sheet-prev-val');
+  const SHEET_ESTADOS = ['cerrado', 'preview', 'expandido'];
+  const esMovil = () => window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+  const refrescaSheetPreview = () => {
+    if (!sheetPrevTit || !sheetPrevVal) return;
+    if (ui.sel && FICHAS[ui.sel]) {
+      const f = FICHAS[ui.sel];
+      sheetPrevTit.textContent = f.corto;
+      const pares = f.vivo(vista());
+      sheetPrevVal.textContent = pares.map(([k, v]) => `${k}: ${v}`).join(' · ');
+    } else {
+      sheetPrevTit.textContent = 'Vista general · 4 consolas';
+      sheetPrevVal.textContent = `Vel: ${num(est.v)} m/s · F: ${fmtDistCorta(est.frente)} · T: ${fmtDistCorta(est.atras)}`;
+    }
+  };
+  const ponSheet = (estado) => {
+    const nxt = SHEET_ESTADOS.includes(estado) ? estado : 'cerrado';
+    ui.sheet = nxt;
+    if (hwPanel) hwPanel.dataset.sheet = nxt;
+    if (sheetHandle) sheetHandle.setAttribute('aria-expanded', String(nxt !== 'cerrado'));
+    if (sheetHandleLbl) {
+      sheetHandleLbl.textContent = nxt === 'cerrado'
+        ? 'Sensores · Toca para abrir ▲'
+        : nxt === 'preview'
+          ? 'Vista previa · Toca para expandir ▲'
+          : 'Consola completa · Toca para cerrar ▼';
+    }
+    refrescaSheetPreview();
+  };
+  if (sheetHandle) {
+    let sy0 = null;
+    sheetHandle.addEventListener('pointerdown', (e) => { sy0 = e.clientY; });
+    sheetHandle.addEventListener('pointerup', (e) => {
+      if (sy0 == null) return;
+      const dy = e.clientY - sy0;
+      sy0 = null;
+      const i = SHEET_ESTADOS.indexOf(ui.sheet || 'cerrado');
+      if (Math.abs(dy) > 22) {
+        ponSheet(SHEET_ESTADOS[Math.max(0, Math.min(2, i + (dy < 0 ? 1 : -1)))]);
+      } else {
+        ponSheet(SHEET_ESTADOS[(i + 1) % SHEET_ESTADOS.length]);
+      }
+    });
+  }
+  if (sheetPreview) sheetPreview.addEventListener('click', () => ponSheet('expandido'));
   const dpadEl = $('#dpad');
   const ponMando = (on) => {
     ui.mando = Boolean(on);
@@ -424,8 +489,9 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   const tira = $('#tira');
   tira.innerHTML = ORDEN_TIRA.map((id) => {
     const f = FICHAS[id];
+    const mc = MOVIL_CHIP[id] || {ico: '•', txt: f.corto};
     const extra = id === 'tcrt' ? '<span class="sq" aria-hidden="true"></span>'.repeat(4) : '';
-    return `<button class="chip" data-comp="${id}" style="--c:${f.color}" aria-pressed="false"><b>${esc(f.corto)}</b><span class="res">${esc(f.resumen || '')}</span><span class="v" data-v="${id}">${extra}</span></button>`;
+    return `<button class="chip" data-comp="${id}" style="--c:${f.color}" aria-pressed="false"><span class="ico-c" aria-hidden="true">${mc.ico}</span><b class="lbl-largo">${esc(f.corto)}</b><b class="lbl-corto">${esc(mc.txt)}</b><span class="res">${esc(f.resumen || '')}</span><span class="v" data-v="${id}">${extra}</span></button>`;
   }).join('');
   const hwFicha = $('#hw-ficha');
   const hwPanel = $('#hw-panel');
@@ -470,9 +536,12 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     const consolaSel = ui.sel ? CONSOLA_COMP[ui.sel] : null;
     if (!desdePanel && S && (S.get().foco !== focoEstado || S.get().seleccion !== consolaSel)) S.set({foco: focoEstado, seleccion: consolaSel}, 'circuito-ui');
     if (ui.sel === 'us' && $('#hw-panel-titulo')) $('#hw-panel-titulo').textContent = 'Enfocado · HC-SR04P · Radar dual';
-    if (ui.sel) enfocarCamara(ui.sel);
-    else if (ui.zoomComp) irA('inspeccion');
+    if (ui.sel) {
+      enfocarCamara(ui.sel);
+      if (esMovil() && (ui.sheet || 'cerrado') === 'cerrado') ponSheet('preview');
+    } else if (ui.zoomComp) irA('inspeccion');
     refrescaVerConsolaRapida();
+    refrescaSheetPreview();
     dibujarRadarDual();
     solicitarCuadro();
   };
@@ -1089,6 +1158,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ponMando,
     ponPanelColapsado,
     enfocarCamara,
+    ponSheet,
     ponModo,
     estado: S,
     manual: MANUAL,

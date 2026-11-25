@@ -558,6 +558,10 @@ prueba('UX P02: barra superior limpia, menús agrupados, D-pad solo en manual, p
   assert.ok(app.includes('id="b-sensores"') && app.includes('id="b-vista-general"') && app.includes('id="b-abrir-consola"'), 'controles de panel colapsable, vista general y acceso rápido');
   assert.ok(css.includes('data-panel-colapsado="1"') && css.includes('.p02-ver-consola'), 'CSS de panel colapsable y botón rápido');
   assert.ok(main.includes('ponPanelColapsado') && main.includes('ZOOM_COMP') && main.includes('enfocarCamara'), 'lógica de colapso con resize y zoom suave 3D');
+  // 6. Móvil: Bottom Sheet de 3 estados (cerrado, preview, expandido), menú ⋯ y fichas compactas
+  assert.ok(app.includes('id="sheet-handle"') && app.includes('id="sheet-preview"') && app.includes('id="b-mas-movil"'), 'controles móviles Bottom Sheet y menú ⋯');
+  assert.ok(css.includes('data-sheet="cerrado"') && css.includes('data-sheet="preview"') && css.includes('data-sheet="expandido"'), '3 estados CSS del Bottom Sheet');
+  assert.ok(main.includes('ponSheet') && main.includes('MOVIL_CHIP'), 'lógica Bottom Sheet y fichas compactas en móvil');
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

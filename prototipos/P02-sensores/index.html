@@ -47,6 +47,17 @@
           <button type="button" class="p02-drop-item" id="hw-btn-reset" role="menuitem">↺ Restablecer nominal</button>
         </div>
       </div>
+      <div class="p02-menu-wrap p02-solo-movil" id="wrap-mas-movil">
+        <button type="button" class="hw-btn-reset p02-gear-btn" id="b-mas-movil" aria-haspopup="true" aria-expanded="false" aria-controls="menu-mas-movil" aria-label="Más herramientas" title="Más herramientas">⋯</button>
+        <div class="p02-dropdown p02-dropdown-der" id="menu-mas-movil" role="menu" hidden>
+          <button type="button" class="p02-drop-item" data-movil-act="xray" role="menuitem">🩻 Rayos X</button>
+          <button type="button" class="p02-drop-item" data-movil-act="etiq" role="menuitem">🏷️ Etiquetas 3D</button>
+          <button type="button" class="p02-drop-item" data-movil-act="v-inspeccion" role="menuitem">🔍 Vista Inspección</button>
+          <button type="button" class="p02-drop-item" data-movil-act="v-seguir" role="menuitem">🎯 Seguir robot</button>
+          <button type="button" class="p02-drop-item" data-movil-act="v-general" role="menuitem">🗺️ Panorámica</button>
+          <button type="button" class="p02-drop-item" data-movil-act="reset" role="menuitem">↺ Restablecer nominal</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -88,7 +99,15 @@
     <nav class="tira" id="tira" aria-label="Componentes del robot (toca uno para enfocar su consola y su ficha técnica)"></nav>
   </div>
 
-  <aside class="hw-panel" id="hw-panel" aria-label="Consolas interactivas y ficha técnica">
+  <aside class="hw-panel" id="hw-panel" data-sheet="cerrado" aria-label="Consolas interactivas y ficha técnica">
+    <button type="button" class="p02-sheet-handle" id="sheet-handle" aria-label="Cambiar altura del panel de sensores (cerrado, vista previa, expandido)" aria-expanded="false">
+      <span class="p02-sheet-bar" aria-hidden="true"></span>
+      <span class="p02-sheet-lbl" id="sheet-handle-lbl">Sensores · Toca para abrir ▲</span>
+    </button>
+    <div class="p02-sheet-preview" id="sheet-preview" aria-live="polite">
+      <strong id="sheet-prev-tit">Vista general · 4 consolas</strong>
+      <span id="sheet-prev-val">Toca una ficha o sube para ver las consolas</span>
+    </div>
     <div class="hw-panel-head">
       <span class="hw-panel-tit" id="hw-panel-titulo">Vista general · 4 consolas en vivo</span>
       <button type="button" class="hw-foco-cerrar" id="hw-foco-cerrar" hidden>Ver todas (4)</button>

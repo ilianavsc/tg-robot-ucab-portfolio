@@ -192,6 +192,14 @@ export const FICHAS = {
 
 export const ORDEN = ['tcrt', 'us_front', 'us_rear', 'esp32', 'mpu', 'traccion', 'bateria'];
 export const ORDEN_TIRA = ['tcrt', 'us', 'esp32', 'mpu', 'traccion', 'bateria'];
+export const MOVIL_CHIP = {
+  tcrt: {ico: '📏', txt: 'Línea'},
+  us: {ico: '📡', txt: 'Radar'},
+  esp32: {ico: '🧠', txt: 'ESP32'},
+  mpu: {ico: '🧭', txt: 'IMU'},
+  traccion: {ico: '⚙️', txt: 'Motor'},
+  bateria: {ico: '🔋', txt: 'Bat.'},
+};
 
 // Texto corto de cada etiqueta 3D (versión ancha y versión estrecha)
 export const ETIQUETAS = {
