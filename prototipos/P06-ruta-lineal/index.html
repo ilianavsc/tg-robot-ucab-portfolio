@@ -43,6 +43,15 @@
     </div>
 
     <aside class="rl-panel" id="rl-panel" aria-label="Panel de operación y consola de sensores">
+      <!-- Minimapa 2D del gemelo digital: siempre visible, arriba de las pestañas (mismo lenguaje que el de P04) -->
+      <div class="rl-minimapa" id="rl-minimapa" role="region" aria-label="Minimapa del gemelo digital de la ruta lineal">
+        <div class="rl-mm-cab">
+          <span class="rl-mm-tit"><i class="rl-mm-dot" id="rl-mm-dot" aria-hidden="true"></i>Gemelo Digital</span>
+          <span class="rl-mm-ruta" id="rl-mm-ruta">Ruta Lineal</span>
+        </div>
+        <canvas id="rl-mm-canvas" role="img" aria-label="Trazado recto de la ruta: BASE · INICIO, PC1, PC2, PC3 y DESTINO, con la posición y el rumbo del robot en vivo"></canvas>
+        <div class="rl-mm-leyenda" id="rl-mm-leyenda"></div>
+      </div>
       <div class="rl-tabs" role="tablist" aria-label="Pestañas del panel">
         <button type="button" role="tab" class="rl-tab" id="rl-tab-op" aria-controls="rl-pane-op" aria-selected="true" tabindex="0">Operación</button>
         <button type="button" role="tab" class="rl-tab" id="rl-tab-sen" aria-controls="rl-pane-sen" aria-selected="false" tabindex="-1">Consola de sensores</button>

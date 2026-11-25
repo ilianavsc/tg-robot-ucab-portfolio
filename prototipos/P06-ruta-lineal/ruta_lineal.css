@@ -116,6 +116,24 @@
   background: var(--oscuro); color: var(--tg-dark-text);
   border-left: 2px solid var(--tinta);
 }
+/* minimapa 2D del gemelo digital: arriba del panel, visible en las dos pestañas */
+.rl-minimapa {
+  flex: none; margin: 8px 8px 0; padding: 6px 8px 7px;
+  background: var(--tg-dark-inset); border: 1.5px solid var(--borde); border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0, 242, 254, 0.1); color: var(--tg-dark-text); min-width: 0;
+}
+.rl-mm-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; min-width: 0; }
+.rl-mm-tit { display: inline-flex; align-items: center; gap: 6px; font: 700 11px var(--tg-font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--tg-dark-accent); white-space: nowrap; }
+.rl-mm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tg-dark-ok); box-shadow: 0 0 6px var(--tg-dark-ok); display: inline-block; flex: none; }
+.rl-mm-dot.activo { background: var(--tg-dark-accent); box-shadow: 0 0 8px var(--tg-dark-accent); animation: rl-mm-latido 1s ease-in-out infinite alternate; }
+.rl-mm-dot.alarma { background: var(--tg-dark-alarm); box-shadow: 0 0 8px var(--tg-dark-alarm); animation: rl-mm-latido .6s ease-in-out infinite alternate; }
+@keyframes rl-mm-latido { from { opacity: .45; } to { opacity: 1; } }
+.rl-mm-ruta { font: 600 11px var(--tg-font-mono); color: var(--tg-dark-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#rl-mm-canvas { display: block; width: 100%; height: 76px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.22); }
+.rl-mm-leyenda { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; margin-top: 5px; font: 600 10px var(--tg-font-mono); line-height: 1.25; color: var(--tg-dark-text-muted); font-variant-numeric: tabular-nums; }
+.rl-mm-leyenda span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.rl-mm-leyenda i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+@media (prefers-reduced-motion: reduce) { .rl-mm-dot.activo, .rl-mm-dot.alarma { animation: none; } }
 .rl-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px 8px 0; background: #0B0E13; border-bottom: 1px solid var(--borde); }
 .rl-tab {
   min-height: 42px; border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0;

@@ -21,7 +21,8 @@
     detalle: ['--tg-sim-detalle', '#F7FAF9'], pared: ['--tg-sim-pared', '#C5D2CD'], paredExtremo: ['--tg-sim-pared-extremo', '#B3C3BD'],
     cinta: ['--tg-sim-cinta', '#0B0C0E'], chasis: ['--tg-sim-chasis', '#1E3A5F'], rueda: ['--tg-sim-rueda', '#1D2025'],
     pcb: ['--tg-sim-pcb', '#2F6F55'], ultrasonico: ['--tg-sim-ultrasonico', '#2A63B5'], obstaculo: ['--tg-sim-obstaculo', '#EA580C'],
-    obstaculoClaro: ['--tg-sim-obstaculo-claro', '#FB923C'], obstaculoOscuro: ['--tg-sim-obstaculo-oscuro', '#C2410C'], obstaculoBorde: ['--tg-sim-obstaculo-borde', '#7C2D12']
+    obstaculoClaro: ['--tg-sim-obstaculo-claro', '#FB923C'], obstaculoOscuro: ['--tg-sim-obstaculo-oscuro', '#C2410C'], obstaculoBorde: ['--tg-sim-obstaculo-borde', '#7C2D12'],
+    flecha: ['--tg-dark-warning', '#FBBF24'], mmFondo: ['--tg-dark-bg', '#10141A'], mmTexto: ['--tg-dark-text', '#E2E8F0']
   });
 
   // ---------------------------------------------------------------- canvas nítido
@@ -396,6 +397,91 @@
     ctx.textAlign = 'left';
   }
 
+  // ---------------------------------------------------------------- minimapa 2D del gemelo digital (arriba del panel)
+  // Mismo lenguaje que el de P04: retícula, trazo cian luminoso, nodos INICIO · PC1–PC3 · DESTINO y flecha del robot.
+  // Se dibuja desde el bucle único (se pausa con la pestaña oculta) y lee solo el SimulationState.
+  var fmtM = function (m) { return m.toFixed(2).replace('.', ',') + ' m'; };
+  var claveLeyenda = '';
+  function hitosRuta(e) {
+    return [{id: 'INICIO', x: 0, estado: 'base'}]
+      .concat((e.puntosControl || []).map(function (p) { return {id: p.id, x: p.x, estado: p.retorno ? 'retorno' : p.ida ? 'ida' : 'pendiente'}; }))
+      .concat([{id: 'DESTINO', x: G.largo, estado: 'destino'}]);
+  }
+  function colorHito(h) {
+    return h.estado === 'base' ? COL.verde : h.estado === 'destino' ? COL.coral : h.estado === 'retorno' ? COL.ok : h.estado === 'ida' ? COL.cian : COL.tenue;
+  }
+  function dibujarMinimapa(e) {
+    var P = preparar($('rl-mm-canvas'));
+    if (!P) return;
+    var ctx = P.ctx, w = P.w, h = P.h;
+    // fondo con retícula sutil
+    ctx.fillStyle = COL.mmFondo;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(0,242,254,0.08)';
+    ctx.lineWidth = 1;
+    for (var gx = 16; gx < w; gx += 22) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke(); }
+    for (var gy = 12; gy < h; gy += 20) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke(); }
+    var pad = 22, y0 = Math.round(h * 0.55);
+    var sx = function (x) { return pad + (x / G.largo) * (w - pad * 2); };
+    // trazo recto luminoso de la ruta (halo + línea)
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(0,242,254,0.22)';
+    ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(sx(0), y0); ctx.lineTo(sx(G.largo), y0); ctx.stroke();
+    ctx.strokeStyle = COL.cian;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sx(0), y0); ctx.lineTo(sx(G.largo), y0); ctx.stroke();
+    // marcas transversales reales (regleta 1111) de la base y de la parada
+    ctx.strokeStyle = COL.mmTexto;
+    ctx.lineWidth = 2;
+    [G.marcaBase, G.marcaParada].forEach(function (mx) { ctx.beginPath(); ctx.moveTo(sx(mx), y0 - 6); ctx.lineTo(sx(mx), y0 + 6); ctx.stroke(); });
+    // hitos: INICIO, PC1–PC3 (pendiente hueco · cruzado relleno) y DESTINO (pulso en ESPERA_REPOSICION)
+    var hitos = hitosRuta(e);
+    var espera = e.ruta.estado === 'ESPERA_REPOSICION';
+    ctx.font = '700 9.5px ' + (window.getComputedStyle ? getComputedStyle(document.documentElement).getPropertyValue('--tg-font-mono') || 'monospace' : 'monospace');
+    ctx.textBaseline = 'middle';
+    hitos.forEach(function (hh, i) {
+      var px = sx(hh.x), col = colorHito(hh);
+      if (hh.id === 'DESTINO' && espera) {
+        var k = 0.5 + 0.5 * Math.sin(e.ruta.t * 6);
+        ctx.beginPath(); ctx.arc(px, y0, 7 + 6 * k, 0, Math.PI * 2);
+        ctx.strokeStyle = COL.alarma; ctx.globalAlpha = 0.85 - 0.5 * k; ctx.lineWidth = 2.5; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.beginPath(); ctx.arc(px, y0, hh.estado === 'pendiente' ? 4.5 : 5, 0, Math.PI * 2);
+      if (hh.estado === 'pendiente') { ctx.fillStyle = COL.mmFondo; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); }
+      else { ctx.fillStyle = espera && hh.id === 'DESTINO' ? COL.alarma : col; ctx.fill(); ctx.strokeStyle = COL.mmFondo; ctx.lineWidth = 1.5; ctx.stroke(); }
+      ctx.fillStyle = COL.mmTexto;
+      ctx.textAlign = i === 0 ? 'left' : i === hitos.length - 1 ? 'right' : 'center';
+      ctx.fillText(hh.id === 'INICIO' ? (w < 460 ? 'INICIO' : 'BASE · INICIO') : hh.id, i === 0 ? px - 4 : i === hitos.length - 1 ? px + 4 : px, y0 - 15);
+    });
+    // obstáculo inyectado (HC-SR04)
+    if (e.obstaculo) {
+      var ox = sx(e.obstaculo.x);
+      ctx.beginPath(); ctx.arc(ox, y0, 6, 0, Math.PI * 2);
+      ctx.fillStyle = COL.obstaculo; ctx.fill(); ctx.strokeStyle = COL.mmFondo; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = COL.blanco; ctx.textAlign = 'center'; ctx.font = '700 9px sans-serif'; ctx.fillText('!', ox, y0 + 0.5);
+    }
+    // flecha amarilla del robot: posición y rumbo reales (gira 180° al reposicionarlo)
+    var rb = e.robot;
+    var lat = Math.max(-5, Math.min(5, rb.y * 400));
+    ctx.save();
+    ctx.translate(sx(rb.x), y0 - lat); // sobre la línea, encima de los hitos
+    ctx.rotate(-rumboRad(e));
+    ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-6, -5); ctx.lineTo(-3, 0); ctx.lineTo(-6, 5); ctx.closePath();
+    ctx.fillStyle = COL.flecha; ctx.fill(); ctx.strokeStyle = COL.mmFondo; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+    // cabecera y leyenda (solo cambian con el progreso)
+    var clave = hitos.map(function (hh) { return hh.estado; }).join('|') + '|' + (e.motores.v > 0.01 ? 1 : 0) + espera;
+    if (clave !== claveLeyenda) {
+      claveLeyenda = clave;
+      txt('rl-mm-ruta', 'Ruta Lineal · ' + fmtM(G.largo));
+      $('rl-mm-dot').className = 'rl-mm-dot' + (espera ? ' alarma' : e.motores.v > 0.01 ? ' activo' : '');
+      $('rl-mm-leyenda').innerHTML = hitos.map(function (hh) {
+        return '<span><i style="background:' + colorHito(hh) + '"></i>' + (hh.id === 'INICIO' ? 'INICIO' : hh.id) + ' ' + fmtM(hh.x) + '</span>';
+      }).join('');
+    }
+  }
+
   // ---------------------------------------------------------------- panel (DOM)
   var txt = function (id, t) { var el = $(id); if (el && el.textContent !== t) el.textContent = t; };
   var cls = function (id, c) { var el = $(id); if (el && el.className !== c) el.className = c; };
@@ -629,10 +715,12 @@
     var g = window.GemeloP06;
     if (g && g.activo) g.cuadro(e, dt || 0);
     else dibujarEscena(e);
+    dibujarMinimapa(e);
   }
   if (window.ResizeObserver) new ResizeObserver(function () { pintarEscena(S.get(), 0); renderPanel(S.get()); }).observe($('rl-sim'));
   renderPanel(S.get());
   dibujarEscena(S.get());
+  dibujarMinimapa(S.get());
   idCuadro = requestAnimationFrame(bucle);
   // pestaña oculta: se detiene el ciclo (y la alarma sonora); al volver se reanuda sin salto de tiempo
   document.addEventListener('visibilitychange', function () {
