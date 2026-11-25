@@ -102,6 +102,31 @@ window.TG = {
     cronograma: "cronograma.html"
   },
 
+  /* ---------- KPIs REALES DE LA PORTADA (Bloque 1 del Plan de Optimización) ----------
+     Indicadores verificables extraídos de los prototipos completados (P01–P06).
+     Rigor de ejecución, visible ante el jurado:
+       SIL  = Software In the Loop (simulación local con datos sintéticos).
+       EN VIVO = MQTT v2.0.0 (broker público real; el robot sigue simulado).
+       HIL  = Hardware In the Loop (ESP32 y sensores físicos, pendiente). */
+  kpis: {
+    indicadores: [
+      { ceja: "Prototipos implementados", valor: "6/6", sub: "P01–P06 completados · P10 (puente Firebase) planificado" },
+      { ceja: "Comunicación en vivo", valor: "MQTT v2.0.0", sub: "P04 operativo en vivo (schema_version 2.0.0)" },
+      { ceja: "Calidad y pruebas", valor: "140+", sub: "tests web en verde · 173/173 en App Flutter v2" },
+      { ceja: "Parámetros físicos (TG_ROBOT)", valor: "0,46 m/s", sub: "Vel. máx. · 4× TCRT5000 · 2× HC-SR04P (5–80 cm) · MPU-6050 · 3S Li-Ion (11,1 V)" }
+    ],
+    rigor: [
+      { texto: "SIL · Simulación local (datos sintéticos)", clase: "sil" },
+      { texto: "EN VIVO · MQTT v2.0.0 (broker real, robot simulado)", clase: "vivo" },
+      { texto: "HIL · Hardware físico (pendiente)", clase: "hil" }
+    ],
+    estrellas: [
+      { codigo: "P02", nombre: "Inspector Hardware 3D", ejecucion: "SIL · Simulación local", ejecucionClase: "sil", capa: "Hardware / Sensores", url: "prototipos/P02-sensores/", descripcion: "Panel colapsable, zoom 3D, radar dual HC-SR04P, control unificado y Bottom Sheet móvil." },
+      { codigo: "P04", nombre: "Simulador ESP32", ejecucion: "EN VIVO · MQTT v2.0.0", ejecucionClase: "vivo", capa: "Comunicación / MQTT", url: "prototipos/P04-simulador-1-esp32/", descripcion: "Telemetría y comandos en tiempo real (broker público; robot simulado hasta el HIL)." },
+      { codigo: "P06", nombre: "Ruta Lineal", ejecucion: "SIL · Simulación local", ejecucionClase: "sil", capa: "Capa 3 · Operacional", url: "prototipos/P06-ruta-lineal/", descripcion: "Máquina de estados ida/reposición 180°/retorno, robot 3D oficial, PC1–PC3 y minimapa 2D." }
+    ]
+  },
+
   /* Las 7 fases agrupadas en 4 etapas fáciles de leer.
      fases = ids de TG.fases · semanas = [primera, última] */
   etapas: [
