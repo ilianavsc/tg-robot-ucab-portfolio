@@ -2,6 +2,7 @@
 
 const num = (v, d = 2) => v.toFixed(d).replace('.', ',');
 export const fmtDist = (d) => (!Number.isFinite(d) ? 'sin eco (> 4 m)' : d < 1 ? `${Math.round(d * 100)} cm` : `${num(d)} m`);
+export const fmtDistCorta = (d) => (!Number.isFinite(d) ? 'sin eco' : d < 1 ? `${Math.round(d * 100)} cm` : `${num(d, 1)} m`);
 const ZONA_TXT = {critica: 'crítica (< 20 cm)', precaucion: 'precaución (20–50 cm)', libre: 'libre (> 50 cm)'};
 
 function lecturaLinea(s) {
@@ -39,6 +40,27 @@ export const FICHAS = {
     ],
     estado: ['aviso', 'Simulado, falta medir'],
     nota: `En la demo cada sensor ve un círculo de ⌀ 8 mm (supuesto de simulación). Umbral de reflectancia y altura de montaje ${PEND_MED}.`,
+  },
+  us: {
+    nombre: 'Radar Ultrasónico Dual (2× HC-SR04P)',
+    corto: 'HC-SR04P · Radar',
+    resumen: 'Vigilan frente y atrás con haz de ±15°.',
+    color: '#E8B90C',
+    consola: {id: 'hcsr04', titulo: 'Consola HC-SR04P · Radar dual (frente y atrás)'},
+    rol: 'Par de sensores ultrasónicos (frontal y trasero) leídos de forma alternada cada 100 ms. Vigilan obstáculos adelante (< 20 cm detiene avance/giros) y atrás (bloquea retroceso si hay < 20 cm).',
+    datos: [
+      ['Frontal', 'TRIG GPIO 23 · ECHO GPIO 33'],
+      ['Trasero', 'TRIG GPIO 15 (separado) · ECHO GPIO 5'],
+      ['Lectura', 'alternada: frente en ciclos pares, atrás en impares (100 ms)'],
+      ['Zonas', '< 20 cm alerta (rojo) · 20–50 cm precaución (ámbar) · > 50 cm despejado'],
+      ['Sensor fallido', '3 lecturas sin eco (600 ms) activan fail-safe'],
+    ],
+    vivo: (v) => [
+      ['Frente', `${fmtDist(v.dF)} · ${ZONA_TXT[v.zonaF]}`],
+      ['Atrás', `${fmtDist(v.dR)} · ${ZONA_TXT[v.zonaR]}`],
+    ],
+    estado: ['aviso', 'Simulado, falta medir'],
+    nota: 'En el radar dual puedes inyectar obstáculos al frente o atrás (5–80 cm). Los conos 3D son ayuda visual; las mediciones reales van en el registro HIL.',
   },
   us_front: {
     nombre: 'HC-SR04P frontal',
@@ -169,6 +191,7 @@ export const FICHAS = {
 };
 
 export const ORDEN = ['tcrt', 'us_front', 'us_rear', 'esp32', 'mpu', 'traccion', 'bateria'];
+export const ORDEN_TIRA = ['tcrt', 'us', 'esp32', 'mpu', 'traccion', 'bateria'];
 
 // Texto corto de cada etiqueta 3D (versión ancha y versión estrecha)
 export const ETIQUETAS = {

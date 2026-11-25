@@ -9,7 +9,7 @@ import vm from 'node:vm';
 import {LIMITES, MANUAL, crearDemo} from './demo.js';
 import {R, VMAX, dutyPara, encoderHz} from './model.js';
 import {CINTA, GEO, OBSTACULOS, crearRuta, lineaSensores, ultrasonido, zonaDe} from './ruta.js';
-import {FICHAS, ORDEN} from './fichas.js';
+import {FICHAS, ORDEN, ORDEN_TIRA} from './fichas.js';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 let ok = 0;
@@ -549,6 +549,11 @@ prueba('UX P02: panel enfocado por componente, D-pad oculto por defecto con togg
   assert.ok(app.includes('id="hw-foco-cerrar"') && app.includes('Ver todas (4)'), 'botón Ver todas (4) en encabezado del panel');
   assert.ok(css.includes('.hw-panel[data-foco-activo="1"] .hw-card{display:none}'), 'oculta las demás consolas al enfocar');
   assert.ok(main.includes("esp32: 'motores'") && main.includes('bateria: null') && main.includes('sincronizarFocoPanel'), 'mapeo de consolas incluyendo ESP32 y Batería');
+  // 4. Tarjeta unificada HC-SR04P · Radar + consola de radar dual (frontal + trasero)
+  assert.deepStrictEqual(ORDEN_TIRA, ['tcrt', 'us', 'esp32', 'mpu', 'traccion', 'bateria'], 'tira inferior unifica HC-SR04P en una sola tarjeta');
+  assert.ok(FICHAS.us && FICHAS.us.corto === 'HC-SR04P · Radar' && FICHAS.us.consola.id === 'hcsr04', 'ficha unificada HC-SR04P');
+  assert.ok(app.includes('id="hw-canvas-radar-dual"') && app.includes('id="hw-in-dist-atras"'), 'canvas de radar dual y slider trasero');
+  assert.ok(main.includes('dibujarRadarDual') && main.includes('FRENTE ▲') && main.includes('ATRÁS ▼'), 'dibuja ambos sectores frontal y trasero');
 });
 
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);

@@ -45,21 +45,28 @@
       <button type="button" class="hw-foco-cerrar" id="hw-foco-cerrar" hidden>Ver todas (4)</button>
     </div>
     <div class="hw-consolas" id="hw-consolas">
-      <!-- 1 · HC-SR04 -->
+      <!-- 1 · HC-SR04P Radar Dual (frente y atrás) -->
       <article class="hw-card" id="hw-card-hcsr04" data-card="hcsr04" data-estado="normal" aria-labelledby="hw-tit-hcsr04">
         <div class="hw-card-head">
-          <button type="button" class="hw-card-title" id="hw-tit-hcsr04" data-foco="us_front">HC-SR04 · Dist.</button>
+          <button type="button" class="hw-card-title" id="hw-tit-hcsr04" data-foco="us_front">HC-SR04P · Radar dual</button>
           <span class="hw-badge ok" id="hw-badge-hcsr04">DESPEJADO</span>
         </div>
-        <canvas class="hw-cv hw-cv-radar" id="hw-canvas-radar" width="260" height="92" aria-hidden="true"></canvas>
+        <canvas class="hw-cv hw-cv-radar" id="hw-canvas-radar" width="260" height="92" aria-hidden="true" hidden></canvas>
+        <canvas class="hw-cv hw-cv-radar-dual" id="hw-canvas-radar-dual" width="260" height="164" role="img" aria-label="Radar dual HC-SR04P: sector superior frontal y sector inferior trasero con anillos a 20, 50 y 80 cm"></canvas>
         <div class="hw-metrics-row">
-          <div class="hw-metric"><span class="hw-metric-k">Frente</span><span class="hw-metric-v" id="hw-val-dist">—</span></div>
-          <div class="hw-metric"><span class="hw-metric-k">Atrás</span><span class="hw-metric-v" id="hw-val-atras">—</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">FRENTE</span><span class="hw-metric-v" id="hw-val-dist">—</span></div>
+          <div class="hw-metric"><span class="hw-metric-k">ATRÁS</span><span class="hw-metric-v" id="hw-val-atras">—</span></div>
         </div>
-        <label class="hw-ctrl" for="hw-in-dist">
-          <span class="hw-ctrl-lbl"><span>Inyectar obstáculo <small id="hw-val-zona">LIBRE</small></span><span class="hw-ctrl-val" id="hw-lbl-dist">60 cm</span></span>
-          <input id="hw-in-dist" type="range" min="5" max="80" step="1" value="60">
-        </label>
+        <div class="hw-ctrl-2">
+          <label class="hw-ctrl" for="hw-in-dist">
+            <span class="hw-ctrl-lbl"><span>Frente <small id="hw-val-zona">LIBRE</small></span><span class="hw-ctrl-val" id="hw-lbl-dist">60 cm</span></span>
+            <input id="hw-in-dist" type="range" min="5" max="80" step="1" value="60">
+          </label>
+          <label class="hw-ctrl" for="hw-in-dist-atras">
+            <span class="hw-ctrl-lbl"><span>Atrás</span><span class="hw-ctrl-val" id="hw-lbl-dist-atras">Vivo</span></span>
+            <input id="hw-in-dist-atras" type="range" min="5" max="80" step="1" value="60">
+          </label>
+        </div>
         <div class="hw-seg hw-seg-4" role="group" aria-label="Salud HC-SR04">
           <button type="button" class="hw-vivo" id="hw-vivo-hcsr04" data-vivo="hcsr04">● Vivo</button>
           <button type="button" class="hw-st-btn" data-st-card="hcsr04" data-st-val="normal">OK</button>

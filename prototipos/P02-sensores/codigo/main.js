@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import {SIN_WEBGL, crearAviso, vigilarContexto} from './arranque.js';
 import {crearDemo} from './demo.js';
-import {ETIQUETAS, FICHAS, ORDEN, fmtDist} from './fichas.js';
+import {ETIQUETAS, FICHAS, ORDEN, ORDEN_TIRA, fmtDist, fmtDistCorta} from './fichas.js';
 import {crearMundo} from './mundo.js';
 import {R, VMAX} from './model.js';
 import {MANUAL} from './demo.js';
@@ -316,14 +316,15 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
 
   // ---------------------------------------------------------------- tira de componentes y ficha técnica en el panel
   const tira = $('#tira');
-  tira.innerHTML = ORDEN.map((id) => {
+  tira.innerHTML = ORDEN_TIRA.map((id) => {
     const f = FICHAS[id];
     const extra = id === 'tcrt' ? '<span class="sq" aria-hidden="true"></span>'.repeat(4) : '';
     return `<button class="chip" data-comp="${id}" style="--c:${f.color}" aria-pressed="false"><b>${esc(f.corto)}</b><span class="res">${esc(f.resumen || '')}</span><span class="v" data-v="${id}">${extra}</span></button>`;
   }).join('');
   const hwFicha = $('#hw-ficha');
   const hwPanel = $('#hw-panel');
-  const CONSOLA_COMP = {tcrt: 'tcrt5000', us_front: 'hcsr04', us_rear: 'hcsr04', mpu: 'mpu6050', traccion: 'motores', esp32: 'motores', bateria: null};
+  const CONSOLA_COMP = {tcrt: 'tcrt5000', us: 'hcsr04', us_front: 'hcsr04', us_rear: 'hcsr04', mpu: 'mpu6050', traccion: 'motores', esp32: 'motores', bateria: null};
+  const normalizaComp = (id) => (id === 'us_front' || id === 'us_rear' ? 'us' : id || null);
   const sincronizarFocoPanel = (id) => {
     if (!hwPanel) return;
     if (id) {
@@ -335,11 +336,12 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     }
   };
   // el bloque compacto de datos técnicos del proyecto va dentro del panel oscuro, justo debajo de su consola
-  const abrirFicha = (id, desdePanel = false) => {
-    ui.sel = id || null;
+  const abrirFicha = (rawId, desdePanel = false) => {
+    const id = normalizaComp(rawId);
+    ui.sel = id;
     if (id) $('#pista-tocar').hidden = true;
     $$('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.comp === id)));
-    $$('.et').forEach((e) => e.classList.toggle('act', e.dataset.comp === id));
+    $$('.et').forEach((e) => e.classList.toggle('act', normalizaComp(e.dataset.comp) === id));
     sincronizarFocoPanel(ui.sel);
     if (hwFicha) {
       if (id) {
@@ -358,8 +360,11 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
         refrescaFicha();
       } else hwFicha.innerHTML = '';
     }
+    const focoEstado = ui.sel === 'us' ? 'us_front' : ui.sel;
     const consolaSel = ui.sel ? CONSOLA_COMP[ui.sel] : null;
-    if (!desdePanel && S && (S.get().foco !== ui.sel || S.get().seleccion !== consolaSel)) S.set({foco: ui.sel, seleccion: consolaSel}, 'circuito-ui');
+    if (!desdePanel && S && (S.get().foco !== focoEstado || S.get().seleccion !== consolaSel)) S.set({foco: focoEstado, seleccion: consolaSel}, 'circuito-ui');
+    if (ui.sel === 'us' && $('#hw-panel-titulo')) $('#hw-panel-titulo').textContent = 'Enfocado · HC-SR04P · Radar dual';
+    dibujarRadarDual();
     solicitarCuadro();
   };
   addEventListener('keydown', (e) => {
@@ -385,7 +390,10 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
   });
   cont.addEventListener('click', (e) => {
     const b = e.target.closest('[data-comp]');
-    if (b) abrirFicha(ui.sel === b.dataset.comp ? null : b.dataset.comp);
+    if (b) {
+      const id = normalizaComp(b.dataset.comp);
+      abrirFicha(ui.sel === id ? null : id);
+    }
   });
 
   // ---------------------------------------------------------------- selección con clic en el 3D
@@ -406,7 +414,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     const dur = performance.now() - down.t;
     down = null;
     if (mov > 6 || dur > 600) return;
-    const id = pick(ev);
+    const id = normalizaComp(pick(ev));
     if (id) abrirFicha(id === ui.sel ? null : id);
   });
   let movPend = null;
@@ -437,18 +445,19 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     $('#f-vivo').innerHTML = html;
   }
   const prevTira = {};
+  const PEOR_ZONA = (a, b) => (a === 'critica' || b === 'critica' ? 'critica' : a === 'precaucion' || b === 'precaucion' ? 'precaucion' : 'libre');
   const refrescaTira = () => {
     const v = vista();
     const txt = {
-      us_front: fmtDist(v.dF),
-      us_rear: fmtDist(v.dR),
+      us: `F: ${fmtDistCorta(v.dF)} · T: ${fmtDistCorta(v.dR)}`,
       esp32: 'MQTT + PWM',
       mpu: 'heading hold',
       traccion: `${num(v.v)} m/s`,
       bateria: `${num(R.vbat, 1)} V nominal`,
     };
-    for (const id of ORDEN) {
+    for (const id of ORDEN_TIRA) {
       const el = $(`[data-v="${id}"]`, tira);
+      if (!el) continue;
       if (id === 'tcrt') {
         const clave = v.sens.join('');
         if (prevTira[id] !== clave) {
@@ -456,7 +465,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
           $$('.sq', el).forEach((q, i) => q.classList.toggle('on', !!v.sens[i]));
         }
       } else {
-        const zona = id === 'us_front' ? v.zonaF : id === 'us_rear' ? v.zonaR : '';
+        const zona = id === 'us' ? PEOR_ZONA(v.zonaF, v.zonaR) : '';
         const clave = `${txt[id]}|${zona}`;
         if (prevTira[id] !== clave) {
           prevTira[id] = clave;
@@ -659,13 +668,172 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     S.subscribe((s, origen) => {
       if (origen === 'circuito') return;
       aplicarInyecciones(s);
-      if ((s.foco || null) !== ui.sel) abrirFicha(s.foco || null, true);
+      const focoNorm = normalizaComp(s.foco);
+      if (focoNorm !== ui.sel) abrirFicha(focoNorm, true);
+      if (ui.sel === 'us' && $('#hw-panel-titulo')) $('#hw-panel-titulo').textContent = 'Enfocado · HC-SR04P · Radar dual';
       publicar(true);
+      dibujarRadarDual();
       solicitarCuadro();
     });
     aplicarInyecciones(S.get());
     publicar(true);
   }
+
+  // ---------------------------------------------------------------- radar dual HC-SR04P (frontal arriba + trasero abajo)
+  const inAtras = $('#hw-in-dist-atras');
+  const lblAtras = $('#hw-lbl-dist-atras');
+  const btnVivoUs = $('#hw-vivo-hcsr04');
+  const btnReset = $('#hw-btn-reset');
+  let radarSweep = 0;
+  let radarDir = 1;
+  const limpiarInyAtras = () => {
+    est.iny.atras = null;
+    if (lblAtras) lblAtras.textContent = 'Vivo';
+    demo.medir();
+    publicar(true);
+    dibujarRadarDual();
+  };
+  if (inAtras) {
+    inAtras.addEventListener('input', (e) => {
+      const cm = Number(e.target.value);
+      est.iny.atras = cm / 100;
+      if (lblAtras) lblAtras.textContent = `${cm} cm`;
+      demo.medir();
+      publicar(true);
+      dibujarRadarDual();
+      solicitarCuadro();
+    });
+  }
+  if (btnVivoUs) btnVivoUs.addEventListener('click', limpiarInyAtras);
+  if (btnReset) btnReset.addEventListener('click', limpiarInyAtras);
+
+  function dibujarRadarDual() {
+    const c = $('#hw-canvas-radar-dual');
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    const w = c.clientWidth || c.width || 260;
+    const h = c.clientHeight || c.height || 164;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.round(w * dpr);
+    const H = Math.round(h * dpr);
+    if (c.clientWidth && (c.width !== W || c.height !== H)) {
+      c.width = W;
+      c.height = H;
+    }
+    if (ctx.setTransform) ctx.setTransform(c.clientWidth ? dpr : 1, 0, 0, c.clientWidth ? dpr : 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const s = S ? S.get() : null;
+    const fallo = Boolean(s && s.salud.hcsr04 === 'fallo');
+    const dF = s ? s.hcsr04.distanciaCm : est.frente * 100;
+    const dR = est.iny.atras != null ? est.iny.atras * 100 : (s && s.hcsr04.atrasCm != null ? s.hcsr04.atrasCm : est.atras * 100);
+    const zonaCm = (cm) => (fallo ? 'fallo' : cm < 20 ? 'critica' : cm < 50 ? 'precaucion' : 'libre');
+    const zF = zonaCm(dF);
+    const zR = zonaCm(dR);
+    const colZona = (z) => (z === 'critica' || z === 'fallo' ? '#EF4444' : z === 'precaucion' ? '#F59E0B' : '#00F2FE');
+    const fillZona = (z) => (z === 'critica' || z === 'fallo' ? 'rgba(239,68,68,0.22)' : z === 'precaucion' ? 'rgba(245,158,11,0.16)' : 'rgba(0,242,254,0.12)');
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const maxR = Math.min(w * 0.42, h * 0.43);
+
+    // Anillos concéntricos 20 / 50 / 80 cm (frente arriba + atrás abajo)
+    ctx.lineWidth = 1;
+    ctx.font = '9.5px "JetBrains Mono", monospace';
+    [[20, 'rgba(239,68,68,0.52)'], [50, 'rgba(245,158,11,0.45)'], [80, 'rgba(0,242,254,0.3)']].forEach(([cm, col]) => {
+      const r = maxR * (cm / 80);
+      ctx.beginPath();
+      ctx.strokeStyle = col;
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#849495';
+      ctx.fillText(String(cm), cx + r + 3, cy + 3);
+    });
+
+    // Línea divisoria central (frente / atrás)
+    ctx.strokeStyle = 'rgba(132,148,149,0.28)';
+    ctx.beginPath();
+    ctx.moveTo(cx - maxR - 8, cy);
+    ctx.lineTo(cx + maxR + 8, cy);
+    ctx.stroke();
+
+    // Etiquetas FRENTE / ATRÁS
+    ctx.fillStyle = '#849495';
+    ctx.font = '700 9px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('FRENTE ▲', 8, 13);
+    ctx.fillText('ATRÁS ▼', 8, h - 6);
+
+    const dibujaSector = (dirSign, dCm, z) => {
+      const baseAng = dirSign < 0 ? -Math.PI / 2 : Math.PI / 2;
+      const ab = (28 * Math.PI) / 180;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, maxR, baseAng - ab, baseAng + ab, false);
+      ctx.closePath();
+      ctx.fillStyle = fillZona(z);
+      ctx.fill();
+      if (fallo) return;
+      const col = colZona(z);
+      const sw = baseAng + (dirSign < 0 ? radarSweep : -radarSweep);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(sw) * maxR, cy + Math.sin(sw) * maxR);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      if (Number.isFinite(dCm) && dCm <= 80) {
+        const r = Math.max(6, (dCm / 80) * maxR);
+        const ey = cy + dirSign * r;
+        ctx.beginPath();
+        ctx.arc(cx, ey, 5, 0, Math.PI * 2);
+        ctx.fillStyle = col;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, ey, 9, 0, Math.PI * 2);
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+    };
+
+    dibujaSector(-1, dF, zF); // Superior: frontal
+    dibujaSector(1, dR, zR);  // Inferior: trasero
+
+    // Chasis central del robot
+    ctx.fillStyle = '#181C22';
+    ctx.strokeStyle = '#E0FDFF';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(cx - 10, cy - 7, 20, 14);
+    ctx.strokeRect(cx - 10, cy - 7, 20, 14);
+
+    if (fallo) {
+      ctx.fillStyle = '#F87171';
+      ctx.font = 'bold 10.5px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('SIN ECO · FALLO', cx, cy - 16);
+      ctx.textAlign = 'left';
+    }
+
+    // Refuerza color numérico de ATRÁS y badge global si atrás está en alerta
+    const elAtras = $('#hw-val-atras');
+    if (elAtras) {
+      elAtras.textContent = fallo ? '---' : (!Number.isFinite(dR) || dR >= 400 ? '> 4 m' : Math.round(dR) + ' cm');
+      elAtras.className = 'hw-metric-v' + (zR === 'critica' || zR === 'fallo' ? ' peligro' : zR === 'precaucion' ? ' aviso' : '');
+    }
+    const badgeH = $('#hw-badge-hcsr04');
+    if (badgeH && !fallo && zF === 'libre' && zR !== 'libre') {
+      badgeH.textContent = zR === 'critica' ? 'ATRÁS < 20 cm' : 'ATRÁS PRECAUCIÓN';
+      badgeH.className = 'hw-badge ' + (zR === 'critica' ? 'peligro' : 'aviso');
+    }
+  }
+  window.setInterval(() => {
+    radarSweep += radarDir * 0.05;
+    if (radarSweep > 0.44) { radarSweep = 0.44; radarDir = -1; }
+    if (radarSweep < -0.44) { radarSweep = -0.44; radarDir = 1; }
+    dibujarRadarDual();
+  }, 80);
   // el robot 3D refleja la IMU (pitch/roll), el impacto y el obstáculo inyectado
   const DEG = Math.PI / 180;
   const aplicaPose = (dt) => {
@@ -727,7 +895,7 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       zonaR: demo.zonaAtras(),
       dF: est.frente,
       dR: est.atras,
-      sel: ui.sel,
+      sel: ui.sel === 'us' ? 'us_front' : ui.sel,
     });
     // la luz con sombra acompaña al robot
     sol.position.set(est.x + 1.0, 2.4, est.z + 0.8);

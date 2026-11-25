@@ -47,6 +47,7 @@ export function crearDemo({encendido = false} = {}) {
     // entradas inyectadas desde las consolas interactivas (SimulationState). Por defecto no cambian nada.
     iny: {
       frente: null, // distancia frontal forzada (m) o null para la lectura real del circuito
+      atras: null, // distancia trasera forzada (m) o null para la lectura real del circuito
       sinEcoFrente: false, // HC-SR04 en fallo: no hay eco
       sinLinea: false, // TCRT5000 en fallo: la regleta lee 0000
       desvio: 0, // posición deseada de la cinta respecto al centro de la regleta (m, + a la derecha)
@@ -168,7 +169,7 @@ export function crearDemo({encendido = false} = {}) {
   const medir = () => {
     est.sens = est.iny.sinLinea ? [0, 0, 0, 0] : lineaSensores(ruta, est.x, est.z, est.th, est.hint);
     est.frente = est.iny.sinEcoFrente ? Infinity : est.iny.frente != null ? est.iny.frente : ultrasonido(est.x, est.z, est.th, 'frente', obstaculos);
-    est.atras = ultrasonido(est.x, est.z, est.th, 'atras', obstaculos);
+    est.atras = est.iny.sinEcoFrente ? Infinity : est.iny.atras != null ? est.iny.atras : ultrasonido(est.x, est.z, est.th, 'atras', obstaculos);
     if (!est.encendido) {
       const sx = est.x + Math.sin(est.th) * GEO.tcrtZ;
       const sz = est.z + Math.cos(est.th) * GEO.tcrtZ;
