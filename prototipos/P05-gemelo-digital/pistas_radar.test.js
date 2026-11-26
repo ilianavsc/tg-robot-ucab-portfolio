@@ -218,8 +218,8 @@ module.exports = async function (ctx) {
     assert.ok(/data-pista="A"/.test(html) && /data-pista="B"/.test(html));
     for (const id of ["lienzo-pista", "velocimetro", "velo-arco", "velo-aguja", "alerta"]) assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     assert.ok(!html.includes('id="base-obstaculo"') && !/obs-base|obs-ficha|modo-colocar/.test(html), "no queda el control de obstáculo");
-    assert.ok(!/colocarObstaculo|forzarFrente|pointerdown/.test(html), "ningún atajo suelto inyecta obstáculos");
-    assert.ok(/obstaculosPermitidos\(faseActual,\s*CM_EST\)/.test(html), "los obstáculos solo se habilitan en Operación MVP tras calibrar 5/5");
+    assert.ok(!/colocarObstaculo|forzarFrente|inyectarObstaculo|pointerdown/.test(html), "ningún atajo inyecta obstáculos en P05");
+    assert.ok(!html.includes('id="btn-sim-obstaculo"') && !html.includes('id="btn-modo-op-real"'), "sin botones de simular objeto ni operación con obstáculos");
     assert.ok(html.includes("../P04-simulador-1-esp32/codigo/pista.js"), "usa las pistas de SIM1 sin copiarlas");
   });
 
@@ -852,35 +852,58 @@ module.exports = async function (ctx) {
     }
   });
 
-  await prueba("Operación MVP: obstáculos bloqueados en Escaneos 1–5 y en Paso 4 de verificación; habilitados solo en Operación real con contraste de paredes", () => {
+  await prueba("P05 sin simulación de obstáculos, con selector de parada mutuamente excluyente (PC vs Segmento) y coloreado progresivo S1 → S2 → S3", () => {
     const est = CM.crearEstado(PE, SE, 9.0);
     const r1 = PE.crear(), r2 = PE.crear();
-    assert.strictEqual(CM.obstaculosPermitidos(1, est), false);
-    assert.strictEqual(CM.obstaculosPermitidos(2, est), false);
-    assert.strictEqual(CM.obstaculosPermitidos(3, est), false);
-    assert.strictEqual(CM.obstaculosPermitidos(4, est), false, "sin calibrar 5/5 sigue bloqueado");
-
+    /* 1. Sin obstáculos en ninguna fase */
     CM.completarCalibracionCompleta(est, r1, r2, SE, 9.0, "B");
-    assert.strictEqual(CM.obstaculosPermitidos(1, est), false);
-    assert.strictEqual(CM.obstaculosPermitidos(2, est), false);
-    assert.strictEqual(CM.obstaculosPermitidos(3, est), false);
-    assert.strictEqual(CM.obstaculosPermitidos(4, est), false, "en Paso 4 (verificación) sin Operación real sigue bloqueado");
+    for (const f of [1, 2, 3, 4]) assert.strictEqual(CM.obstaculosPermitidos(f, est), false, "sin obstáculos en fase " + f);
 
-    CM.setOperacionReal(est, true);
-    assert.strictEqual(CM.obstaculosPermitidos(4, est), true, "habilitado solo en Operación real (post-calibración)");
+    /* 2. Selector mutuamente excluyente: Ruta completa | Por PC (PC1–PC3) | Por Segmento (S1–S3) */
+    assert.strictEqual(est.seleccionParada.modo, "ninguna");
+    CM.seleccionarPorPC(est, "PC2", 9.0, SE);
+    assert.strictEqual(est.seleccionParada.modo, "pc");
+    assert.strictEqual(est.seleccionParada.pc, "PC2");
+    assert.strictEqual(est.seleccionParada.seg, null, "al elegir PC se desactiva segmento");
+    assert.strictEqual(est.seleccionParada.sM, 6.0);
 
-    /* Simular pared fija conocida a 70 cm en S2: lectura de 66 cm NO debe ser falso positivo */
-    est.perfilUnificado.S2.paredFrenteCm = 70;
-    const pared = CM.evaluarEcoUltrasonico(est, 4.5, 9.0, 66, SE);
-    assert.strictEqual(pared.tipo, "pared_fija");
-    assert.strictEqual(pared.esObjetoReal, false);
+    CM.seleccionarPorSegmento(est, "S2", 50, 9.0, SE);
+    assert.strictEqual(est.seleccionParada.modo, "segmento");
+    assert.strictEqual(est.seleccionParada.seg, "S2");
+    assert.strictEqual(est.seleccionParada.pc, null, "al elegir segmento se desactiva PC");
+    assert.strictEqual(est.seleccionParada.sM, 4.5);
 
-    /* Objeto real a 16 cm en S2 (muy por debajo de la pared de 70 cm): se detecta como objeto real crítico */
-    const obj = CM.evaluarEcoUltrasonico(est, 4.5, 9.0, 16, SE);
-    assert.strictEqual(obj.tipo, "objeto_real");
-    assert.strictEqual(obj.esObjetoReal, true);
-    assert.strictEqual(obj.severidad, "critica");
-    assert.strictEqual(obj.seg, "S2");
+    CM.seleccionarPorS(est, 2.2, 9.0, SE);
+    assert.strictEqual(est.seleccionParada.modo, "segmento");
+    assert.strictEqual(est.seleccionParada.seg, "S1");
+    assert.strictEqual(est.seleccionParada.pc, null, "clic en mapa desactiva PC");
+
+    CM.seleccionarModoRutaCompleta(est);
+    assert.strictEqual(est.seleccionParada.modo, "ninguna");
+    assert.strictEqual(est.seleccionParada.pc, null);
+    assert.strictEqual(est.seleccionParada.seg, null);
+
+    /* 3. Fijar parada permanente funciona tanto desde PC como desde Segmento */
+    CM.simularLoteHasta8(est, 9.0, r1, r2, SE);
+    CM.seleccionarPorPC(est, "PC1", 9.0, SE);
+    const pPc = CM.aplicarParadaDesdeSeleccion(est, "fijada", 9.0, SE);
+    assert.ok(pPc && pPc.origen === "pc" && pPc.pc === "PC1" && pPc.sM === 3.0);
+    const linPc = CM.confirmarFijarYReescanear(est, 9.0);
+    assert.ok(linPc && linPc.largoIda === 3.0 && linPc.largoRegreso === 6.0);
+
+    /* 4. Coloreado progresivo S1 → S2 → S3 según posición s */
+    const p0 = CM.progresoColorSegmentos(0, false, 9.0, SE);
+    assert.deepStrictEqual(p0.map((x) => x.activo), [false, false, false], "antes de avanzar, nada coloreado");
+    const p1 = CM.progresoColorSegmentos(1.8, false, 9.0, SE);
+    assert.deepStrictEqual(p1.map((x) => x.activo), [true, false, false], "en S1 solo S1 activo");
+    assert.strictEqual(p1[0].pintadoHastaM, 1.8);
+    const p2 = CM.progresoColorSegmentos(4.5, false, 9.0, SE);
+    assert.deepStrictEqual(p2.map((x) => x.activo), [true, true, false], "al cruzar PC1: S1 completo y S2 progresivo");
+    assert.strictEqual(p2[0].completo, true);
+    assert.strictEqual(p2[1].pintadoHastaM, 4.5);
+    const p3 = CM.progresoColorSegmentos(7.2, false, 9.0, SE);
+    assert.deepStrictEqual(p3.map((x) => x.activo), [true, true, true], "al cruzar PC2: S1 y S2 completos, S3 progresivo");
+    assert.strictEqual(p3[2].pintadoHastaM, 7.2);
   });
 
   await prueba("Parada programable: bloqueada en 0–7 viajes, desbloqueada exactamente al 8.º viaje en S1, S2 o S3", () => {
@@ -908,13 +931,16 @@ module.exports = async function (ctx) {
     assert.strictEqual(est.paradaProgramada, null);
   });
 
-  await prueba("Página P05: fases 3 y 4 integradas (calibración 3–5, obstáculos solo en MVP, parada >= 8 viajes y notas App)", () => {
+  await prueba("Página P05: fases 3 y 4 integradas (sin saltos en Punto 3, sin obstáculos, selector excluyente y notas App)", () => {
     const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
     assert.ok(html.includes('src="calibracion_mvp.js"'));
-    for (const id of ["barra-calib", "btn-calib-rapido", "btn-calib-todo", "btn-ir-mvp", "barra-mvp", "btn-sim-obstaculo", "mvp-viajes-badge", "btn-mvp-lote8", "panel-parada", "parada-pct", "btn-fijar-parada", "perfil-unificado-grid", "datos-consolidado", "datos-eventos", "nota-app3", "nota-app4"]) {
+    for (const id of ["barra-calib", "btn-ir-mvp", "barra-mvp", "parada-modo-bar", "panel-modo-pc", "panel-modo-seg", "seleccion-resumen", "mvp-viajes-badge", "btn-mvp-lote8", "panel-parada", "parada-pct", "btn-fijar-parada", "btn-fijar-permanente", "modal-fijar-fondo", "perfil-unificado-grid", "datos-consolidado", "datos-eventos", "nota-app3", "nota-app4"]) {
       assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     }
-    assert.ok(/Disponible tras 8 viajes verificados/.test(html), "texto de bloqueo de parada programable");
+    assert.ok(!html.includes('id="btn-calib-rapido"') && !html.includes('id="btn-calib-todo"'), "sin botones de salto en Punto 3");
+    assert.ok(!html.includes('id="btn-sim-obstaculo"') && !html.includes('id="btn-modo-op-real"'), "sin simulación de obstáculos en P05");
+    assert.ok(html.includes("Operación y asignación de paradas") && html.includes("Enviar robot en ruta"), "títulos y CTA limpios");
+    assert.ok(/Disponible tras 8 viajes verificados|disponible tras 8 viajes verificados/.test(html), "texto de bloqueo de parada permanente");
     assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "cero torretas o balizas");
   });
 
@@ -976,12 +1002,13 @@ module.exports = async function (ctx) {
       assert.strictEqual(CM.filtrarMuestrasLineal(ms, "todos").length, ms.length);
     }
 
-    /* 3. Integración UI en index.html: botón Fijar, modal de confirmación, ajuste fino −/+, sin obstáculos en Paso 4 */
+    /* 3. Integración UI en index.html: botón Fijar, modal de confirmación, ajuste fino −/+, selector excluyente, sin obstáculos ni saltos */
     const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
-    for (const id of ["btn-modo-op-real", "btn-parada-menos", "btn-parada-mas", "btn-fijar-permanente", "modal-fijar-fondo", "btn-confirmar-fijar", "btn-confirmar-fijar-rapido", "btn-salir-lineal", "lineal-vista-bar", "seg-filtro-lineal"]) {
+    for (const id of ["parada-modo-bar", "panel-modo-pc", "panel-modo-seg", "btn-parada-menos", "btn-parada-mas", "btn-fijar-permanente", "modal-fijar-fondo", "btn-confirmar-fijar", "btn-confirmar-fijar-rapido", "btn-salir-lineal", "lineal-vista-bar", "seg-filtro-lineal"]) {
       assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     }
-    assert.ok(/id="btn-sim-obstaculo"[^>]*hidden/.test(html), "botón de obstáculos oculto por defecto en Paso 4");
+    assert.ok(!html.includes('id="btn-sim-obstaculo"') && !html.includes('id="btn-calib-todo"') && !html.includes('id="btn-calib-rapido"'), "sin obstáculos ni saltos en Punto 3");
+    assert.ok(/progresoColorSegmentos\(/.test(html), "coloreado progresivo S1 → S2 → S3 en canvas");
     for (const v of ["ida", "regreso", "ambos"]) assert.ok(html.includes('data-lineal-vista="' + v + '"'));
     for (const f of ["todos", "ida", "regreso", "I1", "I2", "I3", "R1", "R2", "R3"]) assert.ok(html.includes('data-lin-filtro="' + f + '"'));
     assert.ok(/function dibujarRutaLineal/.test(html) && /function perfilSvgLineal/.test(html));

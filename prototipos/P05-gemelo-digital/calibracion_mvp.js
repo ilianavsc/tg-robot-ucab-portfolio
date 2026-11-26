@@ -42,7 +42,7 @@
     1: Object.freeze({ id: 1, nombre: "Escaneo 1 · Muestreo base", corto: "Escaneo 1" }),
     2: Object.freeze({ id: 2, nombre: "Escaneo 2 · Ruta con 3 segmentos", corto: "Escaneo 2" }),
     3: Object.freeze({ id: 3, nombre: "Calibración · Escaneos 3–5", corto: "Calibración 3–5" }),
-    4: Object.freeze({ id: 4, nombre: "Operación MVP · Misiones y obstáculos", corto: "Operación MVP" })
+    4: Object.freeze({ id: 4, nombre: "Operación · Asignación de paradas", corto: "Operación y paradas" })
   });
 
   /* Paleta cerrada (S1–S3) vs. nueva paleta lineal de 6 colores distintos (I1–I3 ida, R1–R3 regreso) */
@@ -109,16 +109,22 @@
       escaneoCalibActivo: 3, /* 3, 4 o 5 */
       calibrada: false,
       perfilUnificado: crearPerfilVacio(L, SE),
-      /* Operación MVP (fase 4) */
+      /* Operación y asignación de paradas (fase 4 · sin simulación de obstáculos) */
       regMvp: PE.crear(),
-      destinoMvp: "PC3", /* "PC1" | "PC2" | "PC3" */
-      operacionRealActiva: false, /* obstáculos SOLO en Operación real (post-calibración), nunca en Paso 4 de calibración/verificación */
       viajesOperativos: 0,
       historialMisiones: [],
       eventosOperativos: [],
-      obstaculoActivo: null, /* { sM, seg, cm, tipo, esObjetoReal, refCm } */
-      /* Parada programable: temporal (sin re-escaneo ni receptor) vs. fijada (permanente >= 8 viajes) */
-      paradaProgramada: null, /* { seg, pct, sM, etiqueta, activa, tipo: "temporal" | "fijada", requiereReceptor: boolean } */
+      /* Selección de parada MUTUAMENTE EXCLUYENTE: "ninguna" (ruta completa) | "pc" (PC1–PC3) | "segmento" (S1–S3) */
+      seleccionParada: {
+        modo: "ninguna",
+        pc: null,
+        seg: null,
+        pct: 50,
+        sM: null,
+        etiqueta: "Ruta completa · sin parada"
+      },
+      /* Parada aplicada: temporal (sin re-escaneo ni receptor) vs. fijada (permanente >= 8 viajes) */
+      paradaProgramada: null, /* { origen, pc, seg, pct, sM, etiqueta, activa, tipo: "temporal" | "fijada", requiereReceptor: boolean } */
       enParadaProgramada: false,
       paradaCumplidaEnViaje: false,
       confirmacionReceptorActiva: false,
@@ -146,17 +152,101 @@
     return 5;
   }
 
-  /* Obstáculos estrictamente bloqueados en Escaneos 1–5 (incl. Paso 4) y en verificación/re-escaneo;
-     solo permitidos en Operación real (post-calibración) */
-  function obstaculosPermitidos(fase, est) {
-    return fase === 4 && Boolean(est && est.calibrada && est.operacionRealActiva) && !(est.lineal && est.lineal.escaneando);
+  /* En P05 (Gemelo Digital de escaneos y asignación de paradas) no hay simulación de obstáculos */
+  function obstaculosPermitidos() {
+    return false;
   }
 
-  function setOperacionReal(est, activa) {
-    if (!est || !est.calibrada) { if (est) est.operacionRealActiva = false; return false; }
-    est.operacionRealActiva = Boolean(activa);
-    if (!est.operacionRealActiva) est.obstaculoActivo = null;
-    return est.operacionRealActiva;
+  /* Coloreado progresivo de segmentos (S1 → S2 → S3) conforme avanza la posición s del robot */
+  function progresoColorSegmentos(sActual, completo, largoM, SE) {
+    var L = Math.max(0.5, Number(largoM) || 9.0);
+    var sPint = completo ? L : clamp(Number(sActual) || 0, 0, L);
+    return SE.segmentos(L).map(function (sg) {
+      var hasta = clamp(sPint, sg.desdeM, sg.hastaM);
+      return {
+        id: sg.id,
+        desdeM: sg.desdeM,
+        hastaM: sg.hastaM,
+        pintadoHastaM: r(hasta, 3),
+        activo: hasta > sg.desdeM + 1e-6,
+        completo: hasta >= sg.hastaM - 1e-6
+      };
+    });
+  }
+
+  /* ---- Selector de parada MUTUAMENTE EXCLUYENTE (Ruta completa | Por PC | Por Segmento) ---- */
+  function seleccionarModoRutaCompleta(est) {
+    est.seleccionParada = { modo: "ninguna", pc: null, seg: null, pct: 50, sM: null, etiqueta: "Ruta completa · sin parada" };
+    return est.seleccionParada;
+  }
+
+  function seleccionarPorPC(est, pcId, largoM, SE) {
+    var L = largoM || est.largoM || 9.0;
+    var pcs = SE.puntosControl(L), found = null, i;
+    for (i = 0; i < pcs.length; i++) if (pcs[i].id === pcId) found = pcs[i];
+    if (!found) return null;
+    est.seleccionParada = {
+      modo: "pc",
+      pc: found.id,
+      seg: null,
+      pct: null,
+      sM: found.posicionM,
+      etiqueta: found.id + " (" + found.posicionM.toFixed(2).replace(".", ",") + " m)"
+    };
+    return est.seleccionParada;
+  }
+
+  function seleccionarPorSegmento(est, segId, pct, largoM, SE) {
+    var L = largoM || est.largoM || 9.0;
+    var segs = SE.segmentos(L), sg = null, i;
+    for (i = 0; i < segs.length; i++) if (segs[i].id === segId) sg = segs[i];
+    if (!sg) return null;
+    var p = clamp(Number(pct), 5, 95);
+    var sM = r(sg.desdeM + (sg.hastaM - sg.desdeM) * (p / 100), 2);
+    est.seleccionParada = {
+      modo: "segmento",
+      pc: null,
+      seg: sg.id,
+      pct: Math.round(p),
+      sM: sM,
+      etiqueta: sg.id + " · " + sM.toFixed(2).replace(".", ",") + " m"
+    };
+    return est.seleccionParada;
+  }
+
+  function seleccionarPorS(est, sM, largoM, SE) {
+    var L = largoM || est.largoM || 9.0;
+    var sClamped = clamp(Number(sM) || 0, 0.3, L - 0.3);
+    var segId = SE.segmentoDe(sClamped, L);
+    var segs = SE.segmentos(L), sg = segs[0], i;
+    for (i = 0; i < segs.length; i++) if (segs[i].id === segId) sg = segs[i];
+    var pct = ((sClamped - sg.desdeM) / Math.max(0.1, sg.hastaM - sg.desdeM)) * 100;
+    return seleccionarPorSegmento(est, segId, pct, L, SE);
+  }
+
+  /* Aplica la selección actual (PC o Segmento) como parada temporal o fijada */
+  function aplicarParadaDesdeSeleccion(est, tipo, largoM, SE) {
+    var L = largoM || est.largoM || 9.0;
+    var sel = est.seleccionParada;
+    if (!sel || sel.modo === "ninguna" || sel.sM === null) return null;
+    var esFijada = tipo === "fijada";
+    if (esFijada && !paradaDesbloqueada(est)) return null;
+    var segRef = sel.modo === "pc" ? SE.segmentoDe(Math.min(sel.sM, L - 0.01), L) : sel.seg;
+    est.paradaProgramada = {
+      origen: sel.modo,
+      pc: sel.pc,
+      seg: segRef,
+      pct: sel.pct,
+      sM: sel.sM,
+      etiqueta: "Parada · " + (sel.modo === "pc" ? sel.pc : segRef) + " (" + sel.sM.toFixed(1) + " m)",
+      activa: true,
+      tipo: esFijada ? "fijada" : "temporal",
+      requiereReceptor: esFijada
+    };
+    est.enParadaProgramada = false;
+    est.paradaCumplidaEnViaje = false;
+    if (esFijada) est.confirmacionReceptorActiva = true;
+    return est.paradaProgramada;
   }
 
   function paradaDesbloqueada(est) {
@@ -430,6 +520,7 @@
     est.paradaCumplidaEnViaje = false;
     est.confirmacionReceptorActiva = false;
     est.lineal = crearEstadoLineal();
+    seleccionarModoRutaCompleta(est);
   }
 
   /* ---- Punto 5 (Extensión): Re-escaneo Lineal Continuo SIN vuelta en U ----
@@ -652,7 +743,12 @@
     conteoEscaneos: conteoEscaneos,
     siguienteEscaneoCalib: siguienteEscaneoCalib,
     obstaculosPermitidos: obstaculosPermitidos,
-    setOperacionReal: setOperacionReal,
+    progresoColorSegmentos: progresoColorSegmentos,
+    seleccionarModoRutaCompleta: seleccionarModoRutaCompleta,
+    seleccionarPorPC: seleccionarPorPC,
+    seleccionarPorSegmento: seleccionarPorSegmento,
+    seleccionarPorS: seleccionarPorS,
+    aplicarParadaDesdeSeleccion: aplicarParadaDesdeSeleccion,
     paradaDesbloqueada: paradaDesbloqueada,
     unificarPorSegmento: unificarPorSegmento,
     registrarEscaneoCompletado: registrarEscaneoCompletado,
