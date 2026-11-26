@@ -852,7 +852,7 @@ module.exports = async function (ctx) {
     }
   });
 
-  await prueba("Operación MVP: obstáculos bloqueados en Escaneos 1–5 y habilitados solo en Fase 4 con contraste contra paredes de referencia", () => {
+  await prueba("Operación MVP: obstáculos bloqueados en Escaneos 1–5 y en Paso 4 de verificación; habilitados solo en Operación real con contraste de paredes", () => {
     const est = CM.crearEstado(PE, SE, 9.0);
     const r1 = PE.crear(), r2 = PE.crear();
     assert.strictEqual(CM.obstaculosPermitidos(1, est), false);
@@ -864,7 +864,10 @@ module.exports = async function (ctx) {
     assert.strictEqual(CM.obstaculosPermitidos(1, est), false);
     assert.strictEqual(CM.obstaculosPermitidos(2, est), false);
     assert.strictEqual(CM.obstaculosPermitidos(3, est), false);
-    assert.strictEqual(CM.obstaculosPermitidos(4, est), true, "habilitado solo en Operación MVP tras 5/5");
+    assert.strictEqual(CM.obstaculosPermitidos(4, est), false, "en Paso 4 (verificación) sin Operación real sigue bloqueado");
+
+    CM.setOperacionReal(est, true);
+    assert.strictEqual(CM.obstaculosPermitidos(4, est), true, "habilitado solo en Operación real (post-calibración)");
 
     /* Simular pared fija conocida a 70 cm en S2: lectura de 66 cm NO debe ser falso positivo */
     est.perfilUnificado.S2.paredFrenteCm = 70;
@@ -915,7 +918,7 @@ module.exports = async function (ctx) {
     assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "cero torretas o balizas");
   });
 
-  await prueba("Punto 5 (Re-escaneo lineal): 3+3 segmentos (I1–I3 ida, R1–R3 regreso), nuevos PCs y 6 colores distintos a S1–S3", () => {
+  await prueba("Punto 5 (Re-escaneo lineal continuo): Ida [0, s_parada] (I1–I3) + Regreso hacia adelante [s_parada, L] (R1–R3) sin solapamiento, flujo Fijar y 6 nuevos colores", () => {
     /* 1. Paleta de 6 colores lineales completamente distinta a S1–S3 */
     const cerrados = Object.values(CM.PALETA_CERRADA).map((c) => c.toUpperCase());
     const lineales = Object.values(CM.PALETA_LINEAL).map((c) => c.toUpperCase());
@@ -923,29 +926,45 @@ module.exports = async function (ctx) {
     assert.strictEqual(new Set(lineales).size, 6, "6 colores lineales únicos entre sí");
     for (const col of lineales) assert.ok(!cerrados.includes(col), "color lineal " + col + " no repite paleta cerrada");
 
-    /* 2. Cálculo 3+3 desde una parada fijada en S1, S2 o S3 */
+    /* 2. Geometría continua SIN vuelta en U ni solapamiento para paradas en S1, S2 o S3 */
     for (const [segId, pct, sEsperado] of [["S1", 50, 1.5], ["S2", 60, 4.8], ["S3", 50, 7.5]]) {
       const est = CM.crearEstado(PE, SE, 9.0);
       const r1 = PE.crear(), r2 = PE.crear();
       CM.completarCalibracionCompleta(est, r1, r2, SE, 9.0, "B");
       CM.simularLoteHasta8(est, 9.0, r1, r2, SE);
-      const parada = CM.programarParada(est, segId, pct, 9.0, SE);
-      assert.ok(parada && Math.abs(parada.sM - sEsperado) < 0.05);
 
-      const lin = CM.iniciarReescaneoLineal(est);
+      /* Parada temporal: NO requiere re-escaneo ni confirmación del receptor */
+      const pTemp = CM.programarParada(est, segId, pct, 9.0, SE, "temporal");
+      assert.ok(pTemp && Math.abs(pTemp.sM - sEsperado) < 0.05);
+      assert.strictEqual(pTemp.tipo, "temporal");
+      assert.strictEqual(pTemp.requiereReceptor, false);
+
+      /* Botón Fijar -> confirmación de nuevo escaneo lineal -> activa receptor obligatorio */
+      const lin = CM.confirmarFijarYReescanear(est, 9.0);
       assert.ok(lin && lin.activo && lin.escaneando);
+      assert.strictEqual(est.paradaProgramada.tipo, "fijada");
+      assert.strictEqual(est.paradaProgramada.requiereReceptor, true);
+      assert.strictEqual(est.confirmacionReceptorActiva, true);
       assert.strictEqual(CM.obstaculosPermitidos(4, est), false, "obstáculos bloqueados durante re-escaneo lineal");
+
+      /* Ida [0, s_parada] + Regreso [s_parada, L] suman exactamente L sin solaparse */
+      assert.strictEqual(lin.largoIda, lin.paradaS);
+      assert.ok(Math.abs(lin.largoIda + lin.largoRegreso - 9.0) < 0.01, "Ida + Regreso = L");
       assert.deepStrictEqual(lin.segmentosIda.map((x) => x.id), ["I1", "I2", "I3"]);
       assert.deepStrictEqual(lin.segmentosRegreso.map((x) => x.id), ["R1", "R2", "R3"]);
       assert.deepStrictEqual(lin.pcsIda.map((p) => p.etiqueta), ["PC-I1", "PC-I2", "Parada (PC-I3)"]);
       assert.deepStrictEqual(lin.pcsRegreso.map((p) => p.etiqueta), ["PC-R1", "PC-R2", "Base (PC-R3)"]);
-      assert.strictEqual(lin.pcsIda[2].posicionM, lin.paradaS);
-      assert.strictEqual(lin.pcsRegreso[2].posicionM, 0);
+      const todos6 = lin.segmentosIda.concat(lin.segmentosRegreso);
+      assert.strictEqual(todos6[0].desdeM, 0);
+      assert.strictEqual(todos6[5].hastaM, 9.0);
+      for (let i = 0; i < 5; i++) {
+        assert.ok(todos6[i].hastaM > todos6[i].desdeM, todos6[i].id + " avanza hacia adelante");
+        assert.strictEqual(todos6[i].hastaM, todos6[i + 1].desdeM, todos6[i].id + " contiguo sin solapamiento con " + todos6[i + 1].id);
+      }
 
-      CM.completarReescaneoLinealRapido(est, null);
+      CM.completarReescaneoLinealRapido(est, null, 9.0);
       assert.strictEqual(est.lineal.completo, true);
       assert.strictEqual(est.lineal.escaneando, false);
-      assert.strictEqual(CM.obstaculosPermitidos(4, est), true, "obstáculos vuelven a habilitarse al terminar re-escaneo");
 
       const ms = est.lineal.muestras;
       const res = CM.resumenLinealPorSegmento(ms);
@@ -957,11 +976,12 @@ module.exports = async function (ctx) {
       assert.strictEqual(CM.filtrarMuestrasLineal(ms, "todos").length, ms.length);
     }
 
-    /* 3. Integración UI en index.html */
+    /* 3. Integración UI en index.html: botón Fijar, modal de confirmación, ajuste fino −/+, sin obstáculos en Paso 4 */
     const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
-    for (const id of ["btn-reescanear-lineal", "btn-lineal-rapido", "btn-salir-lineal", "lineal-vista-bar", "seg-filtro-lineal"]) {
+    for (const id of ["btn-modo-op-real", "btn-parada-menos", "btn-parada-mas", "btn-fijar-permanente", "modal-fijar-fondo", "btn-confirmar-fijar", "btn-confirmar-fijar-rapido", "btn-salir-lineal", "lineal-vista-bar", "seg-filtro-lineal"]) {
       assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     }
+    assert.ok(/id="btn-sim-obstaculo"[^>]*hidden/.test(html), "botón de obstáculos oculto por defecto en Paso 4");
     for (const v of ["ida", "regreso", "ambos"]) assert.ok(html.includes('data-lineal-vista="' + v + '"'));
     for (const f of ["todos", "ida", "regreso", "I1", "I2", "I3", "R1", "R2", "R3"]) assert.ok(html.includes('data-lin-filtro="' + f + '"'));
     assert.ok(/function dibujarRutaLineal/.test(html) && /function perfilSvgLineal/.test(html));

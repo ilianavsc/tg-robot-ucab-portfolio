@@ -112,15 +112,17 @@
       /* Operación MVP (fase 4) */
       regMvp: PE.crear(),
       destinoMvp: "PC3", /* "PC1" | "PC2" | "PC3" */
+      operacionRealActiva: false, /* obstáculos SOLO en Operación real (post-calibración), nunca en Paso 4 de calibración/verificación */
       viajesOperativos: 0,
       historialMisiones: [],
       eventosOperativos: [],
       obstaculoActivo: null, /* { sM, seg, cm, tipo, esObjetoReal, refCm } */
-      /* Parada programable (viajesOperativos >= 8) */
-      paradaProgramada: null, /* { seg, pct, sM, etiqueta, activa } */
+      /* Parada programable: temporal (sin re-escaneo ni receptor) vs. fijada (permanente >= 8 viajes) */
+      paradaProgramada: null, /* { seg, pct, sM, etiqueta, activa, tipo: "temporal" | "fijada", requiereReceptor: boolean } */
       enParadaProgramada: false,
       paradaCumplidaEnViaje: false,
-      /* Punto 5 (Extensión): Re-escaneo lineal Ida (I1–I3) y Regreso (R1–R3) */
+      confirmacionReceptorActiva: false,
+      /* Punto 5 (Extensión): Re-escaneo lineal continuo Ida [0, s_parada] (I1–I3) y Regreso [s_parada, L] (R1–R3) */
       lineal: crearEstadoLineal()
     };
   }
@@ -144,8 +146,17 @@
     return 5;
   }
 
+  /* Obstáculos estrictamente bloqueados en Escaneos 1–5 (incl. Paso 4) y en verificación/re-escaneo;
+     solo permitidos en Operación real (post-calibración) */
   function obstaculosPermitidos(fase, est) {
-    return fase === 4 && Boolean(est && est.calibrada) && !(est.lineal && est.lineal.escaneando);
+    return fase === 4 && Boolean(est && est.calibrada && est.operacionRealActiva) && !(est.lineal && est.lineal.escaneando);
+  }
+
+  function setOperacionReal(est, activa) {
+    if (!est || !est.calibrada) { if (est) est.operacionRealActiva = false; return false; }
+    est.operacionRealActiva = Boolean(activa);
+    if (!est.operacionRealActiva) est.obstaculoActivo = null;
+    return est.operacionRealActiva;
   }
 
   function paradaDesbloqueada(est) {
@@ -378,100 +389,131 @@
     return agregados;
   }
 
-  /* Programar parada exacta dentro de S1, S2 o S3 (requiere viajesOperativos >= 8) */
-  function programarParada(est, segId, pct, largoM, SE) {
+  /* Programar parada temporal (viaje puntual en circuito cerrado: no requiere re-escaneo ni confirmación del receptor) */
+  function programarParada(est, segId, pct, largoM, SE, tipo) {
     if (!paradaDesbloqueada(est)) return null;
     var segs = SE.segmentos(largoM), sg = null, i;
     for (i = 0; i < segs.length; i++) if (segs[i].id === segId) sg = segs[i];
     if (!sg) return null;
-    var p = clamp(Number(pct), 10, 90);
+    var p = clamp(Number(pct), 5, 95);
     var sM = r(sg.desdeM + (sg.hastaM - sg.desdeM) * (p / 100), 2);
+    var modoTipo = tipo === "fijada" ? "fijada" : "temporal";
     est.paradaProgramada = {
       seg: sg.id,
       pct: Math.round(p),
       sM: sM,
       etiqueta: "Parada · " + sg.id + " (" + sM.toFixed(1) + " m)",
-      activa: true
+      activa: true,
+      tipo: modoTipo,
+      requiereReceptor: modoTipo === "fijada"
     };
     est.enParadaProgramada = false;
     est.paradaCumplidaEnViaje = false;
+    if (modoTipo === "fijada") est.confirmacionReceptorActiva = true;
     return est.paradaProgramada;
   }
 
-  /* Programa parada a partir de una distancia s exacta (ej. clic sobre el mapa) */
-  function programarParadaEnS(est, sM, largoM, SE) {
+  /* Programa parada a partir de una distancia s exacta (ej. clic sobre el mapa o ajuste fino −/+ 0,1 m) */
+  function programarParadaEnS(est, sM, largoM, SE, tipo) {
     if (!paradaDesbloqueada(est)) return null;
-    var sClamped = clamp(sM, 0.2, largoM - 0.2);
+    var sClamped = clamp(sM, 0.3, largoM - 0.3);
     var segId = SE.segmentoDe(sClamped, largoM);
     var segs = SE.segmentos(largoM), sg = segs[0];
     for (var i = 0; i < segs.length; i++) if (segs[i].id === segId) sg = segs[i];
     var pct = ((sClamped - sg.desdeM) / Math.max(0.1, sg.hastaM - sg.desdeM)) * 100;
-    return programarParada(est, segId, pct, largoM, SE);
+    return programarParada(est, segId, pct, largoM, SE, tipo);
   }
 
   function quitarParada(est) {
     est.paradaProgramada = null;
     est.enParadaProgramada = false;
     est.paradaCumplidaEnViaje = false;
+    est.confirmacionReceptorActiva = false;
     est.lineal = crearEstadoLineal();
   }
 
-  /* ---- Punto 5 (Extensión): Re-escaneo Lineal (Ida I1–I3 + Regreso R1–R3) ---- */
-  function calcularRutaLineal(paradaS) {
-    var L = r(Math.max(0.3, Number(paradaS) || 0), 2);
-    var t1 = r(L / 3, 2), t2 = r((2 * L) / 3, 2);
+  /* ---- Punto 5 (Extensión): Re-escaneo Lineal Continuo SIN vuelta en U ----
+   * Ida (I1–I3):    Base (0) → Parada (s_parada), dividido en 3 tercios iguales.
+   * Regreso (R1–R3): continúa HACIA ADELANTE por el resto del circuito [s_parada, L] → Base (L),
+   *                  dividido en 3 tercios iguales. Sin solapamiento; largoIda + largoRegreso = L. */
+  function calcularRutaLineal(paradaS, largoTotalM) {
+    var Ltot = r(Math.max(1.0, Number(largoTotalM) || 9.0), 2);
+    var sP = r(clamp(Number(paradaS) || (Ltot / 2), 0.3, Ltot - 0.3), 2);
+    var lIda = sP;
+    var lReg = r(Ltot - sP, 2);
+
+    var i1 = r(lIda / 3, 2), i2 = r((2 * lIda) / 3, 2);
     var pcsIda = [
-      { id: "PC-I1", etiqueta: "PC-I1", posicionM: t1, recorridoM: t1 },
-      { id: "PC-I2", etiqueta: "PC-I2", posicionM: t2, recorridoM: t2 },
-      { id: "PC-I3", etiqueta: "Parada (PC-I3)", posicionM: L, recorridoM: L }
+      { id: "PC-I1", etiqueta: "PC-I1", posicionM: i1, recorridoM: i1 },
+      { id: "PC-I2", etiqueta: "PC-I2", posicionM: i2, recorridoM: i2 },
+      { id: "PC-I3", etiqueta: "Parada (PC-I3)", posicionM: sP, recorridoM: lIda }
     ];
     var segmentosIda = [
-      { id: "I1", sentido: "ida", desde: "Base", hasta: "PC-I1", nombre: "Base → PC-I1", desdeM: 0, hastaM: t1, color: PALETA_LINEAL.I1 },
-      { id: "I2", sentido: "ida", desde: "PC-I1", hasta: "PC-I2", nombre: "PC-I1 → PC-I2", desdeM: t1, hastaM: t2, color: PALETA_LINEAL.I2 },
-      { id: "I3", sentido: "ida", desde: "PC-I2", hasta: "Parada (PC-I3)", nombre: "PC-I2 → Parada", desdeM: t2, hastaM: L, color: PALETA_LINEAL.I3 }
+      { id: "I1", sentido: "ida", desde: "Base", hasta: "PC-I1", nombre: "Base → PC-I1", desdeM: 0, hastaM: i1, color: PALETA_LINEAL.I1 },
+      { id: "I2", sentido: "ida", desde: "PC-I1", hasta: "PC-I2", nombre: "PC-I1 → PC-I2", desdeM: i1, hastaM: i2, color: PALETA_LINEAL.I2 },
+      { id: "I3", sentido: "ida", desde: "PC-I2", hasta: "Parada (PC-I3)", nombre: "PC-I2 → Parada", desdeM: i2, hastaM: sP, color: PALETA_LINEAL.I3 }
     ];
+
+    var r1 = r(sP + lReg / 3, 2), r2 = r(sP + (2 * lReg) / 3, 2);
     var pcsRegreso = [
-      { id: "PC-R1", etiqueta: "PC-R1", posicionM: r(L - t1, 2), recorridoM: t1 },
-      { id: "PC-R2", etiqueta: "PC-R2", posicionM: r(L - t2, 2), recorridoM: t2 },
-      { id: "PC-R3", etiqueta: "Base (PC-R3)", posicionM: 0, recorridoM: L }
+      { id: "PC-R1", etiqueta: "PC-R1", posicionM: r1, recorridoM: r(lReg / 3, 2) },
+      { id: "PC-R2", etiqueta: "PC-R2", posicionM: r2, recorridoM: r((2 * lReg) / 3, 2) },
+      { id: "PC-R3", etiqueta: "Base (PC-R3)", posicionM: Ltot, recorridoM: lReg }
     ];
     var segmentosRegreso = [
-      { id: "R1", sentido: "regreso", desde: "Parada", hasta: "PC-R1", nombre: "Parada → PC-R1", desdeM: L, hastaM: r(L - t1, 2), recDesdeM: 0, recHastaM: t1, color: PALETA_LINEAL.R1 },
-      { id: "R2", sentido: "regreso", desde: "PC-R1", hasta: "PC-R2", nombre: "PC-R1 → PC-R2", desdeM: r(L - t1, 2), hastaM: r(L - t2, 2), recDesdeM: t1, recHastaM: t2, color: PALETA_LINEAL.R2 },
-      { id: "R3", sentido: "regreso", desde: "PC-R2", hasta: "Base (PC-R3)", nombre: "PC-R2 → Base", desdeM: r(L - t2, 2), hastaM: 0, recDesdeM: t2, recHastaM: L, color: PALETA_LINEAL.R3 }
+      { id: "R1", sentido: "regreso", desde: "Parada", hasta: "PC-R1", nombre: "Parada → PC-R1", desdeM: sP, hastaM: r1, recDesdeM: 0, recHastaM: r(lReg / 3, 2), color: PALETA_LINEAL.R1 },
+      { id: "R2", sentido: "regreso", desde: "PC-R1", hasta: "PC-R2", nombre: "PC-R1 → PC-R2", desdeM: r1, hastaM: r2, recDesdeM: r(lReg / 3, 2), recHastaM: r((2 * lReg) / 3, 2), color: PALETA_LINEAL.R2 },
+      { id: "R3", sentido: "regreso", desde: "PC-R2", hasta: "Base (PC-R3)", nombre: "PC-R2 → Base", desdeM: r2, hastaM: Ltot, recDesdeM: r((2 * lReg) / 3, 2), recHastaM: lReg, color: PALETA_LINEAL.R3 }
     ];
+
     return {
-      paradaS: L, largoIda: L, largoRegreso: L,
+      paradaS: sP, largoTotalM: Ltot, largoIda: lIda, largoRegreso: lReg,
       pcsIda: pcsIda, segmentosIda: segmentosIda,
       pcsRegreso: pcsRegreso, segmentosRegreso: segmentosRegreso
     };
   }
 
-  function segmentoLinealDe(sM, paradaS, sentido) {
-    var L = Math.max(0.3, Number(paradaS) || 0.3);
-    var t1 = L / 3, t2 = (2 * L) / 3;
-    if (sentido === "regreso") {
-      var u = Math.max(0, L - sM);
-      if (u < t1 - 1e-6) return "R1";
-      if (u < t2 - 1e-6) return "R2";
+  function segmentoLinealDe(sM, paradaS, sentido, largoTotalM) {
+    var Ltot = Math.max(1.0, Number(largoTotalM) || 9.0);
+    var sP = clamp(Number(paradaS) || (Ltot / 2), 0.3, Ltot - 0.3);
+    if (sentido === "regreso" || sM >= sP + 1e-6) {
+      var lReg = Math.max(0.3, Ltot - sP);
+      var u = Math.max(0, sM - sP);
+      if (u < lReg / 3 - 1e-6) return "R1";
+      if (u < (2 * lReg) / 3 - 1e-6) return "R2";
       return "R3";
     }
-    if (sM < t1 - 1e-6) return "I1";
-    if (sM < t2 - 1e-6) return "I2";
+    if (sM < sP / 3 - 1e-6) return "I1";
+    if (sM < (2 * sP) / 3 - 1e-6) return "I2";
     return "I3";
   }
 
-  function iniciarReescaneoLineal(est) {
+  /* Flujo de botón "Fijar" (permanente): solo tras confirmación del usuario inicia el re-escaneo lineal
+     continuo y activa la confirmación obligatoria del receptor en destino */
+  function confirmarFijarYReescanear(est, largoTotalM) {
     if (!paradaDesbloqueada(est) || !est.paradaProgramada) return null;
-    var calc = calcularRutaLineal(est.paradaProgramada.sM);
+    est.paradaProgramada.tipo = "fijada";
+    est.paradaProgramada.requiereReceptor = true;
+    est.confirmacionReceptorActiva = true;
+    return iniciarReescaneoLineal(est, largoTotalM);
+  }
+
+  function iniciarReescaneoLineal(est, largoTotalM) {
+    if (!paradaDesbloqueada(est) || !est.paradaProgramada) return null;
+    var Ltot = largoTotalM || est.largoM || 9.0;
+    var calc = calcularRutaLineal(est.paradaProgramada.sM, Ltot);
     est.obstaculoActivo = null;
     est.enParadaProgramada = false;
+    est.paradaProgramada.tipo = "fijada";
+    est.paradaProgramada.requiereReceptor = true;
+    est.confirmacionReceptorActiva = true;
     est.lineal = {
       activo: true,
       escaneando: true,
       sentidoActual: "ida",
       vista: "ambos",
       paradaS: calc.paradaS,
+      largoTotalM: calc.largoTotalM,
       largoIda: calc.largoIda,
       largoRegreso: calc.largoRegreso,
       segmentosIda: calc.segmentosIda,
@@ -483,14 +525,14 @@
       tFinS: 0
     };
     registrarEvento(est, "REESCANEO_LINEAL_INICIO", est.paradaProgramada.seg, calc.paradaS,
-      "Re-escaneo lineal iniciado (pista despejada): Ida Base → Parada (" + calc.paradaS.toFixed(2) + " m) y Regreso Parada → Base");
+      "Parada fijada · Re-escaneo continuo iniciado (pista despejada): Ida [0–" + calc.paradaS.toFixed(2) + " m] + Regreso [" + calc.paradaS.toFixed(2) + "–" + calc.largoTotalM.toFixed(2) + " m] · confirmación de receptor activa");
     return est.lineal;
   }
 
   function registrarMuestraLineal(est, muestraBase, sentido) {
     if (!est.lineal || !est.lineal.activo) return null;
     var sent = sentido || est.lineal.sentidoActual;
-    var seg = segmentoLinealDe(muestraBase.s_m, est.lineal.paradaS, sent);
+    var seg = segmentoLinealDe(muestraBase.s_m, est.lineal.paradaS, sent, est.lineal.largoTotalM);
     var copia = Object.assign({}, muestraBase, {
       n: est.lineal.muestras.length + 1,
       sentido: sent,
@@ -500,55 +542,67 @@
     return copia;
   }
 
-  function completarReescaneoLinealRapido(est, trazado) {
+  function completarReescaneoLinealRapido(est, trazado, largoTotalM) {
     if (!paradaDesbloqueada(est) || !est.paradaProgramada) return null;
-    if (!est.lineal || !est.lineal.activo || est.lineal.paradaS !== est.paradaProgramada.sM) {
-      iniciarReescaneoLineal(est);
+    var Ltot = largoTotalM || (trazado ? trazado.L : est.largoM) || 9.0;
+    if (!est.lineal || !est.lineal.activo || est.lineal.paradaS !== est.paradaProgramada.sM || est.lineal.largoTotalM !== r(Ltot, 2)) {
+      iniciarReescaneoLineal(est, Ltot);
     }
-    var lin = est.lineal, L = lin.paradaS, vel = 0.41, pasoS = vel * 2;
+    var lin = est.lineal, sP = lin.paradaS, L = lin.largoTotalM, vel = 0.41, pasoS = vel * 2;
     lin.muestras = [];
-    var t = 0, s, pt, ang;
-    /* Tramo 1: Ida Base -> Parada (I1, I2, I3) */
-    for (s = 0; s < L - 0.05; s += pasoS) {
+    var s, pt, ang;
+    /* Tramo 1: Ida continua [0, sP] (I1, I2, I3) */
+    for (s = 0; s < sP - 0.05; s += pasoS) {
       pt = trazado ? trazado.puntoEn(s) : { x: r(s, 3), y: 0 };
       ang = trazado ? trazado.rumboPistaGrados(s) : 0;
       registrarMuestraLineal(est, {
-        t_s: r(t, 2), s_m: r(s, 3), x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
+        t_s: r(s / vel, 2), s_m: r(s, 3), x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
         tcrt: [0, 1, 1, 0], tcrt_n: [0.07, 0.93, 0.92, 0.08],
         frente_cm: null, atras_cm: 192,
         paredes_ref: { frente_cm: null, atras_cm: 192, linea_base: true },
         yaw_deg: r(ang, 1), omega_dps: 0, v_ms: vel, pwm_izq: 0.72, pwm_der: 0.72, final: false
       }, "ida");
-      t += 2;
     }
-    pt = trazado ? trazado.puntoEn(L) : { x: r(L, 3), y: 0 };
-    ang = trazado ? trazado.rumboPistaGrados(L) : 0;
+    pt = trazado ? trazado.puntoEn(sP) : { x: r(sP, 3), y: 0 };
+    ang = trazado ? trazado.rumboPistaGrados(sP) : 0;
     registrarMuestraLineal(est, {
-      t_s: r(L / vel, 2), s_m: r(L, 3), x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
+      t_s: r(sP / vel, 2), s_m: r(sP, 3), x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
       tcrt: [0, 1, 1, 0], tcrt_n: [0.05, 0.95, 0.95, 0.05],
       frente_cm: null, atras_cm: 190,
       paredes_ref: { frente_cm: null, atras_cm: 190, linea_base: true },
       yaw_deg: r(ang, 1), omega_dps: 0, v_ms: vel, pwm_izq: 0.72, pwm_der: 0.72, final: false
     }, "ida");
-    /* Tramo 2: Regreso Parada -> Base (R1, R2, R3) */
-    var tBaseReg = r(L / vel, 2);
-    var u;
-    for (u = 0; u < L - 0.05; u += pasoS) {
-      s = Math.max(0, L - u);
+    /* Tramo 2: Regreso continuo HACIA ADELANTE [sP, L] (R1, R2, R3) hasta volver a Base */
+    for (s = sP + pasoS; s < L - 0.05; s += pasoS) {
       pt = trazado ? trazado.puntoEn(s) : { x: r(s, 3), y: 0 };
-      ang = trazado ? trazado.rumboPistaGrados(s) + 180 : 180;
+      ang = trazado ? trazado.rumboPistaGrados(s) : 0;
       registrarMuestraLineal(est, {
-        t_s: r(tBaseReg + u / vel, 2), s_m: r(s, 3), x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
+        t_s: r(s / vel, 2), s_m: r(s, 3), x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
         tcrt: [0, 1, 1, 0], tcrt_n: [0.08, 0.92, 0.91, 0.09],
         frente_cm: null, atras_cm: 194,
         paredes_ref: { frente_cm: null, atras_cm: 194, linea_base: true },
         yaw_deg: r(ang, 1), omega_dps: 0, v_ms: vel, pwm_izq: 0.72, pwm_der: 0.72, final: false
       }, "regreso");
     }
-    pt = trazado ? trazado.puntoEn(0) : { x: 0, y: 0 };
-    ang = trazado ? trazado.rumboPistaGrados(0) + 180 : 180;
+    /* Asegura al menos 1 muestra en cada tercio de regreso aunque lReg sea corto */
+    [lin.segmentosRegreso[0], lin.segmentosRegreso[1]].forEach(function (sg) {
+      var sMed = r((sg.desdeM + sg.hastaM) / 2, 3);
+      if (!lin.muestras.some(function (m) { return m.seg === sg.id; })) {
+        pt = trazado ? trazado.puntoEn(sMed) : { x: sMed, y: 0 };
+        ang = trazado ? trazado.rumboPistaGrados(sMed) : 0;
+        registrarMuestraLineal(est, {
+          t_s: r(sMed / vel, 2), s_m: sMed, x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
+          tcrt: [0, 1, 1, 0], tcrt_n: [0.07, 0.93, 0.92, 0.08],
+          frente_cm: null, atras_cm: 193,
+          paredes_ref: { frente_cm: null, atras_cm: 193, linea_base: true },
+          yaw_deg: r(ang, 1), omega_dps: 0, v_ms: vel, pwm_izq: 0.72, pwm_der: 0.72, final: false
+        }, "regreso");
+      }
+    });
+    pt = trazado ? trazado.puntoEn(L) : { x: r(L, 3), y: 0 };
+    ang = trazado ? trazado.rumboPistaGrados(Math.max(0, L - 0.01)) : 0;
     registrarMuestraLineal(est, {
-      t_s: r((2 * L) / vel, 2), s_m: 0, x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
+      t_s: r(L / vel, 2), s_m: r(L, 3), x: r(pt.x, 3), y: r(pt.y, 3), angulo: r(ang, 1),
       tcrt: [0, 1, 1, 0], tcrt_n: [0.05, 0.95, 0.94, 0.05],
       frente_cm: null, atras_cm: 196,
       paredes_ref: { frente_cm: null, atras_cm: 196, linea_base: true },
@@ -558,9 +612,9 @@
     lin.escaneando = false;
     lin.completo = true;
     lin.sentidoActual = "regreso";
-    lin.tFinS = r((2 * L) / vel, 2);
-    registrarEvento(est, "REESCANEO_LINEAL_COMPLETO", "R3", 0,
-      "Re-escaneo lineal completo: Ida I1–I3 (" + L.toFixed(2) + " m) + Regreso R1–R3 (" + L.toFixed(2) + " m) · " + lin.muestras.length + " muestras");
+    lin.tFinS = r(L / vel, 2);
+    registrarEvento(est, "REESCANEO_LINEAL_COMPLETO", "R3", L,
+      "Re-escaneo continuo completo: Ida I1–I3 (" + lin.largoIda.toFixed(2) + " m) + Regreso R1–R3 (" + lin.largoRegreso.toFixed(2) + " m) = " + L.toFixed(2) + " m · confirmación del receptor habilitada");
     return lin;
   }
 
@@ -598,6 +652,7 @@
     conteoEscaneos: conteoEscaneos,
     siguienteEscaneoCalib: siguienteEscaneoCalib,
     obstaculosPermitidos: obstaculosPermitidos,
+    setOperacionReal: setOperacionReal,
     paradaDesbloqueada: paradaDesbloqueada,
     unificarPorSegmento: unificarPorSegmento,
     registrarEscaneoCompletado: registrarEscaneoCompletado,
@@ -613,6 +668,7 @@
     quitarParada: quitarParada,
     calcularRutaLineal: calcularRutaLineal,
     segmentoLinealDe: segmentoLinealDe,
+    confirmarFijarYReescanear: confirmarFijarYReescanear,
     iniciarReescaneoLineal: iniciarReescaneoLineal,
     registrarMuestraLineal: registrarMuestraLineal,
     completarReescaneoLinealRapido: completarReescaneoLinealRapido,

@@ -648,14 +648,15 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       </div>
     </div>
 
-    <!-- 2c. Controles de Operación MVP (misiones, obstáculos y parada programable >= 8 viajes) -->
+    <!-- 2c. Controles de Operación MVP (verificación sin obstáculos / operación real + parada temporal o fijada >= 8 viajes) -->
     <div class="ctrl-fase" id="barra-mvp" data-solo-fase="4" hidden role="region" aria-label="Controles de Operación MVP">
       <div class="ctrl-grupo">
         <span>Destino:</span>
         <button type="button" class="ctrl-btn" data-dest-mvp="PC1" aria-pressed="false">PC1</button>
         <button type="button" class="ctrl-btn" data-dest-mvp="PC2" aria-pressed="false">PC2</button>
         <button type="button" class="ctrl-btn sel" data-dest-mvp="PC3" aria-pressed="true">PC3</button>
-        <button type="button" class="ctrl-btn aviso" id="btn-sim-obstaculo" aria-pressed="false">📦 Simular objeto</button>
+        <button type="button" class="ctrl-btn" id="btn-modo-op-real" aria-pressed="false" title="Activa Operación real (post-calibración) para habilitar simulación de obstáculos">🛡 Verificación (sin obstáculos)</button>
+        <button type="button" class="ctrl-btn aviso" id="btn-sim-obstaculo" aria-pressed="false" hidden>📦 Simular objeto</button>
       </div>
       <div class="ctrl-grupo">
         <span class="seg-pill" id="mvp-viajes-badge">Viajes verificados: 0/8</span>
@@ -668,16 +669,18 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
           <button type="button" class="ctrl-btn sel" data-parada-seg="S1" aria-pressed="true" disabled>S1</button>
           <button type="button" class="ctrl-btn" data-parada-seg="S2" aria-pressed="false" disabled>S2</button>
           <button type="button" class="ctrl-btn" data-parada-seg="S3" aria-pressed="false" disabled>S3</button>
-          <input type="range" class="parada-slider" id="parada-pct" min="10" max="90" value="50" aria-label="Posición de la parada dentro del segmento" disabled>
+          <button type="button" class="ctrl-btn" id="btn-parada-menos" aria-label="Retroceder parada 0,1 metros" disabled>− 0,1 m</button>
+          <input type="range" class="parada-slider" id="parada-pct" min="5" max="95" value="50" aria-label="Posición de la parada dentro del segmento" disabled>
+          <button type="button" class="ctrl-btn" id="btn-parada-mas" aria-label="Avanzar parada 0,1 metros" disabled>+ 0,1 m</button>
           <span id="parada-metros-txt">S1 · 1,50 m</span>
-          <button type="button" class="ctrl-btn ok" id="btn-fijar-parada" disabled>📍 Fijar parada</button>
+          <button type="button" class="ctrl-btn" id="btn-fijar-parada" title="Usa esta parada solo para un viaje puntual sin re-escaneo ni confirmación del receptor" disabled>📍 Parada temporal</button>
+          <button type="button" class="ctrl-btn ok" id="btn-fijar-permanente" title="Fija la parada permanentemente, solicita nuevo escaneo lineal continuo (I1–I3 + R1–R3) y activa confirmación del receptor" disabled>📌 Fijar</button>
           <button type="button" class="ctrl-btn" id="btn-quitar-parada" hidden>✕ Quitar</button>
-          <button type="button" class="ctrl-btn info" id="btn-reescanear-lineal" hidden>🔄 Re-escanear como rutas lineales (Ida y Regreso)</button>
-          <button type="button" class="ctrl-btn ok" id="btn-lineal-rapido" hidden>⚡ Completar lineal</button>
           <button type="button" class="ctrl-btn" id="btn-salir-lineal" hidden>↩ Circuito cerrado</button>
-          <button type="button" class="ctrl-btn ok" id="btn-reanudar-parada" hidden>▶ Reanudar destino</button>
+          <button type="button" class="ctrl-btn ok" id="btn-reanudar-parada" hidden>✅ Confirmar entrega y continuar</button>
           <button type="button" class="ctrl-btn aviso" id="btn-volver-base" hidden>↩ Volver a Base</button>
         </div>
+        <span class="nota" id="parada-ayuda-txt" style="width:100%;margin:0">Clic directo sobre la ruta del mapa o usa −/+ para elegir el punto · <b>Temporal:</b> sin re-escaneo ni confirmación del receptor · <b>Fijar:</b> solicita re-escaneo lineal (Ida I1–I3 + Regreso R1–R3) y activa confirmación del receptor.</span>
       </div>
     </div>
 
@@ -862,6 +865,31 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   </div>
 </div>
 
+<!-- Modal de confirmación para botón «Fijar» (solicita nuevo escaneo lineal continuo + confirmación del receptor) -->
+<div class="modal-datos-fondo" id="modal-fijar-fondo" hidden>
+  <div class="modal-datos" id="modal-fijar" role="dialog" aria-modal="true" aria-labelledby="t-modal-fijar" style="width:min(540px,100%)">
+    <div class="modal-datos-cab">
+      <h2 id="t-modal-fijar">📌 Fijar parada y solicitar nuevo escaneo lineal</h2>
+      <button type="button" class="cajon-cerrar" id="btn-fijar-cerrar" aria-label="Cancelar fijación">✕</button>
+    </div>
+    <div class="modal-datos-cuerpo" style="display:grid;gap:10px">
+      <p style="margin:0;font-size:13px;line-height:1.45" id="modal-fijar-desc">
+        Al <strong>Fijar</strong> esta parada de forma permanente, el Gemelo Digital ejecutará un <strong>nuevo escaneo lineal continuo en pista despejada</strong> (sin vuelta en U):
+      </p>
+      <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.5;color:var(--tg-dark-text)">
+        <li><strong>Ida (I1–I3):</strong> <code>Base (0 m) → Parada</code> en 3 tercios iguales con nuevos puntos de control (<code>PC-I1</code>, <code>PC-I2</code>, <code>Parada</code>).</li>
+        <li><strong>Regreso (R1–R3):</strong> continúa <strong>hacia adelante</strong> por el resto del circuito <code>Parada → Base (L)</code> en 3 tercios iguales (<code>PC-R1</code>, <code>PC-R2</code>, <code>Base</code>), sin solapamiento.</li>
+        <li><strong>Confirmación del receptor obligatoria:</strong> en operación, el robot esperará en destino hasta que el receptor confirme la entrega para continuar el regreso a Base.</li>
+      </ul>
+      <div class="fila" style="justify-content:flex-end;margin-top:4px">
+        <button type="button" class="b" id="btn-cancelar-fijar">Cancelar</button>
+        <button type="button" class="b info" id="btn-confirmar-fijar">🔄 Confirmar y re-escanear</button>
+        <button type="button" class="b ok" id="btn-confirmar-fijar-rapido">⚡ Confirmar y completar rápido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer id="pie"></footer>
 
 <script src="../../datos/proyecto.js"></script>
@@ -907,8 +935,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     4: SE.configFase(2, window.TG_ROBOT, PE)
   };
   var COL_SEG = { S1: PAL.seg1, S2: PAL.seg2, S3: PAL.seg3 }, COL_LIN = CM.PALETA_LINEAL;
-  var filtroSeg = "todos", filtroLin = "todos", modalAbierto = false;
-  var paradaSegSel = "S1", obsRegistradoEnViaje = false, avisoBloqueoMvp = "";
+  var filtroSeg = "todos", filtroLin = "todos", modalAbierto = false, modalFijarAbierto = false;
+  var paradaSegSel = "S1", borradorParadaS = 1.5, obsRegistradoEnViaje = false, avisoBloqueoMvp = "";
   var avisoEl = $("aviso-carga");
   var nucleo = null, canonica = null, sim1 = null, pistaObj = null, tr = null, sim = null;
   var corriendo = false, velSim = 1, ultimoFrame = 0, acum = 0, ultimoDom = 0, filasPintadas = 0;
@@ -997,7 +1025,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       var n = 0;
       while (acum >= TICK_MS && n < 60) {
         S.paso(sim, TICK_MS);
-        /* Re-escaneo lineal animado (Ida Base -> Parada, luego Regreso Parada -> Base, pista despejada) */
+        /* Re-escaneo lineal continuo HACIA ADELANTE (Ida [0, paradaS] -> Regreso [paradaS, L], SIN vuelta en U) */
         if (faseActual === 4 && CM_EST.lineal && CM_EST.lineal.escaneando) {
           var lin = CM_EST.lineal;
           var nTick = PE.tick(reg, sim, S);
@@ -1005,21 +1033,18 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
             var ultM = reg.muestras[reg.muestras.length - 1];
             CM.registrarMuestraLineal(CM_EST, ultM, lin.sentidoActual);
           }
-          if (lin.sentidoActual === "ida" && sim.s >= lin.paradaS - 0.06) {
+          if (lin.sentidoActual === "ida" && sim.s >= lin.paradaS - 0.05) {
             CM.registrarMuestraLineal(CM_EST, PE.muestra(reg, sim, S, Math.round((sim.t - reg.t0) * 1000), false), "ida");
-            lin.sentidoActual = "regreso";
-            S.nuevoViaje(sim, -1);
-            sim.s = lin.paradaS;
-            sim.velObjetivoMs = CFG[4].velMs;
-          } else if (lin.sentidoActual === "regreso" && sim.s <= 0.08) {
+            lin.sentidoActual = "regreso"; /* continúa hacia adelante por el resto del circuito [paradaS, L] */
+          } else if (lin.sentidoActual === "regreso" && (sim.llegadaCompleta || sim.s >= sim.L - 0.08)) {
             var tFin = Math.round((sim.t - reg.t0) * 1000);
             CM.registrarMuestraLineal(CM_EST, PE.muestra(reg, sim, S, tFin, true), "regreso");
             lin.escaneando = false;
             lin.completo = true;
             lin.tFinS = Math.round(tFin / 10) / 100;
             PE.finalizar(reg, sim, S, null);
-            CM.registrarEvento(CM_EST, "REESCANEO_LINEAL_COMPLETO", "R3", 0,
-              "Re-escaneo lineal completo: Ida I1–I3 (" + fmt(lin.paradaS, 2) + " m) + Regreso R1–R3 (" + fmt(lin.paradaS, 2) + " m) · " + lin.muestras.length + " muestras");
+            CM.registrarEvento(CM_EST, "REESCANEO_LINEAL_COMPLETO", "R3", sim.L,
+              "Re-escaneo continuo completo: Ida I1–I3 (" + fmt(lin.largoIda, 2) + " m) + Regreso R1–R3 (" + fmt(lin.largoRegreso, 2) + " m) · confirmación del receptor activa");
             sim.velObjetivoMs = null;
             detener();
             refrescarDom(true);
@@ -1248,8 +1273,37 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var pct = Number($("parada-pct").value);
     var segs = SE.segmentos(sim.L), sg = segs[0];
     for (var i = 0; i < segs.length; i++) if (segs[i].id === paradaSegSel) sg = segs[i];
-    var sM = sg.desdeM + (sg.hastaM - sg.desdeM) * (pct / 100);
-    $("parada-metros-txt").textContent = paradaSegSel + " · " + fmt(sM, 2) + " m (" + pct + " %)";
+    borradorParadaS = Math.round((sg.desdeM + (sg.hastaM - sg.desdeM) * (pct / 100)) * 100) / 100;
+    $("parada-metros-txt").textContent = paradaSegSel + " · " + fmt(borradorParadaS, 2) + " m (" + pct + " %)";
+  }
+  function ajustarBorradorParadaS(nuevoS) {
+    if (!sim) return;
+    var sClamped = Math.max(0.3, Math.min(sim.L - 0.3, Math.round(nuevoS * 100) / 100));
+    borradorParadaS = sClamped;
+    paradaSegSel = SE.segmentoDe(sClamped, sim.L);
+    var segs = SE.segmentos(sim.L), sg = segs[0];
+    for (var i = 0; i < segs.length; i++) if (segs[i].id === paradaSegSel) sg = segs[i];
+    var pct = Math.max(5, Math.min(95, Math.round(((sClamped - sg.desdeM) / Math.max(0.1, sg.hastaM - sg.desdeM)) * 100)));
+    $("parada-pct").value = String(pct);
+    $("parada-metros-txt").textContent = paradaSegSel + " · " + fmt(borradorParadaS, 2) + " m (" + pct + " %)";
+    if (CM_EST.paradaProgramada && CM_EST.paradaProgramada.tipo === "temporal") {
+      CM.programarParadaEnS(CM_EST, borradorParadaS, sim.L, SE, "temporal");
+    }
+    refrescarDom(true);
+  }
+  function abrirModalFijar(abrir) {
+    modalFijarAbierto = Boolean(abrir);
+    $("modal-fijar-fondo").hidden = !modalFijarAbierto;
+    if (modalFijarAbierto && sim) {
+      var L = sim.L, sP = borradorParadaS;
+      $("modal-fijar-desc").innerHTML =
+        'Vas a <strong>Fijar</strong> permanentemente la parada en <strong>' + paradaSegSel + ' · ' + fmt(sP, 2) +
+        ' m</strong> (Ida: <code>0 → ' + fmt(sP, 2) + ' m</code> · Regreso continuo hacia adelante: <code>' +
+        fmt(sP, 2) + ' → ' + fmt(L, 2) + ' m</code>). Se requiere ejecutar el nuevo escaneo lineal en pista despejada:';
+      $("btn-confirmar-fijar").focus();
+    } else if (!modalFijarAbierto && $("btn-fijar-permanente")) {
+      $("btn-fijar-permanente").focus();
+    }
   }
   function alternarObstaculoMvp() {
     if (!sim || !CM.obstaculosPermitidos(faseActual, CM_EST)) return;
@@ -1271,21 +1325,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     if (!sim || faseActual !== 4 || !CM.paradaDesbloqueada(CM_EST)) return;
     var rect = cvP.getBoundingClientRect();
     var px = ev.clientX - rect.left, py = ev.clientY - rect.top;
-    var mejorS = null, mejorD = 26; /* radio máximo 26 px sobre la ruta */
-    for (var s = 0.2; s <= sim.L - 0.2; s += 0.1) {
+    var mejorS = null, mejorD = 28; /* radio máximo 28 px sobre la ruta */
+    for (var s = 0.3; s <= sim.L - 0.3; s += 0.1) {
       var pt = tr.puntoEn(s);
       var d = Math.hypot(VX(pt.x) - px, VY(pt.y) - py);
       if (d < mejorD) { mejorD = d; mejorS = s; }
     }
-    if (mejorS !== null) {
-      var p = CM.programarParadaEnS(CM_EST, mejorS, sim.L, SE);
-      if (p) {
-        paradaSegSel = p.seg;
-        $("parada-pct").value = String(p.pct);
-        actualizarEtiquetaParadaSlider();
-        refrescarDom(true);
-      }
-    }
+    if (mejorS !== null) ajustarBorradorParadaS(mejorS);
   }
   function pintarReferenciasFase2() {
     var L = sim.L, pcs = SE.puntosControl(L);
@@ -1337,7 +1383,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("cajon-backdrop").addEventListener("click", function () { abrirCajon(false); });
     window.addEventListener("keydown", function (ev) {
       if (ev.key !== "Escape") return;
-      if (modalAbierto) abrirModalDatos(false); else if (cajonAbierto) abrirCajon(false);
+      if (modalFijarAbierto) abrirModalFijar(false);
+      else if (modalAbierto) abrirModalDatos(false);
+      else if (cajonAbierto) abrirCajon(false);
     });
     $("btn-datos-exactos").addEventListener("click", function () { abrirModalDatos(true); });
     $("btn-datos-cerrar").addEventListener("click", function () { abrirModalDatos(false); });
@@ -1380,6 +1428,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         refrescarDom(true);
       });
     });
+    $("btn-modo-op-real").addEventListener("click", function () {
+      if (!sim || !CM_EST.calibrada) return;
+      var nuevo = !CM_EST.operacionRealActiva;
+      CM.setOperacionReal(CM_EST, nuevo);
+      if (!nuevo) { S.quitarObstaculo(sim); obsRegistradoEnViaje = false; }
+      refrescarDom(true);
+    });
     $("btn-sim-obstaculo").addEventListener("click", alternarObstaculoMvp);
     $("btn-mvp-mas1").addEventListener("click", function () {
       if (!sim || !CM_EST.calibrada) return;
@@ -1391,7 +1446,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       CM.simularLoteHasta8(CM_EST, sim.L, FS.registros[1], FS.registros[2], SE);
       refrescarDom(true);
     });
-    /* Controles de Parada programable (viajes >= 8) */
+    /* Controles de Parada programable (temporal vs. Fijar permanente >= 8 viajes) */
     Array.prototype.forEach.call(document.querySelectorAll("[data-parada-seg]"), function (b) {
       b.addEventListener("click", function () {
         paradaSegSel = b.getAttribute("data-parada-seg");
@@ -1399,23 +1454,29 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         refrescarDom(true);
       });
     });
-    $("parada-pct").addEventListener("input", actualizarEtiquetaParadaSlider);
+    $("parada-pct").addEventListener("input", function () { actualizarEtiquetaParadaSlider(); if (sim) dibujar(performance.now()); });
+    $("btn-parada-menos").addEventListener("click", function () { ajustarBorradorParadaS(borradorParadaS - 0.1); });
+    $("btn-parada-mas").addEventListener("click", function () { ajustarBorradorParadaS(borradorParadaS + 0.1); });
     $("btn-fijar-parada").addEventListener("click", function () {
       if (!sim) return;
-      CM.programarParada(CM_EST, paradaSegSel, Number($("parada-pct").value), sim.L, SE);
+      CM.programarParadaEnS(CM_EST, borradorParadaS, sim.L, SE, "temporal");
       refrescarDom(true);
     });
-    $("btn-quitar-parada").addEventListener("click", function () {
-      CM.quitarParada(CM_EST);
-      pintarReferenciasFase2();
-      filasPintadas = -1;
-      refrescarDom(true);
+    $("btn-fijar-permanente").addEventListener("click", function () {
+      if (!sim || !CM.paradaDesbloqueada(CM_EST)) return;
+      abrirModalFijar(true);
     });
-    $("btn-reescanear-lineal").addEventListener("click", function () {
-      if (!sim || !CM_EST.paradaProgramada) return;
+    $("btn-fijar-cerrar").addEventListener("click", function () { abrirModalFijar(false); });
+    $("btn-cancelar-fijar").addEventListener("click", function () { abrirModalFijar(false); });
+    $("modal-fijar-fondo").addEventListener("click", function (ev) { if (ev.target === $("modal-fijar-fondo")) abrirModalFijar(false); });
+    $("btn-confirmar-fijar").addEventListener("click", function () {
+      if (!sim) return;
+      abrirModalFijar(false);
       detener();
       S.quitarObstaculo(sim);
-      var lin = CM.iniciarReescaneoLineal(CM_EST);
+      CM.setOperacionReal(CM_EST, false);
+      CM.programarParadaEnS(CM_EST, borradorParadaS, sim.L, SE, "fijada");
+      var lin = CM.confirmarFijarYReescanear(CM_EST, sim.L);
       if (!lin) return;
       reg = CM_EST.regMvp;
       S.nuevoViaje(sim, 1);
@@ -1427,16 +1488,25 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       pintarLeyendaLineal();
       reproducir();
     });
-    $("btn-lineal-rapido").addEventListener("click", function () {
-      if (!sim || !CM_EST.paradaProgramada) return;
+    $("btn-confirmar-fijar-rapido").addEventListener("click", function () {
+      if (!sim) return;
+      abrirModalFijar(false);
       detener();
       S.quitarObstaculo(sim);
-      CM.completarReescaneoLinealRapido(CM_EST, tr);
+      CM.setOperacionReal(CM_EST, false);
+      CM.programarParadaEnS(CM_EST, borradorParadaS, sim.L, SE, "fijada");
+      CM.completarReescaneoLinealRapido(CM_EST, tr, sim.L);
       S.nuevoViaje(sim, 1);
       sim.velObjetivoMs = null;
       filtroLin = "todos";
       filasPintadas = -1;
       pintarLeyendaLineal();
+      refrescarDom(true);
+    });
+    $("btn-quitar-parada").addEventListener("click", function () {
+      CM.quitarParada(CM_EST);
+      pintarReferenciasFase2();
+      filasPintadas = -1;
       refrescarDom(true);
     });
     $("btn-salir-lineal").addEventListener("click", function () {
@@ -1639,26 +1709,23 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     return (b[1] || b[2]) && !b[0] && !b[3] ? 2 : 1;       /* 2 = centrada · 1 = corrigiendo */
   }
   function perfilSvgLineal(ms, lin) {
-    var X0 = 30, X1 = 314, W = X1 - X0, XM = X0 + W / 2, TA = 12, TB = 42, PA = 56, PB = 112;
-    var L = Math.max(0.3, lin.paradaS || 1), out = [];
+    var X0 = 30, X1 = 314, W = X1 - X0, TA = 12, TB = 42, PA = 56, PB = 112;
+    var Ltot = Math.max(1.0, lin.largoTotalM || sim.L || 9.0), sP = lin.paradaS || (Ltot / 2);
+    var X = function (sM) { return X0 + Math.max(0, Math.min(1, sM / Ltot)) * W; };
+    var XP = X(sP), out = [];
     out.push('<rect x="' + X0 + '" y="' + TA + '" width="' + W + '" height="' + (TB - TA) + '" fill="' + PAL.realce + '" rx="3"/>');
     out.push('<rect x="' + X0 + '" y="' + PA + '" width="' + W + '" height="' + (PB - PA) + '" fill="' + PAL.realce + '" rx="3"/>');
-    var segs6 = [
-      { id: "I1", x0: X0, x1: X0 + W / 6 }, { id: "I2", x0: X0 + W / 6, x1: X0 + W / 3 }, { id: "I3", x0: X0 + W / 3, x1: XM },
-      { id: "R1", x0: XM, x1: XM + W / 6 }, { id: "R2", x0: XM + W / 6, x1: XM + W / 3 }, { id: "R3", x0: XM + W / 3, x1: X1 }
-    ];
-    segs6.forEach(function (g) {
-      var col = COL_LIN[g.id];
-      out.push('<rect x="' + g.x0.toFixed(1) + '" y="' + PA + '" width="' + (g.x1 - g.x0).toFixed(1) + '" height="' + (PB - PA) + '" fill="' + col + '" fill-opacity="0.16"/>');
-      out.push('<text x="' + ((g.x0 + g.x1) / 2).toFixed(1) + '" y="' + (PB + 9) + '" fill="' + col + '" font-size="7.5" text-anchor="middle" font-weight="700">' + g.id + "</text>");
+    lin.segmentosIda.concat(lin.segmentosRegreso).forEach(function (sg) {
+      var gx0 = X(sg.desdeM), gx1 = X(sg.hastaM), col = COL_LIN[sg.id];
+      out.push('<rect x="' + gx0.toFixed(1) + '" y="' + PA + '" width="' + Math.max(2, gx1 - gx0).toFixed(1) + '" height="' + (PB - PA) + '" fill="' + col + '" fill-opacity="0.16"/>');
+      out.push('<text x="' + ((gx0 + gx1) / 2).toFixed(1) + '" y="' + (PB + 9) + '" fill="' + col + '" font-size="7.5" text-anchor="middle" font-weight="700">' + sg.id + "</text>");
     });
-    out.push('<line x1="' + XM.toFixed(1) + '" x2="' + XM.toFixed(1) + '" y1="' + (TA - 4) + '" y2="' + PB + '" stroke="#fff" stroke-width="1.2"/>');
-    out.push('<text x="' + (X0 + W / 4).toFixed(1) + '" y="9" fill="' + COL_LIN.I1 + '" font-size="7.5" text-anchor="middle" font-weight="700">IDA (Base → Parada)</text>');
-    out.push('<text x="' + (XM + W / 4).toFixed(1) + '" y="9" fill="' + COL_LIN.R1 + '" font-size="7.5" text-anchor="middle" font-weight="700">REGRESO (Parada → Base)</text>');
+    out.push('<line x1="' + XP.toFixed(1) + '" x2="' + XP.toFixed(1) + '" y1="' + (TA - 4) + '" y2="' + PB + '" stroke="#fff" stroke-width="1.2"/>');
+    out.push('<text x="' + ((X0 + XP) / 2).toFixed(1) + '" y="9" fill="' + COL_LIN.I1 + '" font-size="7.5" text-anchor="middle" font-weight="700">IDA (0→' + fmt(sP, 1) + ' m)</text>');
+    out.push('<text x="' + ((XP + X1) / 2).toFixed(1) + '" y="9" fill="' + COL_LIN.R1 + '" font-size="7.5" text-anchor="middle" font-weight="700">REGRESO (' + fmt(sP, 1) + '→' + fmt(Ltot, 1) + ' m)</text>');
     var alto = [0.3, 0.65, 1];
     ms.forEach(function (m) {
-      var prog = m.sentido === "regreso" ? (0.5 + 0.5 * Math.max(0, Math.min(1, (L - m.s_m) / L))) : (0.5 * Math.max(0, Math.min(1, m.s_m / L)));
-      var x = X0 + prog * W, e = estabilidadTcrt(m.tcrt), h = (TB - TA) * alto[e], col = COL_LIN[m.seg] || PAL.acento;
+      var x = X(m.s_m), e = estabilidadTcrt(m.tcrt), h = (TB - TA) * alto[e], col = COL_LIN[m.seg] || PAL.acento;
       out.push('<rect x="' + (x - 2).toFixed(1) + '" y="' + (TB - h).toFixed(1) + '" width="4" height="' + h.toFixed(1) + '" fill="' + col + '"/>');
       out.push('<circle cx="' + x.toFixed(1) + '" cy="' + (PA + 14).toFixed(1) + '" r="2.5" fill="' + col + '"/>');
     });
@@ -1811,8 +1878,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       b.classList.toggle("sel", on);
       b.setAttribute("aria-pressed", String(on));
     });
+    var opReal = Boolean(CM_EST.operacionRealActiva);
+    $("btn-modo-op-real").textContent = opReal ? "🚀 Operación real (obstáculos activos)" : "🛡 Verificación (sin obstáculos)";
+    $("btn-modo-op-real").className = "ctrl-btn" + (opReal ? " sel ok" : "");
+    $("btn-modo-op-real").setAttribute("aria-pressed", String(opReal));
+    var obsPermitido = CM.obstaculosPermitidos(faseActual, CM_EST);
     var hayObs = sim.obstaculoS !== null;
-    $("btn-sim-obstaculo").disabled = !CM.obstaculosPermitidos(faseActual, CM_EST);
+    $("btn-sim-obstaculo").hidden = !obsPermitido;
+    $("btn-sim-obstaculo").disabled = !obsPermitido;
     $("btn-sim-obstaculo").textContent = hayObs ? "✅ Retirar objeto" : "📦 Simular objeto";
     $("btn-sim-obstaculo").className = "ctrl-btn " + (hayObs ? "peligro" : "aviso");
     $("btn-sim-obstaculo").setAttribute("aria-pressed", String(hayObs));
@@ -1820,12 +1893,18 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("mvp-viajes-badge").className = "seg-pill" + (CM.paradaDesbloqueada(CM_EST) ? " ok" : " activo");
     $("btn-mvp-lote8").disabled = !CM_EST.calibrada || CM.paradaDesbloqueada(CM_EST);
 
-    /* Parada programable (viajes >= 8) */
+    /* Parada programable (temporal vs. Fijar permanente >= 8 viajes) */
     var desbloq = CM.paradaDesbloqueada(CM_EST);
     $("parada-estado-txt").className = "parada-lock" + (desbloq ? " ok" : "");
-    $("parada-estado-txt").textContent = desbloq
-      ? (CM_EST.paradaProgramada ? "📍 " + CM_EST.paradaProgramada.etiqueta + " (o clic en el mapa)" : "🔓 Parada programable desbloqueada (" + CM_EST.viajesOperativos + "/8) · elige segmento o clic en mapa")
-      : ("🔒 Programar parada en segmento · Disponible tras 8 viajes verificados (" + CM_EST.viajesOperativos + "/8)");
+    if (!desbloq) {
+      $("parada-estado-txt").textContent = "🔒 Programar parada en segmento · Disponible tras 8 viajes verificados (" + CM_EST.viajesOperativos + "/8)";
+    } else if (CM_EST.paradaProgramada && CM_EST.paradaProgramada.tipo === "fijada") {
+      $("parada-estado-txt").textContent = "📌 " + CM_EST.paradaProgramada.etiqueta + " (Fijada · confirmación de receptor activa)";
+    } else if (CM_EST.paradaProgramada) {
+      $("parada-estado-txt").textContent = "📍 " + CM_EST.paradaProgramada.etiqueta + " (Temporal · sin re-escaneo ni receptor)";
+    } else {
+      $("parada-estado-txt").textContent = "🔓 Parada desbloqueada (" + CM_EST.viajesOperativos + "/8) · clic en el mapa o usa −/+ y elige Temporal o Fijar";
+    }
     Array.prototype.forEach.call(document.querySelectorAll("[data-parada-seg]"), function (b) {
       var on = b.getAttribute("data-parada-seg") === paradaSegSel;
       b.disabled = !desbloq;
@@ -1833,11 +1912,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       b.setAttribute("aria-pressed", String(on));
     });
     $("parada-pct").disabled = !desbloq;
+    $("btn-parada-menos").disabled = !desbloq;
+    $("btn-parada-mas").disabled = !desbloq;
     $("btn-fijar-parada").disabled = !desbloq;
+    $("btn-fijar-permanente").disabled = !desbloq;
     $("btn-quitar-parada").hidden = !(desbloq && CM_EST.paradaProgramada);
     var linAct = modoLinealActivo();
-    $("btn-reescanear-lineal").hidden = !(desbloq && CM_EST.paradaProgramada);
-    $("btn-lineal-rapido").hidden = !(desbloq && CM_EST.paradaProgramada);
     $("btn-salir-lineal").hidden = !linAct;
     $("lineal-vista-bar").hidden = !linAct;
     if (linAct) {
@@ -1846,14 +1926,17 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       });
       pintarLeyendaLineal();
       $("nota-app4").querySelector("p").innerHTML =
-        '<strong>Nota de integración App:</strong> Aunque el Gemelo Digital usa los 6 colores nuevos (<strong>I1–I3</strong> ida y <strong>R1–R3</strong> regreso) para auditar ambos sentidos por separado, en la aplicación móvil (<code>tg-robot-ucab-app</code>) el trayecto hacia la parada y el retorno se muestran en <strong>una vista limpia de un solo color</strong> con los nuevos puntos de control.';
+        '<strong>Nota de integración App:</strong> Aunque el Gemelo Digital usa los 6 colores nuevos continuos (<strong>I1–I3</strong> ida y <strong>R1–R3</strong> regreso hacia adelante, sin solapamiento) para auditar ambos tramos, en <code>tg-robot-ucab-app</code> el usuario ve la ruta en <strong>un solo color limpio</strong> con los nuevos PCs y confirmación obligatoria del receptor en destino.';
     } else {
       $("nota-app4").querySelector("p").innerHTML =
-        '<strong>Nota de integración App:</strong> En Operación MVP, <code>tg-robot-ucab-app</code> muestra el avance de la misión, alertas de objetos reales y —tras 8 viajes verificados— la <strong>parada personalizada</strong> sobre la ruta limpia de un solo color.';
+        '<strong>Nota de integración App:</strong> En Operación MVP, <code>tg-robot-ucab-app</code> muestra el avance de la misión y —tras 8 viajes verificados— permite parada temporal (sin receptor) o <strong>Fijar</strong> parada permanente con confirmación del receptor.';
     }
     $("seg-filtro").hidden = faseActual < 2 || linAct;
     $("seg-filtro-lineal").hidden = !linAct;
     $("btn-reanudar-parada").hidden = !CM_EST.enParadaProgramada;
+    $("btn-reanudar-parada").textContent = (CM_EST.paradaProgramada && CM_EST.paradaProgramada.requiereReceptor)
+      ? "✅ Confirmar entrega (continuar regreso a Base)"
+      : "▶ Reanudar destino";
     $("btn-volver-base").hidden = !CM_EST.enParadaProgramada;
     $("lienzo-pista").style.cursor = (faseActual === 4 && desbloq) ? "crosshair" : "default";
 
@@ -1961,6 +2044,20 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       c.fillText("Espacio sin mapear · primer escaneo a " + fmt(VEL.lentaMs, 2) + " m/s, 1 punto cada 2 s", w / 2, h - 14);
     }
 
+    /* Fase 4 · Vista previa del pin selector (al elegir punto en el mapa antes de pulsar Temporal o Fijar) */
+    if (faseActual === 4 && CM.paradaDesbloqueada(CM_EST) && !CM_EST.paradaProgramada) {
+      var ptB = tr.puntoEn(borradorParadaS), pxB = VX(ptB.x), pyB = VY(ptB.y);
+      c.save();
+      c.strokeStyle = PAL.acento; c.fillStyle = "rgba(0,242,254,0.22)"; c.lineWidth = 2;
+      c.beginPath(); c.arc(pxB, pyB, 8, 0, 7); c.fill(); c.stroke();
+      var txtB = "Selección · " + paradaSegSel + " (" + fmt(borradorParadaS, 1) + " m)";
+      c.font = "bold 10px JetBrains Mono, monospace"; c.textAlign = "center";
+      var twB = c.measureText(txtB).width + 10;
+      c.fillStyle = "rgba(11,18,32,0.88)"; c.fillRect(pxB - twB / 2, pyB - 28, twB, 16);
+      c.fillStyle = PAL.acento; c.fillText(txtB, pxB, pyB - 20);
+      c.restore();
+    }
+
     /* Fase 4 · Marcador de Parada Programada en S1/S2/S3 */
     if (faseActual === 4 && CM_EST.paradaProgramada) {
       var pp = CM_EST.paradaProgramada, ptP = tr.puntoEn(pp.sM), pxP = VX(ptP.x), pyP = VY(ptP.y);
@@ -2054,54 +2151,50 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.font = "10.5px JetBrains Mono, monospace";
   }
 
-  /* Punto 5 (Extensión): Re-escaneo lineal con 3 segmentos de Ida (I1–I3) y 3 de Regreso (R1–R3) en 6 nuevos colores */
+  /* Punto 5 (Extensión): Re-escaneo lineal CONTINUO sin solapamiento:
+   * Ida (I1–I3) cubre [0, s_parada]; Regreso (R1–R3) continúa hacia adelante [s_parada, L] hasta Base */
   function dibujarRutaLineal(c) {
     var lin = CM_EST.lineal, vistaL = lin.vista || "ambos", paso = 0.05;
     /* Pista completa atenuada de referencia */
-    c.save(); c.strokeStyle = "rgba(148,163,184,0.18)"; c.lineWidth = 3; c.beginPath();
+    c.save(); c.strokeStyle = "rgba(148,163,184,0.16)"; c.lineWidth = 3; c.beginPath();
     for (var sb = 0; sb <= sim.L; sb += 0.1) {
       var pb = tr.puntoEn(sb);
       if (sb === 0) c.moveTo(VX(pb.x), VY(pb.y)); else c.lineTo(VX(pb.x), VY(pb.y));
     }
     c.stroke(); c.restore();
 
-    function trazoConOffset(sIni, sFin, col, offPx) {
-      var dir = sFin >= sIni ? 1 : -1;
-      [[9, 0.2], [4.5, 1]].forEach(function (capa) {
+    function trazoContinuo(sIni, sFin, col) {
+      [[10, 0.22], [4.5, 1]].forEach(function (capa) {
         c.save(); c.globalAlpha = capa[1]; c.strokeStyle = col; c.lineWidth = capa[0]; c.lineCap = "round"; c.lineJoin = "round";
         c.beginPath();
-        var s = sIni, primero = true;
-        while ((dir > 0 && s <= sFin + 1e-6) || (dir < 0 && s >= sFin - 1e-6)) {
-          var sc = dir > 0 ? Math.min(s, sFin) : Math.max(s, sFin);
-          var p = tr.puntoEn(sc), ang = tr.rumboPistaGrados(Math.min(sc, sim.L - 0.01)) * Math.PI / 180;
-          var x = VX(p.x) - Math.sin(ang) * offPx, y = VY(p.y) - Math.cos(ang) * offPx;
-          if (primero) { c.moveTo(x, y); primero = false; } else c.lineTo(x, y);
-          s += dir * paso;
+        for (var s = sIni; s <= sFin + 1e-6; s += paso) {
+          var p = tr.puntoEn(Math.min(s, sFin));
+          if (s === sIni) c.moveTo(VX(p.x), VY(p.y)); else c.lineTo(VX(p.x), VY(p.y));
         }
+        var pFin = tr.puntoEn(sFin); c.lineTo(VX(pFin.x), VY(pFin.y));
         c.stroke(); c.restore();
       });
     }
-    function dibujaPcLineal(pc, col, offPx, ladoEtq) {
-      var p = tr.puntoEn(pc.posicionM), ang = tr.rumboPistaGrados(Math.min(pc.posicionM, sim.L - 0.01)) * Math.PI / 180;
-      var x = VX(p.x) - Math.sin(ang) * offPx, y = VY(p.y) - Math.cos(ang) * offPx;
+    function dibujaPcLineal(pc, col, ladoEtq) {
+      var sPos = Math.min(pc.posicionM, sim.L - 0.01);
+      var p = tr.puntoEn(sPos), ang = tr.rumboPistaGrados(sPos) * Math.PI / 180;
+      var x = VX(p.x), y = VY(p.y);
       c.fillStyle = PAL.fondo; c.strokeStyle = col; c.lineWidth = 2.5;
       c.fillRect(x - 6, y - 6, 12, 12); c.strokeRect(x - 6, y - 6, 12, 12);
-      var lx = x + Math.sin(ang) * (20 * ladoEtq), ly = y + Math.cos(ang) * (20 * ladoEtq);
+      var lx = x + Math.sin(ang) * (22 * ladoEtq), ly = y + Math.cos(ang) * (22 * ladoEtq);
       c.font = "bold 10px JetBrains Mono, monospace"; c.textAlign = "center";
       var tw = c.measureText(pc.etiqueta).width + 8;
       c.fillStyle = "rgba(11,18,32,0.88)"; c.fillRect(lx - tw / 2, ly - 7, tw, 14);
       c.fillStyle = col; c.fillText(pc.etiqueta, lx, ly);
     }
 
-    var offIda = vistaL === "ambos" ? -5 : 0;
-    var offReg = vistaL === "ambos" ? 5 : 0;
     if (vistaL === "ida" || vistaL === "ambos") {
-      lin.segmentosIda.forEach(function (sg) { trazoConOffset(sg.desdeM, sg.hastaM, sg.color, offIda); });
-      lin.pcsIda.forEach(function (pc, idx) { dibujaPcLineal(pc, lin.segmentosIda[idx].color, offIda, -1); });
+      lin.segmentosIda.forEach(function (sg) { trazoContinuo(sg.desdeM, sg.hastaM, sg.color); });
+      lin.pcsIda.forEach(function (pc, idx) { dibujaPcLineal(pc, lin.segmentosIda[idx].color, 1); });
     }
     if (vistaL === "regreso" || vistaL === "ambos") {
-      lin.segmentosRegreso.forEach(function (sg) { trazoConOffset(sg.desdeM, sg.hastaM, sg.color, offReg); });
-      lin.pcsRegreso.forEach(function (pc, idx) { dibujaPcLineal(pc, lin.segmentosRegreso[idx].color, offReg, 1); });
+      lin.segmentosRegreso.forEach(function (sg) { trazoContinuo(sg.desdeM, sg.hastaM, sg.color); });
+      lin.pcsRegreso.forEach(function (pc, idx) { dibujaPcLineal(pc, lin.segmentosRegreso[idx].color, -1); });
     }
     c.font = "10.5px JetBrains Mono, monospace";
   }
