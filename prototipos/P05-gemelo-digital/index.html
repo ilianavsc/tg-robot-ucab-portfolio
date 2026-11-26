@@ -366,11 +366,36 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .seg-filtro button:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: -2px; }
 .nota-seg { margin: 0 0 6px; font-family: var(--font-mono); font-size: 11px; color: var(--s2-muted); }
 
-/* ---- Cajón · Bloque 1: registro del primer viaje (una fila por punto) ---- */
-.tabla-wrap { overflow-x: auto; max-height: 300px; overflow-y: auto; border: 1px solid var(--s2-borde); border-radius: 8px; background: var(--s2-bg); margin: 6px 0 8px; }
-.tabla-muestras { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--tg-dark-text); }
+/* ---- Cajón · Bloque 1: resumen visual del viaje (sin tabla ni scroll horizontal) ---- */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 6px 0 8px; }
+.kpi { background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; padding: 7px 9px; min-width: 0; }
+.kpi small { display: block; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--s2-muted); }
+.kpi strong { display: block; font-family: var(--font-mono); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tg-dark-text-strong); line-height: 1.25; overflow-wrap: anywhere; }
+.kpi strong small { display: inline; font-size: 11px; letter-spacing: 0; text-transform: none; margin-left: 3px; }
+.kpi em { display: block; font-style: normal; font-family: var(--font-mono); font-size: 10px; color: var(--s2-muted); overflow-wrap: anywhere; }
+.perfil { background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; padding: 6px 8px 4px; margin: 0 0 6px; }
+.perfil h4 { margin: 0 0 2px; font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tg-dark-accent); }
+.perfil svg { display: block; width: 100%; height: auto; }
+.perfil-leyenda { display: flex; flex-wrap: wrap; gap: 3px 10px; font-family: var(--font-mono); font-size: 9.5px; color: var(--s2-muted); margin: 2px 0 0; }
+.perfil-leyenda i { display: inline-block; width: 10px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.reg-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.reg-acciones .b { flex: 1 1 160px; text-align: center; }
+
+/* ---- Modal amplio «Datos exactos»: todas las columnas sin recortes ---- */
+.modal-datos-fondo { position: fixed; inset: 0; z-index: 80; background: rgba(2, 6, 23, 0.7); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.modal-datos-fondo[hidden] { display: none; }
+.modal-datos {
+  width: min(1120px, 100%); max-height: calc(100dvh - 32px); display: flex; flex-direction: column;
+  background: var(--s2-surf); color: var(--s2-txt); border: 1.5px solid var(--s2-borde); border-radius: 14px; box-shadow: 0 20px 50px rgba(2, 6, 23, 0.7);
+}
+.modal-datos-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: var(--s2-surf2); border-bottom: 1px solid var(--s2-borde); border-radius: 14px 14px 0 0; }
+.modal-datos-cab h2 { margin: 0; font-family: var(--font-display); font-size: 16px; font-weight: 800; color: #fff; }
+.modal-datos-cuerpo { padding: 10px 14px 14px; overflow-y: auto; overflow-x: hidden; min-height: 0; }
+.modal-datos .nota { margin: 0 0 6px; font-family: var(--font-mono); font-size: 11px; color: var(--s2-muted); overflow-wrap: anywhere; }
+.tabla-wrap { border: 1px solid var(--s2-borde); border-radius: 8px; background: var(--s2-bg); margin: 6px 0 0; }
+.tabla-muestras { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--tg-dark-text); }
 .tabla-muestras th, .tabla-muestras td { padding: 5px 6px; text-align: right; white-space: nowrap; border-bottom: 1px solid rgba(51, 65, 85, 0.6); }
-.tabla-muestras th { position: sticky; top: 0; background: var(--s2-surf2); color: var(--s2-muted); font-weight: 700; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+.tabla-muestras th { position: sticky; top: 0; background: var(--s2-surf2); color: var(--s2-muted); font-weight: 700; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; }
 .tabla-muestras td:first-child, .tabla-muestras th:first-child { text-align: center; color: var(--tg-dark-accent); }
 .tabla-muestras td.tcrt-c { text-align: center; letter-spacing: 0.06em; }
 .tabla-muestras tr.final td { color: var(--tg-dark-ok); }
@@ -380,6 +405,25 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .tabla-muestras tr.seg-s2 td:first-child { box-shadow: inset 3px 0 0 var(--seg2); }
 .tabla-muestras tr.seg-s3 td:first-child { box-shadow: inset 3px 0 0 var(--seg3); }
 .tabla-muestras .vacia td { text-align: center; color: var(--s2-muted); white-space: normal; padding: 12px 8px; }
+/* Móvil: cada fila es una tarjeta con etiquetas (sin scroll horizontal ni texto cortado) */
+@media (max-width: 760px) {
+  .modal-datos-fondo { padding: 0; align-items: stretch; }
+  .modal-datos { width: 100%; max-height: 100dvh; border-radius: 0; }
+  .modal-datos-cab { border-radius: 0; }
+  .tabla-muestras thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tabla-muestras, .tabla-muestras tbody { display: block; }
+  .tabla-muestras tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 10px; padding: 7px 9px; border-bottom: 1px solid var(--s2-borde); }
+  .tabla-muestras tr[hidden] { display: none; }
+  .tabla-muestras td { display: flex; justify-content: space-between; gap: 6px; padding: 2px 0; border: none; text-align: right; white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+  .tabla-muestras td::before { content: attr(data-label); color: var(--s2-muted); text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; flex: none; }
+  .tabla-muestras td.col-ancha { grid-column: 1 / -1; }
+  .tabla-muestras td:first-child { justify-content: flex-start; font-weight: 700; }
+  .tabla-muestras:not(.con-seg) td.col-seg { display: none; }
+  .tabla-muestras tr.seg-s1 td:first-child, .tabla-muestras tr.seg-s2 td:first-child, .tabla-muestras tr.seg-s3 td:first-child { box-shadow: none; }
+  .tabla-muestras tr.seg-s1 { box-shadow: inset 3px 0 0 var(--seg1); } .tabla-muestras tr.seg-s2 { box-shadow: inset 3px 0 0 var(--seg2); } .tabla-muestras tr.seg-s3 { box-shadow: inset 3px 0 0 var(--seg3); }
+  .tabla-muestras .vacia { display: block; } .tabla-muestras .vacia td { display: block; }
+  .tabla-muestras .vacia td::before { content: none; }
+}
 
 /* ---- Cajón · Bloque 2: consola de sensores en vivo (paleta oscura de P02) ---- */
 .consola-grupo { border-top: 1px solid var(--s2-borde); padding-top: 8px; margin-top: 8px; }
@@ -564,23 +608,22 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         <span class="seg-pill" id="reg-estado">Sin iniciar</span>
       </div>
       <p class="nota-paredes" id="nota-paredes" data-solo-fase="1"><strong>Escaneo administrado (pista despejada):</strong> las lecturas ultrasónicas registradas en este viaje se guardan como paredes de referencia para evitar falsos positivos durante la operación normal. En recorridos sucesivos sobre la misma ruta, el robot refina progresivamente su comprensión del entorno fijo.</p>
-      <p class="nota-seg" id="nota-seg" data-solo-fase="2" hidden>Cada fila lleva su segmento (S1 · S2 · S3) con el mismo color del mapa.</p>
-      <div class="seg-filtro" id="seg-filtro" data-solo-fase="2" hidden role="group" aria-label="Filtrar filas por segmento">
-        <button type="button" data-seg-filtro="todos" aria-pressed="true">Todos</button>
-        <button type="button" data-seg-filtro="S1" aria-pressed="false"><i class="seg-sw s1" aria-hidden="true"></i>S1</button>
-        <button type="button" data-seg-filtro="S2" aria-pressed="false"><i class="seg-sw s2" aria-hidden="true"></i>S2</button>
-        <button type="button" data-seg-filtro="S3" aria-pressed="false"><i class="seg-sw s3" aria-hidden="true"></i>S3</button>
+      <p class="nota-seg" id="nota-seg" data-solo-fase="2" hidden>Resumen por tramo con los colores del mapa (S1 · S2 · S3); la tabla completa está en «Datos exactos».</p>
+      <p class="nota" id="reg-resumen" style="margin:0">Una fila cada 2 s: tiempo, pose y distancia recorrida, la lectura instantánea de los sensores y el perfil de paredes (HC-SR04P) como línea base.</p>
+      <!-- Resumen visual (vista por defecto): 4 KPIs + perfil TCRT / paredes de referencia -->
+      <div class="kpi-grid" id="reg-kpis" aria-label="Resumen del viaje actual">
+        <div class="kpi"><small>Muestras</small><strong id="kpi-n">0</strong><em id="kpi-n-det">1 cada 2 s</em></div>
+        <div class="kpi"><small>Distancia total</small><strong id="kpi-d">0,00<small>m</small></strong><em id="kpi-d-det">de 9,00 m</em></div>
+        <div class="kpi"><small>Tiempo</small><strong id="kpi-t">0,0<small>s</small></strong><em id="kpi-t-det">—</em></div>
+        <div class="kpi"><small>Velocidad</small><strong id="kpi-v">0,00<small>m/s</small></strong><em id="kpi-v-det">media del viaje</em></div>
       </div>
-      <p class="nota" id="reg-resumen">Una fila cada 2 s: tiempo, pose y distancia recorrida, la lectura instantánea de los sensores y el perfil de paredes (HC-SR04P) como línea base.</p>
-      <div class="tabla-wrap">
-        <table class="tabla-muestras" id="tabla-muestras">
-          <thead>
-            <tr><th scope="col">#</th><th scope="col" class="col-seg">Seg.</th><th scope="col">t (s)</th><th scope="col">s (m)</th><th scope="col">Pose x, y (m) · θ</th><th scope="col">TCRT</th><th scope="col" class="paredes" title="HC-SR04P frontal / trasero guardados como perfil de paredes de referencia (línea base)">Paredes ref. F / A (cm)</th><th scope="col">Yaw</th><th scope="col">v (m/s)</th></tr>
-          </thead>
-          <tbody id="reg-filas"><tr class="vacia"><td colspan="9">Sin muestras: inicia el primer escaneo.</td></tr></tbody>
-        </table>
-      </div>
-      <div class="fila">
+      <figure class="perfil" style="margin:0 0 6px">
+        <h4>Perfil del recorrido · TCRT5000 y paredes de referencia</h4>
+        <svg id="perfil-svg" viewBox="0 0 320 128" role="img" aria-label="Perfil del recorrido: estabilidad sobre la línea (TCRT5000) y paredes de referencia (HC-SR04P) a lo largo de la ruta"></svg>
+        <figcaption class="perfil-leyenda" id="perfil-leyenda"></figcaption>
+      </figure>
+      <div class="reg-acciones">
+        <button class="b info" id="btn-datos-exactos" type="button" aria-haspopup="dialog" aria-controls="modal-datos">🔍 Ver datos exactos</button>
         <button class="b aviso" id="btn-limpiar-viaje" type="button">♻ Limpiar y reiniciar viaje</button>
       </div>
     </section>
@@ -622,6 +665,33 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   </div>
 </aside>
 
+<!-- Modal amplio «Datos exactos»: la tabla completa del viaje (todas las columnas, filtro por segmento) -->
+<div class="modal-datos-fondo" id="modal-datos-fondo" hidden>
+  <div class="modal-datos" id="modal-datos" role="dialog" aria-modal="true" aria-labelledby="t-datos-exactos">
+    <div class="modal-datos-cab">
+      <h2 id="t-datos-exactos">Datos exactos · registro del viaje</h2>
+      <button type="button" class="cajon-cerrar" id="btn-datos-cerrar" aria-label="Cerrar datos exactos">✕</button>
+    </div>
+    <div class="modal-datos-cuerpo">
+      <p class="nota" id="datos-resumen">Una fila cada 2 s.</p>
+      <div class="seg-filtro" id="seg-filtro" data-solo-fase="2" hidden role="group" aria-label="Filtrar filas por segmento">
+        <button type="button" data-seg-filtro="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-seg-filtro="S1" aria-pressed="false"><i class="seg-sw s1" aria-hidden="true"></i>S1</button>
+        <button type="button" data-seg-filtro="S2" aria-pressed="false"><i class="seg-sw s2" aria-hidden="true"></i>S2</button>
+        <button type="button" data-seg-filtro="S3" aria-pressed="false"><i class="seg-sw s3" aria-hidden="true"></i>S3</button>
+      </div>
+      <div class="tabla-wrap">
+        <table class="tabla-muestras" id="tabla-muestras">
+          <thead>
+            <tr><th scope="col">#</th><th scope="col" class="col-seg">Segmento</th><th scope="col">t (s)</th><th scope="col">s (m)</th><th scope="col">Pose x, y (m) · θ</th><th scope="col">TCRT</th><th scope="col" class="paredes" title="HC-SR04P frontal / trasero guardados como perfil de paredes de referencia (línea base)">Paredes ref. F / A (cm)</th><th scope="col">Yaw</th><th scope="col">v (m/s)</th></tr>
+          </thead>
+          <tbody id="reg-filas"><tr class="vacia"><td colspan="9">Sin muestras: inicia el primer escaneo.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer id="pie"></footer>
 
 <script src="../../datos/proyecto.js"></script>
@@ -657,7 +727,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   /* Fases: 1 = Escaneo 1 · Muestreo base · 2 = Escaneo 2 · Ruta con 3 segmentos; cada una conserva su registro */
   var FS = SE.crearEstado(PE), reg = SE.registroActual(FS);
   var CFG = { 1: SE.configFase(1, window.TG_ROBOT, PE), 2: SE.configFase(2, window.TG_ROBOT, PE) };
-  var COL_SEG = { S1: PAL.seg1, S2: PAL.seg2, S3: PAL.seg3 }, filtroSeg = "todos";
+  var COL_SEG = { S1: PAL.seg1, S2: PAL.seg2, S3: PAL.seg3 }, filtroSeg = "todos", modalAbierto = false;
   var avisoEl = $("aviso-carga");
   var nucleo = null, canonica = null, sim1 = null, pistaObj = null, tr = null, sim = null;
   var corriendo = false, velSim = 1, ultimoFrame = 0, acum = 0, ultimoDom = 0, filasPintadas = 0;
@@ -882,7 +952,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("btn-ing").addEventListener("click", function () { abrirCajon(!cajonAbierto); });
     $("btn-cajon-cerrar").addEventListener("click", function () { abrirCajon(false); });
     $("cajon-backdrop").addEventListener("click", function () { abrirCajon(false); });
-    window.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && cajonAbierto) abrirCajon(false); });
+    window.addEventListener("keydown", function (ev) {
+      if (ev.key !== "Escape") return;
+      if (modalAbierto) abrirModalDatos(false); else if (cajonAbierto) abrirCajon(false);
+    });
+    $("btn-datos-exactos").addEventListener("click", function () { abrirModalDatos(true); });
+    $("btn-datos-cerrar").addEventListener("click", function () { abrirModalDatos(false); });
+    $("modal-datos-fondo").addEventListener("click", function (ev) { if (ev.target === $("modal-datos-fondo")) abrirModalDatos(false); });
     Array.prototype.forEach.call(document.querySelectorAll("[data-pista]"), function (b) {
       b.addEventListener("click", function () { cargarPista(b.getAttribute("data-pista")); });
     });
@@ -925,17 +1001,23 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
 
   function filaHtml(m) {
-    var us = (m.frente_cm === null ? "—" : fmt(m.frente_cm, 0)) + " / " + fmt(m.atras_cm, 0);
+    var us = (m.frente_cm === null ? "sin eco" : fmt(m.frente_cm, 0)) + " / " + fmt(m.atras_cm, 0);
     var seg = FS.fase === 2 && m.seg ? m.seg : null;
     var cls = (m.final ? "final" : "") + (seg ? " seg-" + seg.toLowerCase() : "");
     var oculto = seg && filtroSeg !== "todos" && filtroSeg !== seg ? " hidden" : "";
-    return "<tr" + (cls.trim() ? ' class="' + cls.trim() + '"' : "") + (seg ? ' data-seg="' + seg + '"' : "") + oculto + "><td>" + m.n + "</td>" +
-      '<td class="col-seg">' + (seg ? '<span class="seg-chip ' + seg.toLowerCase() + '">' + seg + "</span>" : "") + "</td><td>" + fmt(m.t_s, 1) + "</td><td>" + fmt(m.s_m, 2) +
-      "</td><td>" + fmt(m.x, 2) + ", " + fmt(m.y, 2) + " · " + fmt(m.angulo, 0) + "°</td><td class=\"tcrt-c\">" + m.tcrt.join("") +
-      "</td><td class=\"paredes\">" + us + "</td><td>" + fmt(m.yaw_deg, 1) + "°</td><td>" + fmt(m.v_ms, 2) + "</td></tr>";
+    return "<tr" + (cls.trim() ? ' class="' + cls.trim() + '"' : "") + (seg ? ' data-seg="' + seg + '"' : "") + oculto + '><td data-label="#">' + m.n + "</td>" +
+      '<td class="col-seg" data-label="Segmento">' + (seg ? '<span class="seg-chip ' + seg.toLowerCase() + '">' + seg + "</span>" : "") + '</td><td data-label="t (s)">' + fmt(m.t_s, 1) + '</td><td data-label="s (m)">' + fmt(m.s_m, 2) +
+      '</td><td class="col-ancha" data-label="Pose x, y · θ">' + fmt(m.x, 2) + ", " + fmt(m.y, 2) + " · " + fmt(m.angulo, 0) + '°</td><td class="tcrt-c" data-label="TCRT">' + m.tcrt.join("") +
+      '</td><td class="paredes col-ancha" data-label="Paredes ref. F / A">' + us + ' cm</td><td data-label="Yaw">' + fmt(m.yaw_deg, 1) + '°</td><td data-label="v (m/s)">' + fmt(m.v_ms, 2) + "</td></tr>";
   }
   function refrescarRegistro() {
-    var tb = $("reg-filas"), ms = reg.muestras;
+    var ms = reg.muestras;
+    if (modalAbierto) refrescarTabla(ms);
+    refrescarResumenVisual(ms);
+    refrescarTextosRegistro(ms);
+  }
+  function refrescarTabla(ms) {
+    var tb = $("reg-filas");
     if (!ms.length) {
       if (filasPintadas !== 0 || tb.textContent.indexOf(FS.fase === 2 ? "segundo" : "primer") < 0) { tb.innerHTML = '<tr class="vacia"><td colspan="9">Sin muestras: inicia el ' + (FS.fase === 2 ? "segundo" : "primer") + ' escaneo.</td></tr>'; filasPintadas = 0; }
     } else if (filasPintadas < 0 || filasPintadas > ms.length) {
@@ -946,19 +1028,84 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       if (ms[ms.length - 1].final && tb.lastElementChild && !tb.lastElementChild.classList.contains("final")) tb.lastElementChild.classList.add("final");
       filasPintadas = ms.length;
     }
+  }
+  function refrescarTextosRegistro(ms) {
     var st = $("reg-estado");
     st.textContent = reg.activo ? (corriendo ? "Escaneando" : "En pausa") : (reg.completo ? "Completo" : (reg.motivo ? "Interrumpido" : "Sin iniciar"));
     st.className = "seg-pill" + (reg.activo ? " activo" : (reg.completo ? " ok" : ""));
     if (FS.fase === 2) {
       var rs = SE.resumenPorSegmento(ms);
-      $("reg-resumen").textContent = ms.length
+      $("reg-resumen").textContent = $("datos-resumen").textContent = ms.length
         ? "Pista " + reg.pista + " · " + ms.length + " muestra(s) · S1 " + rs.S1 + " · S2 " + rs.S2 + " · S3 " + rs.S3 + " · último punto s = " + fmt(ms[ms.length - 1].s_m, 2) + " m · crucero " + fmt(CFG[2].velMs, 2) + " m/s"
         : "Una fila cada 2 s, etiquetada con su segmento (S1 · S2 · S3): sensores y paredes de referencia por tramo.";
       return;
     }
-    $("reg-resumen").textContent = ms.length
+    $("reg-resumen").textContent = $("datos-resumen").textContent = ms.length
       ? "Pista " + reg.pista + " · " + ms.length + " muestra(s) · último punto t = " + fmt(ms[ms.length - 1].t_s, 1) + " s, s = " + fmt(ms[ms.length - 1].s_m, 2) + " m · escaneo a " + fmt(VEL.lentaMs, 2) + " m/s · perfil de paredes de referencia: " + PE.perfilParedes(reg).length + " puntos de línea base"
       : "Una fila cada 2 s: tiempo, pose y distancia recorrida, la lectura instantánea de los sensores y el perfil de paredes (HC-SR04P) como línea base.";
+  }
+
+  /* Resumen visual: 4 KPIs + perfil SVG (estabilidad TCRT5000 y paredes de referencia HC-SR04P a lo largo de s) */
+  function estabilidadTcrt(b) {
+    if (!(b[0] || b[1] || b[2] || b[3])) return 0;          /* sin línea */
+    return (b[1] || b[2]) && !b[0] && !b[3] ? 2 : 1;       /* 2 = centrada · 1 = corrigiendo */
+  }
+  function refrescarResumenVisual(ms) {
+    var n = ms.length, ult = n ? ms[n - 1] : null, L = sim.L, fase2 = FS.fase === 2;
+    var tS = reg.activo ? sim.t - reg.t0 : (n ? reg.tFinS : 0), dist = ult ? Math.max(ult.s_m, reg.activo ? sim.s : 0) : 0;
+    $("kpi-n").textContent = String(n);
+    $("kpi-n-det").textContent = fase2 && n ? (function (r) { return "S1 " + r.S1 + " · S2 " + r.S2 + " · S3 " + r.S3; })(SE.resumenPorSegmento(ms)) : "1 cada 2 s";
+    $("kpi-d").innerHTML = fmt(dist, 2) + "<small>m</small>";
+    $("kpi-d-det").textContent = "de " + fmt(L, 2) + " m · " + Math.round(Math.min(1, dist / L) * 100) + " %";
+    $("kpi-t").innerHTML = fmt(tS, 1) + "<small>s</small>";
+    $("kpi-t-det").textContent = reg.completo ? "viaje completo" : (reg.activo ? (corriendo ? "en curso" : "en pausa") : "sin iniciar");
+    $("kpi-v").innerHTML = fmt(tS > 0.5 ? dist / tS : 0, 2) + "<small>m/s</small>";
+    $("kpi-v-det").textContent = "media · consigna " + fmt(CFG[FS.fase].velMs, 2) + " m/s";
+    $("perfil-svg").innerHTML = perfilSvg(ms, L, fase2);
+    $("perfil-leyenda").innerHTML = fase2
+      ? '<span><i style="background:' + PAL.seg1 + '"></i>S1</span><span><i style="background:' + PAL.seg2 + '"></i>S2</span><span><i style="background:' + PAL.seg3 + '"></i>S3</span><span>barra alta = centrada · media = corrigiendo · baja = sin línea</span>'
+      : '<span><i style="background:' + PAL.ok + '"></i>TCRT centrada</span><span><i style="background:' + PAL.aviso + '"></i>corrigiendo</span><span><i style="background:' + PAL.fallo + '"></i>sin línea</span><span><i style="background:' + PAL.acento + '"></i>pared F</span><span><i style="background:' + PAL.muted + '"></i>pared A</span>';
+  }
+  function perfilSvg(ms, L, fase2) {
+    var X0 = 30, X1 = 314, W = X1 - X0, TA = 12, TB = 40, PA = 54, PB = 112, CM = 200;
+    var X = function (sM) { return X0 + Math.max(0, Math.min(1, sM / L)) * W; };
+    var Y = function (cm) { return PB - Math.min(cm, CM) / CM * (PB - PA); };
+    var colEst = [PAL.fallo, PAL.aviso, PAL.ok], alto = [0.3, 0.62, 1], out = [], i;
+    out.push('<rect x="' + X0 + '" y="' + TA + '" width="' + W + '" height="' + (TB - TA) + '" fill="' + PAL.realce + '" rx="3"/>');
+    out.push('<rect x="' + X0 + '" y="' + PA + '" width="' + W + '" height="' + (PB - PA) + '" fill="' + PAL.realce + '" rx="3"/>');
+    if (fase2) SE.segmentos(L).forEach(function (sg) {
+      out.push('<rect x="' + X(sg.desdeM).toFixed(1) + '" y="' + PA + '" width="' + (X(sg.hastaM) - X(sg.desdeM)).toFixed(1) + '" height="' + (PB - PA) + '" fill="' + COL_SEG[sg.id] + '" fill-opacity="0.1"/>');
+      out.push('<text x="' + ((X(sg.desdeM) + X(sg.hastaM)) / 2).toFixed(1) + '" y="' + (PB + 9) + '" fill="' + COL_SEG[sg.id] + '" font-size="8" text-anchor="middle" font-weight="700">' + sg.id + '</text>');
+      if (sg.hastaM < L - 1e-6) out.push('<line x1="' + X(sg.hastaM).toFixed(1) + '" x2="' + X(sg.hastaM).toFixed(1) + '" y1="' + (TA - 2) + '" y2="' + PB + '" stroke="' + COL_SEG[sg.id] + '" stroke-width="1"/>');
+    });
+    /* Carril TCRT: una barra por muestra, desde su s hasta la siguiente; altura = estabilidad */
+    for (i = 0; i < ms.length; i++) {
+      var m = ms[i], sIni = m.s_m, sFin = i + 1 < ms.length ? ms[i + 1].s_m : sIni + 0.05, e = estabilidadTcrt(m.tcrt);
+      var h = (TB - TA) * alto[e], col = fase2 && m.seg ? COL_SEG[m.seg] : colEst[e];
+      out.push('<rect x="' + X(sIni).toFixed(1) + '" y="' + (TB - h).toFixed(1) + '" width="' + Math.max(1.5, X(sFin) - X(sIni) - 0.6).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + col + '"' + (fase2 && e < 2 ? ' fill-opacity="0.55"' : "") + "/>");
+    }
+    /* Carril paredes: trasero (línea) y frontal (puntos; sin eco = anillo arriba) */
+    if (ms.length > 1) out.push('<polyline fill="none" stroke="' + PAL.muted + '" stroke-width="1.5" points="' + ms.map(function (m) { return X(m.s_m).toFixed(1) + "," + Y(m.paredes_ref ? m.paredes_ref.atras_cm : m.atras_cm).toFixed(1); }).join(" ") + '"/>');
+    ms.forEach(function (m) {
+      var f = m.paredes_ref ? m.paredes_ref.frente_cm : m.frente_cm, col = fase2 && m.seg ? COL_SEG[m.seg] : PAL.acento;
+      out.push(f === null
+        ? '<circle cx="' + X(m.s_m).toFixed(1) + '" cy="' + (PA + 3) + '" r="2.2" fill="none" stroke="' + col + '" stroke-width="1"/>'
+        : '<circle cx="' + X(m.s_m).toFixed(1) + '" cy="' + Y(f).toFixed(1) + '" r="2.4" fill="' + col + '"/>');
+    });
+    out.push('<text x="2" y="' + ((TA + TB) / 2 + 3) + '" fill="' + PAL.muted + '" font-size="8">TCRT</text>');
+    out.push('<text x="2" y="' + (PA + 6) + '" fill="' + PAL.muted + '" font-size="7.5">200+</text><text x="2" y="' + (PB) + '" fill="' + PAL.muted + '" font-size="7.5">0 cm</text>');
+    out.push('<text x="2" y="' + ((PA + PB) / 2 + 3) + '" fill="' + PAL.muted + '" font-size="7.5">pared</text>');
+    out.push('<text x="' + X0 + '" y="' + (PB + 9) + '" fill="' + PAL.muted + '" font-size="8">0 m</text><text x="' + X1 + '" y="' + (PB + 9) + '" fill="' + PAL.muted + '" font-size="8" text-anchor="end">' + fmt(L, 2) + ' m</text>');
+    if (!ms.length) out.push('<text x="' + (X0 + W / 2) + '" y="' + ((PA + PB) / 2 + 3) + '" fill="' + PAL.muted + '" font-size="9" text-anchor="middle">sin muestras todavía</text>');
+    return out.join("");
+  }
+
+  function abrirModalDatos(abrir) {
+    modalAbierto = Boolean(abrir);
+    $("modal-datos-fondo").hidden = !modalAbierto;
+    $("btn-datos-exactos").setAttribute("aria-expanded", String(modalAbierto));
+    if (modalAbierto) { filasPintadas = -1; refrescarRegistro(); $("btn-datos-cerrar").focus(); }
+    else $("btn-datos-exactos").focus();
   }
 
   function refrescarDom(forzar) {
@@ -1011,7 +1158,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("btn-principal-ctx").className = "btn-ctx" + (reg.completo && !reg.activo ? " ok" : "");
     $("btn-encender").setAttribute("aria-pressed", String(corriendo));
     $("btn-encender-txt").textContent = corriendo ? "⏹ Detener" : "⚡ Encender";
-    if (cajonAbierto) refrescarRegistro();
+    if (cajonAbierto || modalAbierto) refrescarRegistro();
   }
 
   /* ---- 5) Dibujo: piso acotado + UN PUNTO DISCRETO por muestra (sin línea de recorrido) ---- */
@@ -1158,7 +1305,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.font = "10.5px JetBrains Mono, monospace";
   }
 
-  window.__p05 = { get sim() { return sim; }, get reg() { return reg; }, get fase() { return FS.fase; }, registros: FS.registros, get corriendo() { return corriendo; }, cambiarFase: function (f) { cambiarFase(f); }, VEL: VEL, cargarPista: function (id) { cargarPista(id); }, refrescar: refrescarDom };
+  window.__p05 = { get sim() { return sim; }, get reg() { return reg; }, get fase() { return FS.fase; }, registros: FS.registros, get corriendo() { return corriendo; }, get modalAbierto() { return modalAbierto; }, cambiarFase: function (f) { cambiarFase(f); }, VEL: VEL, cargarPista: function (id) { cargarPista(id); }, refrescar: refrescarDom };
 })();
 </script>
 </body>

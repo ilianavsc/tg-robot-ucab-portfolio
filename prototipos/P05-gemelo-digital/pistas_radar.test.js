@@ -720,8 +720,10 @@ module.exports = async function (ctx) {
     assert.ok(cajon.includes('id="nota-paredes"') && cajon.includes("Escaneo administrado (pista despejada):") &&
       cajon.includes("se guardan como paredes de referencia para evitar falsos positivos durante la operación normal") &&
       cajon.includes("el robot refina progresivamente su comprensión del entorno fijo"), "nota técnica de paredes de referencia");
-    assert.ok(/Paredes ref\. F \/ A/.test(cajon) && /línea base/.test(cajon), "el registro etiqueta los HC-SR04P como línea base de paredes");
-    for (const id of ["nota-paredes", "reg-filas", "btn-limpiar-viaje", "tcrt-bin", "us-frente", "us-atras", "mpu-rumbo", "mpu-omega", "mov-vel", "mov-pwm"]) assert.ok(cajon.includes('id="' + id + '"'), "falta #" + id);
+    const modal = html.slice(html.indexOf('id="modal-datos-fondo"'), html.indexOf("<footer"));
+    assert.ok(/Paredes ref\. F \/ A/.test(modal) && /línea base/.test(cajon), "el registro etiqueta los HC-SR04P como línea base de paredes");
+    assert.ok(modal.includes('id="reg-filas"'), "la tabla completa vive en el modal de datos exactos");
+    for (const id of ["nota-paredes", "btn-limpiar-viaje", "tcrt-bin", "us-frente", "us-atras", "mpu-rumbo", "mpu-omega", "mov-vel", "mov-pwm"]) assert.ok(cajon.includes('id="' + id + '"'), "falta #" + id);
   });
 
   /* ---- Segundo escaneo: ruta con 3 segmentos a color y 3 puntos de control ---- */
@@ -800,5 +802,21 @@ module.exports = async function (ctx) {
     for (const f of ["todos", "S1", "S2", "S3"]) assert.ok(html.includes('data-seg-filtro="' + f + '"'), "falta filtro " + f);
     assert.ok(html.includes('class="col-seg"') && /seg-chip/.test(html) && /data-seg=/.test(html));
     assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b|colocarObstaculo/i.test(html), "sin torretas ni obstáculos en ninguna fase");
+  });
+
+  await prueba("Registro del viaje: resumen visual por defecto (4 KPIs + perfil SVG TCRT/paredes) y modal «Datos exactos» con todas las columnas, filtro por segmento y tarjetas en móvil", () => {
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    const cajon = html.slice(html.indexOf('id="cajon-ing"'), html.indexOf("</aside>", html.indexOf('id="cajon-ing"')));
+    const modal = html.slice(html.indexOf('id="modal-datos-fondo"'), html.indexOf("<footer"));
+    assert.ok(!cajon.includes("<table"), "el cajón ya no muestra la tabla apretada");
+    for (const id of ["reg-kpis", "kpi-n", "kpi-d", "kpi-t", "kpi-v", "perfil-svg", "perfil-leyenda", "btn-datos-exactos", "btn-limpiar-viaje"]) assert.ok(cajon.includes('id="' + id + '"'), "falta #" + id + " en el resumen");
+    assert.strictEqual((cajon.match(/class="kpi"/g) || []).length, 4, "grid 2×2 de KPIs");
+    assert.ok(/\.kpi-grid\s*\{[^}]*repeat\(2,/.test(html), "KPIs en 2 columnas");
+    assert.ok(/id="modal-datos-fondo"[^>]*hidden/.test(html) && /role="dialog" aria-modal="true"/.test(modal), "modal cerrado por defecto");
+    for (const col of ["#", "Segmento", "t (s)", "s (m)", "Pose x, y (m) · θ", "TCRT", "Paredes ref. F / A (cm)"]) assert.ok(modal.includes(">" + col + "</th>"), "falta la columna " + col);
+    for (const f of ["todos", "S1", "S2", "S3"]) assert.ok(modal.includes('data-seg-filtro="' + f + '"'), "filtro " + f + " dentro de Datos exactos");
+    assert.ok(/\.modal-datos-cuerpo\s*\{[^}]*overflow-x:\s*hidden/.test(html), "el modal no hace scroll horizontal");
+    assert.ok(/td::before\s*\{[^}]*content:\s*attr\(data-label\)/.test(html) && /data-label="Paredes ref\. F \/ A"/.test(html), "tarjetas con etiquetas en móvil");
+    assert.ok(/function perfilSvg/.test(html) && /COL_SEG\[m\.seg\]/.test(html.slice(html.indexOf("function perfilSvg"))), "el perfil usa los colores S1/S2/S3 en el Escaneo 2");
   });
 };

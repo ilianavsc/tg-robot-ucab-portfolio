@@ -37,14 +37,11 @@ Un selector arriba del cockpit alterna entre **Escaneo 1 · Muestreo base** (igu
 | ⇒ **Escaneo lento 0,228 m/s** | 0,40 × 0,57 (`primer_escaneo.js → velocidades()`) |
 
 ## Ingeniería / Datos (2 bloques)
-1. **Registro del primer viaje:** una fila cada 2 s con:
-   - `t`;
-   - `s` (distancia recorrida);
-   - pose `x, y, θ`;
-   - 4 × TCRT5000;
-   - HC-SR04P frontal y trasero como **paredes de referencia (línea base)**;
-   - yaw de la MPU-6050;
-   - velocidad.
+1. **Registro del viaje.** Por defecto muestra un **resumen visual**, sin tabla ni scroll horizontal:
+   - **4 KPIs en 2×2:** muestras, distancia total, tiempo y velocidad media.
+   - **Perfil SVG del recorrido:** estabilidad de los 4 × TCRT5000 (barra alta = centrada, media = corrigiendo, baja = sin línea) y la línea base de paredes de los HC-SR04P a lo largo de `s`. En el Escaneo 2 usa los colores de S1, S2 y S3.
+   - **Botones:** **🔍 Ver datos exactos** y **♻ Limpiar y reiniciar viaje**.
+   - **Modal «Datos exactos»:** la tabla completa del viaje, una fila cada 2 s, con todas las columnas sin recortes (`#`, `Segmento`, `t`, `s`, pose `x, y, θ`, `TCRT`, `Paredes ref. F / A`, yaw y velocidad) y el filtro **Todos · S1 · S2 · S3**. En móvil cada fila se muestra como tarjeta con sus etiquetas.
 2. **Consola de sensores en vivo:**
    - línea 4 × TCRT5000;
    - HC-SR04P frontal y trasero;
@@ -69,4 +66,4 @@ Un selector arriba del cockpit alterna entre **Escaneo 1 · Muestreo base** (igu
 | `pistas_sim1.js` | Adaptador de las pistas de SIM1 (κ(s), pose, rectitud) |
 | `radar_us.js` | Lógica del radar de P03 (cono, rampa, velocímetro) |
 | `gemelo_estado.js`, `aprendizaje_gemelo.js`, `capa3_operacional.js` | Módulos de fases posteriores (estado para la app, viajes de ajuste, Capa 3). La página no los carga; se conservan con sus pruebas. |
-| `simulador_movimiento.test.js`, `pistas_radar.test.js` | 61 pruebas en Node: `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` |
+| `simulador_movimiento.test.js`, `pistas_radar.test.js` | 62 pruebas en Node: `node prototipos/P05-gemelo-digital/simulador_movimiento.test.js` |
