@@ -27,6 +27,11 @@ Un selector arriba del cockpit alterna entre **Escaneo 1 · Muestreo base** (igu
 - **Ingeniería / Datos:** cada fila lleva un chip S1/S2/S3 con el color del mapa, y un filtro **Todos · S1 · S2 · S3**.
 - Sin torretas ni obstáculos simulados en ninguna fase.
 
+## Calibración (Escaneos 3–5), Operación MVP y Parada Programable
+- **Calibración · Escaneos 3–5:** 3 escaneos adicionales en pista despejada (sin obstáculos) que verifican y unifican el perfil por segmento (`S1`, `S2`, `S3`: distancia, estabilidad `TCRT5000`, paredes de referencia `HC-SR04P` y confianza `%`). Incluye botones de avance rápido (`Completar escaneo N/5` y `Completar 5/5`) además de la simulación paso a paso. Al llegar a `5/5` la ruta pasa a **`Calibrada · Lista para operación mínima (MVP)`**.
+- **Operación MVP (tras 5/5):** permite enviar misiones a `PC1`, `PC2` o `PC3`, habilita por primera vez el control de **Simular objeto** contrastando el eco `HC-SR04P` contra las paredes de referencia de cada segmento para evitar falsos positivos, y lleva un contador de **Viajes operativos verificados (`0/8` → `8/8`)** con botones auxiliares (`+1 viaje`, `Simular 8/8`).
+- **Parada programable (`viajesOperativos >= 8`):** bloqueada hasta completar 8 viajes verificados; al desbloquearse permite programar una parada exacta en `S1`, `S2` o `S3` (slider o clic sobre la ruta en el mapa), detener el robot en ese punto, registrarlo en consola y en **Datos exactos**, y reanudar al destino o volver a Base.
+
 ## Velocidad de referencia (valores reales, sin inventar)
 | Valor | Origen |
 |---|---|

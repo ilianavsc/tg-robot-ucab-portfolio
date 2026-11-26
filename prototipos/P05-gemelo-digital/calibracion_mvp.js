@@ -1,0 +1,412 @@
+/* ==========================================================================
+ * P05 · Gemelo Digital · Calibración (Escaneos 3–5), Operación MVP y Parada Programable
+ * --------------------------------------------------------------------------
+ * Extiende Escaneo 1 (primer_escaneo.js) y Escaneo 2 (segundo_escaneo.js) sin
+ * modificar su comportamiento ni reimplementar la máquina de estados teach-and-repeat:
+ *
+ *  · Fase 3 (Calibración · Escaneos 3, 4 y 5 en pista despejada):
+ *    Verifica cada escaneo contra los viajes previos y unifica el perfil por
+ *    segmento (S1, S2, S3): distancia, estabilidad TCRT5000, paredes de
+ *    referencia HC-SR04P y confianza (%). Al completar el Escaneo 5/5 marca la
+ *    ruta como "Calibrada · Lista para operación mínima (MVP)".
+ *
+ *  · Fase 4 (Operación MVP · habilitada tras 5/5):
+ *    Permite enviar misiones a PC1, PC2 o PC3 y habilita por primera vez el
+ *    control de obstáculos reales. Contrasta el eco HC-SR04P contra el perfil
+ *    unificado de paredes fijas del segmento para distinguir un objeto real de
+ *    una pared de referencia. Cuenta viajes operativos verificados (0/8 → 8/8).
+ *
+ *  · Parada programable (desbloqueada con viajesOperativos >= 8):
+ *    Permite fijar una parada exacta en S1, S2 o S3 (porcentaje/metros o clic
+ *    en mapa), detener el robot en ese punto, registrarlo y reanudar o volver a Base.
+ *
+ * Sin DOM: window.CalibracionMVP en la página, require() en Node.
+ * ========================================================================== */
+(function (raiz, fabrica) {
+  var M = fabrica();
+  if (typeof module === "object" && module.exports) module.exports = M;
+  else raiz.CalibracionMVP = M;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  var C = Object.freeze({
+    TOTAL_ESCANEOS: 5,
+    META_VIAJES_PARADA: 8,
+    TOLERANCIA_PARED_CM: 12,
+    UMBRAL_CRITICO_CM: 20,
+    UMBRAL_PRECAUCION_CM: 50,
+    PARADA_TOLERANCIA_M: 0.08
+  });
+
+  var FASES_EXT = Object.freeze({
+    1: Object.freeze({ id: 1, nombre: "Escaneo 1 · Muestreo base", corto: "Escaneo 1" }),
+    2: Object.freeze({ id: 2, nombre: "Escaneo 2 · Ruta con 3 segmentos", corto: "Escaneo 2" }),
+    3: Object.freeze({ id: 3, nombre: "Calibración · Escaneos 3–5", corto: "Calibración 3–5" }),
+    4: Object.freeze({ id: 4, nombre: "Operación MVP · Misiones y obstáculos", corto: "Operación MVP" })
+  });
+
+  function r(x, d) { var k = Math.pow(10, d); return Math.round(x * k) / k; }
+  function clamp(x, a, b) { return x < a ? a : (x > b ? b : x); }
+
+  function estabilidadMuestra(tcrt) {
+    if (!tcrt || !(tcrt[0] || tcrt[1] || tcrt[2] || tcrt[3])) return 0;
+    return (tcrt[1] || tcrt[2]) && !tcrt[0] && !tcrt[3] ? 100 : 72;
+  }
+
+  function crearPerfilVacio(largoM, SE) {
+    var segs = SE.segmentos(largoM || 9.0), out = {};
+    segs.forEach(function (sg) {
+      out[sg.id] = {
+        id: sg.id,
+        nombre: sg.nombre,
+        desdeM: sg.desdeM,
+        hastaM: sg.hastaM,
+        distanciaM: r(sg.hastaM - sg.desdeM, 2),
+        muestras: 0,
+        escaneos: 0,
+        estabilidadTcrtPct: 0,
+        paredFrenteCm: null,
+        paredAtrasCm: 200,
+        confianzaPct: 0
+      };
+    });
+    return out;
+  }
+
+  /* Crea el estado maestro de calibración (3–5), operación MVP y parada programable */
+  function crearEstado(PE, SE, largoM) {
+    var L = largoM || 9.0;
+    return {
+      largoM: L,
+      escaneosCompletos: { 1: false, 2: false, 3: false, 4: false, 5: false },
+      registrosCalib: { 3: PE.crear(), 4: PE.crear(), 5: PE.crear() },
+      escaneoCalibActivo: 3, /* 3, 4 o 5 */
+      calibrada: false,
+      perfilUnificado: crearPerfilVacio(L, SE),
+      /* Operación MVP (fase 4) */
+      regMvp: PE.crear(),
+      destinoMvp: "PC3", /* "PC1" | "PC2" | "PC3" */
+      viajesOperativos: 0,
+      historialMisiones: [],
+      eventosOperativos: [],
+      obstaculoActivo: null, /* { sM, seg, cm, tipo, esObjetoReal, refCm } */
+      /* Parada programable (viajesOperativos >= 8) */
+      paradaProgramada: null, /* { seg, pct, sM, etiqueta, activa } */
+      enParadaProgramada: false,
+      paradaCumplidaEnViaje: false
+    };
+  }
+
+  function reiniciar(est, PE, SE, largoM) {
+    var nuevo = crearEstado(PE, SE, largoM || est.largoM);
+    Object.keys(nuevo).forEach(function (k) { est[k] = nuevo[k]; });
+    return est;
+  }
+
+  function conteoEscaneos(est) {
+    var n = 0, k;
+    for (k = 1; k <= C.TOTAL_ESCANEOS; k++) if (est.escaneosCompletos[k]) n++;
+    return n;
+  }
+
+  function siguienteEscaneoCalib(est) {
+    if (!est.escaneosCompletos[3]) return 3;
+    if (!est.escaneosCompletos[4]) return 4;
+    if (!est.escaneosCompletos[5]) return 5;
+    return 5;
+  }
+
+  function obstaculosPermitidos(fase, est) {
+    return fase === 4 && Boolean(est && est.calibrada);
+  }
+
+  function paradaDesbloqueada(est) {
+    return Boolean(est && est.calibrada && est.viajesOperativos >= C.META_VIAJES_PARADA);
+  }
+
+  /* Genera muestras de referencia sintéticas coherentes para un escaneo rápido (3–5) si no se corrió cuadro a cuadro */
+  function generarMuestrasVerificacion(numEscaneo, largoM, SE, baseMuestras) {
+    var pcs = SE.puntosControl(largoM), vel = 0.41, pasoS = vel * 2, s = 0, t = 0, n = 1, res = [];
+    /* Variación mínima determinista por pasada para reflejar verificación real entre escaneos */
+    var sesgoAtras = (numEscaneo - 3) * 1.2;
+    while (s < largoM - 0.05) {
+      var seg = SE.segmentoDe(s, largoM);
+      var ref = baseMuestras && baseMuestras.length ? baseMuestras[Math.min(baseMuestras.length - 1, n - 1)] : null;
+      var atrasBase = ref && ref.paredes_ref ? ref.paredes_ref.atras_cm : (185 + (seg === "S2" ? 15 : 0));
+      var frenteBase = ref && ref.paredes_ref ? ref.paredes_ref.frente_cm : null;
+      res.push({
+        n: n,
+        t_s: r(t, 2),
+        s_m: r(s, 3),
+        x: ref ? ref.x : r(s * 0.4, 3),
+        y: ref ? ref.y : 0,
+        angulo: ref ? ref.angulo : 0,
+        tcrt: (n % 4 === 0 && numEscaneo === 3) ? [0, 1, 1, 1] : [0, 1, 1, 0],
+        tcrt_n: [0.08, 0.92, 0.91, 0.09],
+        frente_cm: frenteBase,
+        atras_cm: r(atrasBase + sesgoAtras, 1),
+        paredes_ref: { frente_cm: frenteBase, atras_cm: r(atrasBase + sesgoAtras, 1), linea_base: true },
+        yaw_deg: ref ? ref.yaw_deg : 0,
+        omega_dps: 0,
+        v_ms: vel,
+        pwm_izq: 0.72,
+        pwm_der: 0.72,
+        seg: seg,
+        escaneo: numEscaneo,
+        final: false
+      });
+      n++; s += pasoS; t += 2;
+    }
+    res.push({
+      n: n, t_s: r(largoM / vel, 2), s_m: r(largoM, 3), x: 0, y: 0, angulo: 0,
+      tcrt: [0, 1, 1, 0], tcrt_n: [0.05, 0.95, 0.94, 0.05],
+      frente_cm: null, atras_cm: r(195 + sesgoAtras, 1),
+      paredes_ref: { frente_cm: null, atras_cm: r(195 + sesgoAtras, 1), linea_base: true },
+      yaw_deg: 0, omega_dps: 0, v_ms: vel, pwm_izq: 0.72, pwm_der: 0.72,
+      seg: "S3", escaneo: numEscaneo, final: true
+    });
+    return res;
+  }
+
+  /* Unifica/promedia lecturas de todos los escaneos completados por segmento (S1, S2, S3) */
+  function unificarPorSegmento(est, reg1, reg2, SE, largoM) {
+    var L = largoM || est.largoM || 9.0;
+    est.largoM = L;
+    var segs = SE.segmentos(L);
+    var fuentes = [];
+    if (reg1 && reg1.muestras && reg1.muestras.length) fuentes.push({ n: 1, ms: reg1.muestras });
+    if (reg2 && reg2.muestras && reg2.muestras.length) fuentes.push({ n: 2, ms: reg2.muestras });
+    [3, 4, 5].forEach(function (k) {
+      var rk = est.registrosCalib[k];
+      if (rk && rk.muestras && rk.muestras.length) fuentes.push({ n: k, ms: rk.muestras });
+    });
+
+    var numComp = conteoEscaneos(est);
+    var bonoViajes = Math.min(3.5, est.viajesOperativos * 0.45);
+    var perfil = {};
+
+    segs.forEach(function (sg) {
+      var sumaTcrt = 0, cnt = 0, sumaF = 0, cntF = 0, sumaA = 0, cntA = 0, escSeg = 0;
+      fuentes.forEach(function (ft) {
+        var vio = false;
+        ft.ms.forEach(function (m) {
+          var sid = m.seg || SE.segmentoDe(m.s_m, L);
+          if (sid !== sg.id) return;
+          vio = true;
+          cnt++;
+          sumaTcrt += estabilidadMuestra(m.tcrt);
+          var pf = m.paredes_ref ? m.paredes_ref.frente_cm : m.frente_cm;
+          var pa = m.paredes_ref ? m.paredes_ref.atras_cm : m.atras_cm;
+          if (pf !== null && pf !== undefined && pf > 0) { sumaF += pf; cntF++; }
+          if (pa !== null && pa !== undefined && pa > 0) { sumaA += pa; cntA++; }
+        });
+        if (vio) escSeg++;
+      });
+
+      var estTcrt = cnt ? r(sumaTcrt / cnt, 1) : 0;
+      var baseConf = numComp === 0 ? 0 : (54 + numComp * 8.2 + (estTcrt > 0 ? (estTcrt - 80) * 0.12 : 0) + bonoViajes);
+      if (cnt === 0 && numComp > 0) baseConf = 58 + numComp * 7.5 + bonoViajes;
+
+      perfil[sg.id] = {
+        id: sg.id,
+        nombre: sg.nombre,
+        desdeM: sg.desdeM,
+        hastaM: sg.hastaM,
+        distanciaM: r(sg.hastaM - sg.desdeM, 2),
+        muestras: cnt,
+        escaneos: Math.max(escSeg, numComp),
+        estabilidadTcrtPct: cnt ? estTcrt : (numComp > 0 ? 96.0 : 0),
+        paredFrenteCm: cntF ? r(sumaF / cntF, 1) : null,
+        paredAtrasCm: cntA ? r(sumaA / cntA, 1) : 200,
+        confianzaPct: numComp > 0 ? r(clamp(baseConf, 55, 99.5), 1) : 0
+      };
+    });
+
+    est.perfilUnificado = perfil;
+    return perfil;
+  }
+
+  /* Marca un escaneo (1..5) como completado y actualiza la unificación + estado Calibrada */
+  function registrarEscaneoCompletado(est, numEscaneo, reg1, reg2, SE, largoM) {
+    if (numEscaneo < 1 || numEscaneo > C.TOTAL_ESCANEOS) return false;
+    est.escaneosCompletos[numEscaneo] = true;
+    /* Si se completa el escaneo 3, 4 o 5 directamente desde Calibración, asegura base 1 y 2 marcadas */
+    if (numEscaneo >= 3) {
+      est.escaneosCompletos[1] = true;
+      est.escaneosCompletos[2] = true;
+    }
+    est.escaneoCalibActivo = siguienteEscaneoCalib(est);
+    unificarPorSegmento(est, reg1, reg2, SE, largoM);
+    if (conteoEscaneos(est) >= C.TOTAL_ESCANEOS) {
+      est.calibrada = true;
+    }
+    return true;
+  }
+
+  /* Completa de forma rápida el siguiente escaneo de verificación (3, 4 o 5) o todos hasta 5/5 */
+  function completarEscaneoRapido(est, numEscaneo, reg1, reg2, SE, largoM, pistaId) {
+    var k = numEscaneo || siguienteEscaneoCalib(est);
+    if (k < 3) k = 3;
+    if (k > 5) k = 5;
+    var rk = est.registrosCalib[k];
+    var baseMs = (reg2 && reg2.muestras && reg2.muestras.length) ? reg2.muestras : (reg1 && reg1.muestras ? reg1.muestras : []);
+    rk.muestras = generarMuestrasVerificacion(k, largoM || est.largoM, SE, baseMs);
+    rk.activo = false;
+    rk.completo = true;
+    rk.motivo = null;
+    rk.pista = pistaId || "B";
+    rk.tFinS = rk.muestras.length ? rk.muestras[rk.muestras.length - 1].t_s : 0;
+    registrarEscaneoCompletado(est, k, reg1, reg2, SE, largoM);
+    return rk;
+  }
+
+  function completarCalibracionCompleta(est, reg1, reg2, SE, largoM, pistaId) {
+    [3, 4, 5].forEach(function (k) {
+      if (!est.escaneosCompletos[k]) completarEscaneoRapido(est, k, reg1, reg2, SE, largoM, pistaId);
+    });
+    return est.calibrada;
+  }
+
+  /* Contrasta una lectura HC-SR04P frontal contra el perfil unificado de paredes del segmento */
+  function evaluarEcoUltrasonico(est, sM, largoM, frenteCm, SE) {
+    var seg = SE.segmentoDe(sM, largoM);
+    var pf = est.perfilUnificado && est.perfilUnificado[seg] ? est.perfilUnificado[seg] : null;
+    var refCm = pf ? pf.paredFrenteCm : null;
+
+    if (!frenteCm || frenteCm <= 0) {
+      return { tipo: "despejado", esObjetoReal: false, seg: seg, frenteCm: null, refCm: refCm, severidad: "libre", texto: "Pista despejada" };
+    }
+    /* Si el segmento tiene una pared fija registrada cerca de esta distancia y no es impacto crítico, es pared fija */
+    if (refCm !== null && Math.abs(frenteCm - refCm) <= C.TOLERANCIA_PARED_CM && frenteCm >= 25) {
+      return {
+        tipo: "pared_fija",
+        esObjetoReal: false,
+        seg: seg,
+        frenteCm: r(frenteCm, 1),
+        refCm: refCm,
+        severidad: "libre",
+        texto: "Pared fija de referencia en " + seg + " (" + r(frenteCm, 0) + " cm ≈ ref " + r(refCm, 0) + " cm) · sin falso positivo"
+      };
+    }
+    var sev = frenteCm < C.UMBRAL_CRITICO_CM ? "critica" : (frenteCm < C.UMBRAL_PRECAUCION_CM ? "precaucion" : "aviso");
+    return {
+      tipo: "objeto_real",
+      esObjetoReal: true,
+      seg: seg,
+      frenteCm: r(frenteCm, 1),
+      refCm: refCm,
+      severidad: sev,
+      texto: "Objeto real detectado en " + seg + " a " + r(frenteCm, 0) + " cm (ref. pared: " + (refCm === null ? "despejado" : r(refCm, 0) + " cm") + ")"
+    };
+  }
+
+  /* Registra un evento operativo (obstáculo detectado, parada programada, misión completada) */
+  function registrarEvento(est, tipo, seg, sM, detalle) {
+    var ev = {
+      id: est.eventosOperativos.length + 1,
+      tipo: tipo,
+      seg: seg,
+      s_m: r(sM, 2),
+      detalle: detalle
+    };
+    est.eventosOperativos.push(ev);
+    return ev;
+  }
+
+  /* Posición objetivo en metros para un destino MVP ("PC1" | "PC2" | "PC3") */
+  function sDestinoMvp(destino, largoM, SE) {
+    var pcs = SE.puntosControl(largoM);
+    for (var i = 0; i < pcs.length; i++) if (pcs[i].id === destino) return pcs[i].posicionM;
+    return largoM;
+  }
+
+  /* Registra un viaje operativo completado, refuerza confianza de segmentos y avanza 0/8 → 8/8 */
+  function completarViajeOperativo(est, destino, largoM, reg1, reg2, SE, sAlcanzadoM) {
+    if (!est.calibrada) return false;
+    est.viajesOperativos += 1;
+    var sFin = sAlcanzadoM != null ? sAlcanzadoM : sDestinoMvp(destino || est.destinoMvp, largoM, SE);
+    var segFin = SE.segmentoDe(sFin, largoM);
+    est.historialMisiones.push({
+      viaje: est.viajesOperativos,
+      destino: destino || est.destinoMvp,
+      s_m: r(sFin, 2),
+      seg: segFin,
+      paradaUsada: Boolean(est.paradaCumplidaEnViaje)
+    });
+    registrarEvento(est, "MISION_COMPLETADA", segFin, sFin,
+      "Viaje operativo #" + est.viajesOperativos + " completado hasta " + (destino || est.destinoMvp) + " (" + r(sFin, 2) + " m)");
+    unificarPorSegmento(est, reg1, reg2, SE, largoM);
+    return true;
+  }
+
+  /* Auxiliar para pruebas/evaluación rápida: completa viajes hasta llegar a 8/8 */
+  function simularLoteHasta8(est, largoM, reg1, reg2, SE) {
+    if (!est.calibrada) return 0;
+    var agregados = 0;
+    while (est.viajesOperativos < C.META_VIAJES_PARADA) {
+      completarViajeOperativo(est, est.destinoMvp || "PC3", largoM, reg1, reg2, SE);
+      agregados++;
+    }
+    return agregados;
+  }
+
+  /* Programar parada exacta dentro de S1, S2 o S3 (requiere viajesOperativos >= 8) */
+  function programarParada(est, segId, pct, largoM, SE) {
+    if (!paradaDesbloqueada(est)) return null;
+    var segs = SE.segmentos(largoM), sg = null, i;
+    for (i = 0; i < segs.length; i++) if (segs[i].id === segId) sg = segs[i];
+    if (!sg) return null;
+    var p = clamp(Number(pct), 10, 90);
+    var sM = r(sg.desdeM + (sg.hastaM - sg.desdeM) * (p / 100), 2);
+    est.paradaProgramada = {
+      seg: sg.id,
+      pct: Math.round(p),
+      sM: sM,
+      etiqueta: "Parada · " + sg.id + " (" + sM.toFixed(1) + " m)",
+      activa: true
+    };
+    est.enParadaProgramada = false;
+    est.paradaCumplidaEnViaje = false;
+    return est.paradaProgramada;
+  }
+
+  /* Programa parada a partir de una distancia s exacta (ej. clic sobre el mapa) */
+  function programarParadaEnS(est, sM, largoM, SE) {
+    if (!paradaDesbloqueada(est)) return null;
+    var sClamped = clamp(sM, 0.2, largoM - 0.2);
+    var segId = SE.segmentoDe(sClamped, largoM);
+    var segs = SE.segmentos(largoM), sg = segs[0];
+    for (var i = 0; i < segs.length; i++) if (segs[i].id === segId) sg = segs[i];
+    var pct = ((sClamped - sg.desdeM) / Math.max(0.1, sg.hastaM - sg.desdeM)) * 100;
+    return programarParada(est, segId, pct, largoM, SE);
+  }
+
+  function quitarParada(est) {
+    est.paradaProgramada = null;
+    est.enParadaProgramada = false;
+    est.paradaCumplidaEnViaje = false;
+  }
+
+  return {
+    C: C,
+    FASES_EXT: FASES_EXT,
+    crearEstado: crearEstado,
+    reiniciar: reiniciar,
+    conteoEscaneos: conteoEscaneos,
+    siguienteEscaneoCalib: siguienteEscaneoCalib,
+    obstaculosPermitidos: obstaculosPermitidos,
+    paradaDesbloqueada: paradaDesbloqueada,
+    unificarPorSegmento: unificarPorSegmento,
+    registrarEscaneoCompletado: registrarEscaneoCompletado,
+    completarEscaneoRapido: completarEscaneoRapido,
+    completarCalibracionCompleta: completarCalibracionCompleta,
+    evaluarEcoUltrasonico: evaluarEcoUltrasonico,
+    registrarEvento: registrarEvento,
+    sDestinoMvp: sDestinoMvp,
+    completarViajeOperativo: completarViajeOperativo,
+    simularLoteHasta8: simularLoteHasta8,
+    programarParada: programarParada,
+    programarParadaEnS: programarParadaEnS,
+    quitarParada: quitarParada
+  };
+});

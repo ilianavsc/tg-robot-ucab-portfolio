@@ -336,19 +336,66 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .escaneo-hud strong { display: block; font-family: var(--font-mono); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tg-dark-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .escaneo-hud strong.cyan { color: var(--tg-dark-accent); }
 
-/* ---- Selector de fase: Escaneo 1 (muestreo base) / Escaneo 2 (3 segmentos) ---- */
+/* ---- Selector de fase: Escaneo 1 / Escaneo 2 / Calibración (3–5) / Operación MVP ---- */
 :root { --seg1: var(--tg-dark-accent); --seg2: var(--tg-dark-warning); --seg3: var(--tg-dark-alarm); }
 [data-solo-fase][hidden] { display: none !important; }
-.fase-fila { display: grid; grid-template-columns: 1fr 1fr; background: var(--s2-bg); border-bottom: 1px solid var(--s2-borde); }
+.fase-fila { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--s2-bg); border-bottom: 1px solid var(--s2-borde); }
 .fase-op {
-  min-height: 44px; padding: 6px 10px; border: none; border-right: 1px solid var(--s2-borde); border-bottom: 3px solid transparent;
-  background: transparent; color: var(--s2-muted); font-family: var(--font-display); font-weight: 700; font-size: 13.5px;
+  min-height: 44px; padding: 6px 8px; border: none; border-right: 1px solid var(--s2-borde); border-bottom: 3px solid transparent;
+  background: transparent; color: var(--s2-muted); font-family: var(--font-display); font-weight: 700; font-size: 12.5px;
   cursor: pointer; touch-action: manipulation; text-align: center; line-height: 1.2;
 }
 .fase-op:last-child { border-right: none; }
 .fase-op[aria-pressed="true"] { color: #fff; background: rgba(56, 189, 248, 0.14); border-bottom-color: var(--s2-prim); }
 .fase-op:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: -2px; }
 .fase-op .fase-n { font-family: var(--font-mono); font-size: 11px; color: var(--tg-dark-accent); margin-right: 4px; }
+.fase-op .fase-pill { display: inline-block; margin-left: 5px; padding: 1px 6px; border-radius: 999px; font-family: var(--font-mono); font-size: 10px; background: var(--s2-surf2); border: 1px solid var(--s2-borde); color: var(--s2-muted); vertical-align: middle; }
+.fase-op .fase-pill.ok { border-color: var(--s2-ok); color: var(--tg-dark-ok); background: rgba(34, 197, 94, 0.14); }
+
+/* ---- Barras contextuales de Calibración (3–5) y Operación MVP ---- */
+.ctrl-fase {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 12px; background: var(--s2-surf2); border-bottom: 1px solid var(--s2-borde);
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--s2-txt);
+}
+.ctrl-fase[hidden] { display: none !important; }
+.ctrl-grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.ctrl-btn {
+  min-height: 36px; padding: 5px 10px; border-radius: 8px; border: 1.5px solid #475569;
+  background: var(--s2-bg); color: var(--s2-txt); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+  cursor: pointer; touch-action: manipulation; white-space: nowrap;
+}
+.ctrl-btn:hover:not(:disabled) { border-color: var(--s2-prim); color: #fff; }
+.ctrl-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ctrl-btn.sel, .ctrl-btn[aria-pressed="true"] { background: rgba(56, 189, 248, 0.22); border-color: var(--s2-prim); color: #fff; }
+.ctrl-btn.ok { border-color: var(--s2-ok); color: var(--tg-dark-ok); }
+.ctrl-btn.aviso { border-color: var(--s2-warn); color: var(--tg-dark-warning); }
+.ctrl-btn.peligro { border-color: var(--s2-err); color: var(--tg-dark-danger); background: rgba(239, 68, 68, 0.14); }
+.calib-pasos { display: inline-flex; gap: 4px; align-items: center; }
+.calib-dot { padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: var(--s2-bg); border: 1px solid var(--s2-borde); color: var(--s2-muted); }
+.calib-dot.done { border-color: var(--s2-ok); color: var(--tg-dark-ok); background: rgba(34, 197, 94, 0.14); }
+.calib-dot.act { border-color: var(--s2-prim); color: var(--tg-dark-accent); background: rgba(56, 189, 248, 0.14); }
+.parada-box {
+  width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding-top: 8px; border-top: 1px solid rgba(51, 65, 85, 0.65);
+}
+.parada-lock { font-size: 11px; color: var(--tg-dark-warning); }
+.parada-lock.ok { color: var(--tg-dark-ok); }
+.parada-slider { width: 120px; accent-color: var(--s2-prim); cursor: pointer; }
+.seg-unif-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 6px 0 8px; }
+.seg-unif-grid[hidden] { display: none !important; }
+.seg-unif-card { background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; padding: 6px 7px; font-family: var(--font-mono); font-size: 10px; min-width: 0; }
+.seg-unif-card.s1 { border-top: 2px solid var(--seg1); }
+.seg-unif-card.s2 { border-top: 2px solid var(--seg2); }
+.seg-unif-card.s3 { border-top: 2px solid var(--seg3); }
+.seg-unif-card b { display: block; font-size: 11px; color: #fff; margin-bottom: 2px; }
+.seg-unif-card span { display: block; color: var(--s2-muted); line-height: 1.35; }
+.eventos-lista { display: grid; gap: 4px; margin-top: 6px; max-height: 130px; overflow-y: auto; }
+.eventos-lista[hidden] { display: none !important; }
+.ev-item { font-family: var(--font-mono); font-size: 10.5px; padding: 4px 7px; border-radius: 6px; background: var(--s2-bg); border-left: 3px solid var(--s2-prim); color: var(--tg-dark-text); }
+.ev-item.obs { border-left-color: var(--s2-err); }
+.ev-item.parada { border-left-color: var(--s2-warn); }
+.ev-item.ok { border-left-color: var(--s2-ok); }
 .seg-sw { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
 .seg-sw.s1 { background: var(--seg1); } .seg-sw.s2 { background: var(--seg2); } .seg-sw.s3 { background: var(--seg3); }
 .seg-leyenda {
@@ -436,8 +483,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   .escaneo-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .escaneo-hud > div { padding: 5px 8px; }
   #btn-principal-ctx { flex: 1 1 0; min-width: 0; padding: 8px 10px; }
-  .fase-op { font-size: 12px; padding: 4px 6px; }
+  .fase-fila { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fase-op { font-size: 11.5px; padding: 4px 5px; border-bottom-width: 2px; }
   .fase-op .fase-largo { display: none; }
+  .ctrl-fase { padding: 6px 8px; gap: 6px; font-size: 10.5px; }
+  .ctrl-btn { min-height: 36px; padding: 4px 8px; font-size: 10.5px; }
+  .seg-unif-grid { grid-template-columns: 1fr; }
   .seg-leyenda { top: 24px; right: 6px; font-size: 9.5px; padding: 5px 7px; }
   #btn-freno { padding: 8px 10px; font-size: 13px; }
 }
@@ -521,10 +572,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       </div>
     </div>
 
-    <!-- 1b. Selector de fase: Escaneo 1 (muestreo base) / Escaneo 2 (ruta con 3 segmentos) -->
-    <div class="fase-fila" role="group" aria-label="Fase del escaneo">
+    <!-- 1b. Selector de fase: Escaneo 1 / Escaneo 2 / Calibración (3–5) / Operación MVP -->
+    <div class="fase-fila" role="group" aria-label="Fase del gemelo digital">
       <button type="button" class="fase-op" data-fase="1" aria-pressed="true"><span class="fase-n">1</span>Escaneo 1<span class="fase-largo"> · Muestreo base</span></button>
       <button type="button" class="fase-op" data-fase="2" aria-pressed="false"><span class="fase-n">2</span>Escaneo 2<span class="fase-largo"> · Ruta con 3 segmentos</span></button>
+      <button type="button" class="fase-op" data-fase="3" aria-pressed="false"><span class="fase-n">3</span>Calibración<span class="fase-largo"> · 3–5</span><span class="fase-pill" id="fase3-pill">0/5</span></button>
+      <button type="button" class="fase-op" data-fase="4" aria-pressed="false"><span class="fase-n">4</span>Operación MVP<span class="fase-pill" id="fase4-pill">🔒 5/5</span></button>
     </div>
 
     <!-- 2. Pista de SIM1 + velocidad real del escaneo (P04 / TG_ROBOT) -->
@@ -543,6 +596,63 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         <span id="ref-pcs">PC1 3,00 · PC2 6,00 · PC3 9,00 m (tercios de la ruta)</span>
         <span class="ref-fuente">TG_ROBOT.velocidad.cruceroMs</span>
       </p>
+      <p class="escaneo-ref" id="escaneo-ref3" data-solo-fase="3" hidden style="margin:0">
+        <span>Verificación y unificación por segmento <b id="ref-calib-estado">0/5 escaneos</b></span>
+        <span class="ref-paredes">Pista despejada (sin obstáculos) · promedia S1, S2 y S3</span>
+      </p>
+      <p class="escaneo-ref" id="escaneo-ref4" data-solo-fase="4" hidden style="margin:0">
+        <span>Operación MVP a crucero <b>0,41 m/s</b> · <b id="ref-mvp-estado">Viajes verificados: 0/8</b></span>
+        <span class="ref-paredes">Obstáculos reales habilitados · contraste contra paredes ref.</span>
+      </p>
+    </div>
+
+    <!-- 2b. Controles de Calibración (Escaneos 3–5) -->
+    <div class="ctrl-fase" id="barra-calib" data-solo-fase="3" hidden role="region" aria-label="Controles de calibración 3 a 5">
+      <div class="ctrl-grupo">
+        <div class="calib-pasos" id="calib-pasos" aria-label="Progreso de escaneos 1 a 5">
+          <span class="calib-dot" data-cd="1">1</span>
+          <span class="calib-dot" data-cd="2">2</span>
+          <span class="calib-dot" data-cd="3">3</span>
+          <span class="calib-dot" data-cd="4">4</span>
+          <span class="calib-dot" data-cd="5">5</span>
+        </div>
+        <span class="seg-pill" id="calib-badge">Escaneo 3/5 pendiente</span>
+      </div>
+      <div class="ctrl-grupo">
+        <button type="button" class="ctrl-btn" id="btn-calib-rapido">⚡ Completar escaneo 3/5</button>
+        <button type="button" class="ctrl-btn ok" id="btn-calib-todo">⚡ Completar 5/5</button>
+        <button type="button" class="ctrl-btn ok" id="btn-ir-mvp" disabled>🚀 Ir a Operación MVP</button>
+      </div>
+    </div>
+
+    <!-- 2c. Controles de Operación MVP (misiones, obstáculos y parada programable >= 8 viajes) -->
+    <div class="ctrl-fase" id="barra-mvp" data-solo-fase="4" hidden role="region" aria-label="Controles de Operación MVP">
+      <div class="ctrl-grupo">
+        <span>Destino:</span>
+        <button type="button" class="ctrl-btn" data-dest-mvp="PC1" aria-pressed="false">PC1</button>
+        <button type="button" class="ctrl-btn" data-dest-mvp="PC2" aria-pressed="false">PC2</button>
+        <button type="button" class="ctrl-btn sel" data-dest-mvp="PC3" aria-pressed="true">PC3</button>
+        <button type="button" class="ctrl-btn aviso" id="btn-sim-obstaculo" aria-pressed="false">📦 Simular objeto</button>
+      </div>
+      <div class="ctrl-grupo">
+        <span class="seg-pill" id="mvp-viajes-badge">Viajes verificados: 0/8</span>
+        <button type="button" class="ctrl-btn" id="btn-mvp-mas1" title="Simular 1 viaje operativo verificado">+1 viaje</button>
+        <button type="button" class="ctrl-btn ok" id="btn-mvp-lote8" title="Simular lote rápido hasta 8 viajes para probar parada programable">⚡ Simular 8/8</button>
+      </div>
+      <div class="parada-box" id="panel-parada">
+        <span class="parada-lock" id="parada-estado-txt">🔒 Programar parada en segmento · Disponible tras 8 viajes verificados (0/8)</span>
+        <div class="ctrl-grupo" id="parada-controles">
+          <button type="button" class="ctrl-btn sel" data-parada-seg="S1" aria-pressed="true" disabled>S1</button>
+          <button type="button" class="ctrl-btn" data-parada-seg="S2" aria-pressed="false" disabled>S2</button>
+          <button type="button" class="ctrl-btn" data-parada-seg="S3" aria-pressed="false" disabled>S3</button>
+          <input type="range" class="parada-slider" id="parada-pct" min="10" max="90" value="50" aria-label="Posición de la parada dentro del segmento" disabled>
+          <span id="parada-metros-txt">S1 · 1,50 m</span>
+          <button type="button" class="ctrl-btn ok" id="btn-fijar-parada" disabled>📍 Fijar parada</button>
+          <button type="button" class="ctrl-btn" id="btn-quitar-parada" hidden>✕ Quitar</button>
+          <button type="button" class="ctrl-btn ok" id="btn-reanudar-parada" hidden>▶ Reanudar destino</button>
+          <button type="button" class="ctrl-btn aviso" id="btn-volver-base" hidden>↩ Volver a Base</button>
+        </div>
+      </div>
     </div>
 
     <!-- 3. Nota de integración con la App móvil -->
@@ -554,6 +664,16 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     <aside class="nota-app" id="nota-app2" data-solo-fase="2" hidden role="note" aria-label="Nota de integración con la App · segundo escaneo">
       <span class="nota-ico" aria-hidden="true">i</span>
       <p style="margin:0"><strong>Nota de integración App:</strong> En este simulador de Gemelo Digital la ruta se divide en 3 colores para analizar los datos por tramo. En la aplicación móvil (<code>tg-robot-ucab-app</code>), el mapa se mostrará con los mismos 3 puntos de control pero en <strong>un solo color limpio</strong>.</p>
+    </aside>
+
+    <aside class="nota-app" id="nota-app3" data-solo-fase="3" hidden role="note" aria-label="Nota de integración con la App · calibración 3 a 5">
+      <span class="nota-ico" aria-hidden="true">i</span>
+      <p style="margin:0"><strong>Nota de integración App:</strong> Durante los escaneos 3–5, la aplicación móvil (<code>tg-robot-ucab-app</code>) muestra únicamente el progreso de calibración (<strong>3/5 a 5/5 · Lista</strong>) mientras el Gemelo Digital verifica y unifica los perfiles de S1, S2 y S3.</p>
+    </aside>
+
+    <aside class="nota-app" id="nota-app4" data-solo-fase="4" hidden role="note" aria-label="Nota de integración con la App · operación MVP y parada programable">
+      <span class="nota-ico" aria-hidden="true">i</span>
+      <p style="margin:0"><strong>Nota de integración App:</strong> En Operación MVP, <code>tg-robot-ucab-app</code> muestra el avance de la misión, alertas de objetos reales y —tras 8 viajes verificados— la <strong>parada personalizada</strong> sobre la ruta limpia de un solo color.</p>
     </aside>
 
     <!-- 4. Ranura fija de alertas (altura fija 62px / 46px, visibility, delta = 0 px) -->
@@ -622,6 +742,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         <svg id="perfil-svg" viewBox="0 0 320 128" role="img" aria-label="Perfil del recorrido: estabilidad sobre la línea (TCRT5000) y paredes de referencia (HC-SR04P) a lo largo de la ruta"></svg>
         <figcaption class="perfil-leyenda" id="perfil-leyenda"></figcaption>
       </figure>
+      <div class="seg-unif-grid" id="perfil-unificado-grid" hidden aria-label="Perfil unificado por segmento S1, S2 y S3"></div>
       <div class="reg-acciones">
         <button class="b info" id="btn-datos-exactos" type="button" aria-haspopup="dialog" aria-controls="modal-datos">🔍 Ver datos exactos</button>
         <button class="b aviso" id="btn-limpiar-viaje" type="button">♻ Limpiar y reiniciar viaje</button>
@@ -645,6 +766,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
           <div class="esp-card"><small>Frontal</small><div class="val" id="us-frente">—</div></div>
           <div class="esp-card"><small>Trasero</small><div class="val" id="us-atras">—</div></div>
         </div>
+        <div class="sub" id="us-contraste">Pista despejada · línea base de paredes fija</div>
       </div>
       <div class="consola-grupo">
         <h4>IMU · MPU-6050</h4>
@@ -661,6 +783,10 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         </div>
         <div class="sub" id="mov-detalle">—</div>
       </div>
+      <div class="consola-grupo" id="grupo-eventos-consola" hidden>
+        <h4>Eventos operativos · obstáculos y paradas</h4>
+        <div class="eventos-lista" id="consola-eventos"></div>
+      </div>
     </section>
   </div>
 </aside>
@@ -674,6 +800,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     </div>
     <div class="modal-datos-cuerpo">
       <p class="nota" id="datos-resumen">Una fila cada 2 s.</p>
+      <div class="seg-unif-grid" id="datos-consolidado" hidden aria-label="Perfil consolidado por segmento"></div>
+      <div class="eventos-lista" id="datos-eventos" hidden aria-label="Registro de eventos operativos"></div>
       <div class="seg-filtro" id="seg-filtro" data-solo-fase="2" hidden role="group" aria-label="Filtrar filas por segmento">
         <button type="button" data-seg-filtro="todos" aria-pressed="true">Todos</button>
         <button type="button" data-seg-filtro="S1" aria-pressed="false"><i class="seg-sw s1" aria-hidden="true"></i>S1</button>
@@ -703,6 +831,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 <script src="simulador_movimiento.js"></script>
 <script src="primer_escaneo.js"></script>
 <script src="segundo_escaneo.js"></script>
+<script src="calibracion_mvp.js"></script>
 <script>
 (function () {
   "use strict";
@@ -712,7 +841,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     fallo: ["--tg-dark-danger-solid", "#EF4444"], avisoTexto: ["--tg-dark-warning", "#FBBF24"],
     texto: ["--tg-dark-text", "#E2E8F0"], muted: ["--tg-dark-text-muted", "#94A3B8"],
     fondo: ["--tg-dark-bg", "#10141A"], realce: ["--tg-dark-raised", "#20252D"],
-    /* Segundo escaneo: 3 segmentos de alto contraste (mismos colores que --seg1/2/3 del CSS) */
+    /* 3 segmentos de alto contraste (mismos colores que --seg1/2/3 del CSS) */
     seg1: ["--tg-dark-accent", "#00F2FE"], seg2: ["--tg-dark-warning", "#FBBF24"], seg3: ["--tg-dark-alarm", "#A78BFA"]
   });
   var BASE = "../../";
@@ -721,19 +850,35 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   var RADIO_LLEGADA_M = 0.40, CERCA_LLEGADA_M = 0.15; /* parámetros internos de la planta para cerrar el viaje (supuesto de simulación) */
   var TICK_MS = 20;
   var $ = function (id) { return document.getElementById(id); };
-  var S = SimMovimiento, R = RadarUS, PE = PrimerEscaneo, SE = SegundoEscaneo;
+  var S = SimMovimiento, R = RadarUS, PE = PrimerEscaneo, SE = SegundoEscaneo, CM = CalibracionMVP;
   /* Velocidad real del escaneo: PWM lento de P04 × TG_ROBOT.velocidad.pwm100Ms (techo TG_ROBOT.velocidad.maxMs) */
   var VEL = PE.velocidades(window.TG_ROBOT);
-  /* Fases: 1 = Escaneo 1 · Muestreo base · 2 = Escaneo 2 · Ruta con 3 segmentos; cada una conserva su registro */
-  var FS = SE.crearEstado(PE), reg = SE.registroActual(FS);
-  var CFG = { 1: SE.configFase(1, window.TG_ROBOT, PE), 2: SE.configFase(2, window.TG_ROBOT, PE) };
+  /* Fases: 1 = Escaneo 1 · 2 = Escaneo 2 · 3 = Calibración (3–5) · 4 = Operación MVP */
+  var FS = SE.crearEstado(PE);
+  var faseActual = 1;
+  var CM_EST = CM.crearEstado(PE, SE, 9.0);
+  var reg = FS.registros[1];
+  var CFG = {
+    1: SE.configFase(1, window.TG_ROBOT, PE),
+    2: SE.configFase(2, window.TG_ROBOT, PE),
+    3: SE.configFase(2, window.TG_ROBOT, PE),
+    4: SE.configFase(2, window.TG_ROBOT, PE)
+  };
   var COL_SEG = { S1: PAL.seg1, S2: PAL.seg2, S3: PAL.seg3 }, filtroSeg = "todos", modalAbierto = false;
+  var paradaSegSel = "S1", obsRegistradoEnViaje = false, avisoBloqueoMvp = "";
   var avisoEl = $("aviso-carga");
   var nucleo = null, canonica = null, sim1 = null, pistaObj = null, tr = null, sim = null;
   var corriendo = false, velSim = 1, ultimoFrame = 0, acum = 0, ultimoDom = 0, filasPintadas = 0;
   var cajonAbierto = false, tcrtEls = [];
 
   function fmt(x, d) { return Number(x).toFixed(d).replace(".", ","); }
+  function usaSegmentos() { return faseActual >= 2; }
+  function registroDeFase(f) {
+    if (f === 1) return FS.registros[1];
+    if (f === 2) return FS.registros[2];
+    if (f === 3) return CM_EST.registrosCalib[CM_EST.escaneoCalibActivo] || CM_EST.registrosCalib[3];
+    return CM_EST.regMvp;
+  }
 
   /* ---- 1) Carga el núcleo, la pista canónica y las pistas de SIM1 ---- */
   function cargarNucleo(texto) {
@@ -763,6 +908,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     /* Primer escaneo: TODA la cinta puesta; el núcleo teach-and-repeat sigue la línea */
     sim = S.crear(nucleo, pistaObj, { trazado: tr, cintaCompleta: true, bleRadioM: RADIO_LLEGADA_M, bleCercaM: CERCA_LLEGADA_M });
     PE.reiniciar(FS.registros[1]); PE.reiniciar(FS.registros[2]);
+    CM.reiniciar(CM_EST, PE, SE, p1.largo);
+    if (faseActual === 4) { faseActual = 1; FS.fase = 1; aplicarFase(1); }
+    reg = registroDeFase(faseActual);
+    obsRegistradoEnViaje = false;
+    avisoBloqueoMvp = "";
     acum = 0; filasPintadas = -1;
     Array.prototype.forEach.call(document.querySelectorAll("[data-pista]"), function (b) {
       var on = b.getAttribute("data-pista") === id;
@@ -771,6 +921,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     });
     ajustarVista();
     pintarReferenciasFase2();
+    actualizarEtiquetaParadaSlider();
     avisoEl.className = "listo";
     refrescarDom(true);
   }
@@ -801,7 +952,33 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       var n = 0;
       while (acum >= TICK_MS && n < 60) {
         S.paso(sim, TICK_MS);
-        if (PE.tick(reg, sim, S) && FS.fase === 2) SE.etiquetar(reg.muestras, sim.L);
+        if (PE.tick(reg, sim, S) && usaSegmentos()) SE.etiquetar(reg.muestras, sim.L);
+        /* En Operación MVP: contraste de eco HC-SR04P contra paredes de referencia, parada programada y destino PC1/PC2/PC3 */
+        if (faseActual === 4 && reg.activo) {
+          var fAct = S.frenteActualCm(sim);
+          var evEco = CM.evaluarEcoUltrasonico(CM_EST, sim.s, sim.L, fAct, SE);
+          if (evEco.esObjetoReal && (evEco.severidad === "critica" || evEco.severidad === "precaucion")) {
+            CM_EST.obstaculoActivo = evEco;
+            if (!obsRegistradoEnViaje && evEco.severidad === "critica") {
+              obsRegistradoEnViaje = true;
+              CM.registrarEvento(CM_EST, "OBSTACULO_REAL", evEco.seg, sim.s, evEco.texto);
+            }
+          } else if (!sim.obstaculoS) {
+            CM_EST.obstaculoActivo = null;
+          }
+          if (CM_EST.paradaProgramada && CM_EST.paradaProgramada.activa && !CM_EST.paradaCumplidaEnViaje && sim.s >= CM_EST.paradaProgramada.sM - CM.C.PARADA_TOLERANCIA_M) {
+            CM_EST.enParadaProgramada = true;
+            CM_EST.paradaCumplidaEnViaje = true;
+            CM.registrarEvento(CM_EST, "PARADA_PROGRAMADA", CM_EST.paradaProgramada.seg, sim.s, "Robot detenido en " + CM_EST.paradaProgramada.etiqueta);
+            detener();
+            refrescarDom(true);
+            break;
+          }
+          var sMeta = CM.sDestinoMvp(CM_EST.destinoMvp, sim.L, SE);
+          if (CM_EST.destinoMvp !== "PC3" && sim.s >= sMeta - 0.06) {
+            sim.llegadaCompleta = true;
+          }
+        }
         acum -= TICK_MS; n++;
         if (sim.llegadaCompleta || sim.nav.paradaSeguridad) break;
       }
@@ -815,7 +992,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
   function cerrarViaje() {
     PE.finalizar(reg, sim, S, sim.nav.paradaSeguridad ? (sim.motivoParada || "parada_seguridad") : null);
-    if (FS.fase === 2) SE.etiquetar(reg.muestras, sim.L);
+    if (usaSegmentos()) SE.etiquetar(reg.muestras, sim.L);
+    if (reg.completo) {
+      if (faseActual === 1) CM.registrarEscaneoCompletado(CM_EST, 1, FS.registros[1], FS.registros[2], SE, sim.L);
+      else if (faseActual === 2) CM.registrarEscaneoCompletado(CM_EST, 2, FS.registros[1], FS.registros[2], SE, sim.L);
+      else if (faseActual === 3) CM.registrarEscaneoCompletado(CM_EST, CM_EST.escaneoCalibActivo, FS.registros[1], FS.registros[2], SE, sim.L);
+      else if (faseActual === 4) CM.completarViajeOperativo(CM_EST, CM_EST.destinoMvp, sim.L, FS.registros[1], FS.registros[2], SE, sim.s);
+    }
     sim.velObjetivoMs = null;
     detener();
     refrescarDom(true);
@@ -835,26 +1018,43 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     if (!document.hidden && corriendo && !rafId) { ultimoFrame = performance.now(); rafId = requestAnimationFrame(bucle); }
   });
 
-  /* ---- 3) Acciones del escaneo (fase 1: muestreo base · fase 2: ruta con 3 segmentos) ---- */
+  /* ---- 3) Acciones del escaneo / calibración (3–5) / Operación MVP ---- */
   function iniciarEscaneo() {
-    if (FS.fase === 2) {
-      S.nuevoViaje(sim, 1);             /* segundo escaneo: la misma ruta con toda la cinta */
-      sim.velObjetivoMs = CFG[2].velMs; /* crucero real TG_ROBOT.velocidad.cruceroMs */
-    } else {
+    avisoBloqueoMvp = "";
+    obsRegistradoEnViaje = false;
+    CM_EST.enParadaProgramada = false;
+    CM_EST.paradaCumplidaEnViaje = false;
+    if (faseActual === 1) {
+      S.quitarObstaculo(sim);
       S.iniciarEnsenanza(sim, 1);       /* pasada con toda la cinta: el núcleo sigue la línea */
       sim.velObjetivoMs = VEL.lentaMs;  /* consigna lenta real (P04 / TG_ROBOT) */
+    } else if (faseActual === 2 || faseActual === 3) {
+      S.quitarObstaculo(sim);           /* Escaneos 1–5: pista despejada (sin obstáculos) */
+      if (faseActual === 3) reg = registroDeFase(3);
+      S.nuevoViaje(sim, 1);
+      sim.velObjetivoMs = CFG[2].velMs; /* crucero real TG_ROBOT.velocidad.cruceroMs */
+    } else {
+      /* Fase 4 · Operación MVP */
+      reg = CM_EST.regMvp;
+      S.nuevoViaje(sim, 1);
+      sim.velObjetivoMs = CFG[4].velMs;
     }
     PE.iniciar(reg, sim, S);            /* punto #1 en t = 0 */
-    if (FS.fase === 2) SE.etiquetar(reg.muestras, sim.L);
+    if (usaSegmentos()) SE.etiquetar(reg.muestras, sim.L);
     filasPintadas = 0;
     reproducir();
   }
   function reanudar() {
     if (sim.frenoRemoto) S.reanudar(sim);
+    CM_EST.enParadaProgramada = false;
     reproducir();
   }
   function accionPrincipal() {
     if (!sim) return;
+    if (faseActual === 4 && CM_EST.enParadaProgramada) {
+      reanudar();
+      return;
+    }
     if (reg.activo) {
       if (corriendo) { detener(); refrescarDom(true); }
       else reanudar();
@@ -876,6 +1076,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
   function limpiarViaje(refrescar) {
     detener();
+    S.quitarObstaculo(sim);
+    CM_EST.obstaculoActivo = null;
+    CM_EST.enParadaProgramada = false;
+    CM_EST.paradaCumplidaEnViaje = false;
+    obsRegistradoEnViaje = false;
     S.nuevoViaje(sim, 1);
     sim.velObjetivoMs = null;
     PE.reiniciar(reg);
@@ -883,43 +1088,127 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     if (refrescar !== false) refrescarDom(true);
   }
   function textoPrincipal() {
+    if (faseActual === 4 && CM_EST.enParadaProgramada) return "▶ Reanudar hasta " + CM_EST.destinoMvp;
     if (reg.activo) {
-      if (corriendo) return "⏸ Pausar escaneo";
-      return sim.frenoRemoto ? "▶ Reanudar tras Freno Remoto" : "▶ Reanudar escaneo";
+      if (corriendo) return faseActual === 4 ? "⏸ Pausar misión" : "⏸ Pausar escaneo";
+      return sim.frenoRemoto ? "▶ Reanudar tras Freno Remoto" : (faseActual === 4 ? "▶ Reanudar misión" : "▶ Reanudar escaneo");
     }
-    var nom = FS.fase === 2 ? "segundo" : "primer";
+    if (faseActual === 3) {
+      var sig = CM.siguienteEscaneoCalib(CM_EST);
+      if (CM_EST.calibrada) return "♻ Repetir verificación (Escaneo 5/5)";
+      return "🧪 Iniciar Escaneo " + sig + "/5";
+    }
+    if (faseActual === 4) {
+      return "🚀 Enviar misión a " + CM_EST.destinoMvp + (CM_EST.paradaProgramada ? " (con parada)" : "");
+    }
+    var nom = faseActual === 2 ? "segundo" : "primer";
     if (reg.completo) return "♻ Repetir " + nom + " escaneo";
     if (reg.motivo) return "♻ Reintentar " + nom + " escaneo";
-    return FS.fase === 2 ? "🧭 Iniciar segundo escaneo" : "🎓 Iniciar primer escaneo";
+    return faseActual === 2 ? "🧭 Iniciar segundo escaneo" : "🎓 Iniciar primer escaneo";
   }
 
-  /* Cambio de fase: el robot vuelve al inicio; un escaneo sin terminar de la fase que se deja se descarta,
-     los escaneos completos de cada fase se conservan */
+  /* Cambio de fase: Escaneo 1 / Escaneo 2 / Calibración (3–5) / Operación MVP */
   function aplicarFase(fase) {
     Array.prototype.forEach.call(document.querySelectorAll("[data-fase]"), function (b) {
       b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-fase")) === fase));
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-solo-fase]"), function (el) {
-      el.hidden = Number(el.getAttribute("data-solo-fase")) !== fase;
+      var req = el.getAttribute("data-solo-fase");
+      if (el.id === "seg-legend" || el.id === "seg-leyenda" || el.id === "seg-filtro") {
+        el.hidden = fase < 2;
+      } else {
+        el.hidden = Number(req) !== fase;
+      }
     });
-    $("tabla-muestras").classList.toggle("con-seg", fase === 2);
-    $("t-sim-fase").textContent = fase === 2 ? " · Segundo escaneo (3 segmentos)" : " · Primer escaneo lento";
-    $("t-registro").textContent = fase === 2 ? "1 · Registro del segundo viaje · 3 segmentos" : "1 · Registro del primer viaje · línea base";
-    $("lienzo-pista").setAttribute("aria-label", fase === 2
-      ? "Vista cenital del segundo escaneo: el camino completo dividido en 3 segmentos de colores (Base → PC1, PC1 → PC2, PC2 → PC3), los 3 puntos de control y un punto por cada muestra de 2 segundos"
-      : "Vista cenital del primer escaneo administrado en pista despejada: el robot, los conos de los dos ultrasonidos (paredes de referencia) y un punto por cada muestra tomada cada 2 segundos");
+    $("tabla-muestras").classList.toggle("con-seg", fase >= 2);
+    var titulos = {
+      1: " · Primer escaneo lento",
+      2: " · Segundo escaneo (3 segmentos)",
+      3: " · Calibración (Escaneos 3–5)",
+      4: " · Operación MVP (obstáculos y paradas)"
+    };
+    var regs = {
+      1: "1 · Registro del primer viaje · línea base",
+      2: "1 · Registro del segundo viaje · 3 segmentos",
+      3: "1 · Calibración y unificación por segmento (3–5)",
+      4: "1 · Operación MVP · verificación continua"
+    };
+    $("t-sim-fase").textContent = titulos[fase] || titulos[1];
+    $("t-registro").textContent = regs[fase] || regs[1];
+    $("lienzo-pista").style.cursor = (fase === 4 && CM.paradaDesbloqueada(CM_EST)) ? "crosshair" : "default";
+    $("lienzo-pista").setAttribute("aria-label", fase === 1
+      ? "Vista cenital del primer escaneo administrado en pista despejada: el robot, los conos de los dos ultrasonidos (paredes de referencia) y un punto por cada muestra tomada cada 2 segundos"
+      : "Vista cenital de la ruta en 3 segmentos de colores (Base → PC1, PC1 → PC2, PC2 → PC3) y los 3 puntos de control");
   }
   function cambiarFase(fase) {
-    if (!sim || !SE.cambiarFase(FS, fase)) return;
+    if (!sim || fase < 1 || fase > 4) return false;
+    if (fase === 4 && !CM_EST.calibrada) {
+      avisoBloqueoMvp = "Completa los 5 escaneos de calibración (5/5) para habilitar Operación MVP.";
+      if (faseActual !== 3) cambiarFase(3); else refrescarDom(true);
+      return false;
+    }
+    if (fase === faseActual) return false;
+    avisoBloqueoMvp = "";
     detener();
     if (reg.activo) PE.reiniciar(reg);  /* escaneo a medias de la fase anterior: se descarta */
-    reg = SE.registroActual(FS);
+    S.quitarObstaculo(sim);
+    CM_EST.obstaculoActivo = null;
+    CM_EST.enParadaProgramada = false;
+    CM_EST.paradaCumplidaEnViaje = false;
+    faseActual = fase;
+    if (fase <= 2) SE.cambiarFase(FS, fase);
+    reg = registroDeFase(fase);
     if (reg.activo) PE.reiniciar(reg);
     S.nuevoViaje(sim, 1);
     sim.velObjetivoMs = null;
     filasPintadas = -1;
     aplicarFase(fase);
     refrescarDom(true);
+    return true;
+  }
+  function actualizarEtiquetaParadaSlider() {
+    if (!sim) return;
+    var pct = Number($("parada-pct").value);
+    var segs = SE.segmentos(sim.L), sg = segs[0];
+    for (var i = 0; i < segs.length; i++) if (segs[i].id === paradaSegSel) sg = segs[i];
+    var sM = sg.desdeM + (sg.hastaM - sg.desdeM) * (pct / 100);
+    $("parada-metros-txt").textContent = paradaSegSel + " · " + fmt(sM, 2) + " m (" + pct + " %)";
+  }
+  function alternarObstaculoMvp() {
+    if (!sim || !CM.obstaculosPermitidos(faseActual, CM_EST)) return;
+    if (sim.obstaculoS !== null) {
+      S.quitarObstaculo(sim);
+      CM_EST.obstaculoActivo = null;
+      obsRegistradoEnViaje = false;
+    } else {
+      var distAdelante = Math.min(0.85, Math.max(0.35, sim.L - sim.s - 0.25));
+      S.inyectarObstaculo(sim, distAdelante);
+      var fAhora = S.frenteActualCm(sim);
+      var ev = CM.evaluarEcoUltrasonico(CM_EST, sim.s + distAdelante, sim.L, Math.max(15, fAhora || 42), SE);
+      CM_EST.obstaculoActivo = ev;
+      CM.registrarEvento(CM_EST, "OBSTACULO_SIMULADO", ev.seg, sim.s + distAdelante, "Objeto colocado en " + ev.seg + " (" + fmt(sim.s + distAdelante, 2) + " m) · contraste contra paredes ref.");
+    }
+    refrescarDom(true);
+  }
+  function clickEnCanvasParada(ev) {
+    if (!sim || faseActual !== 4 || !CM.paradaDesbloqueada(CM_EST)) return;
+    var rect = cvP.getBoundingClientRect();
+    var px = ev.clientX - rect.left, py = ev.clientY - rect.top;
+    var mejorS = null, mejorD = 26; /* radio máximo 26 px sobre la ruta */
+    for (var s = 0.2; s <= sim.L - 0.2; s += 0.1) {
+      var pt = tr.puntoEn(s);
+      var d = Math.hypot(VX(pt.x) - px, VY(pt.y) - py);
+      if (d < mejorD) { mejorD = d; mejorS = s; }
+    }
+    if (mejorS !== null) {
+      var p = CM.programarParadaEnS(CM_EST, mejorS, sim.L, SE);
+      if (p) {
+        paradaSegSel = p.seg;
+        $("parada-pct").value = String(p.pct);
+        actualizarEtiquetaParadaSlider();
+        refrescarDom(true);
+      }
+    }
   }
   function pintarReferenciasFase2() {
     var L = sim.L, pcs = SE.puntosControl(L);
@@ -972,6 +1261,66 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     Array.prototype.forEach.call(document.querySelectorAll("[data-seg-filtro]"), function (b) {
       b.addEventListener("click", function () { aplicarFiltroSeg(b.getAttribute("data-seg-filtro")); });
     });
+    /* Controles de Calibración (3–5) */
+    $("btn-calib-rapido").addEventListener("click", function () {
+      if (!sim) return;
+      detener();
+      CM.completarEscaneoRapido(CM_EST, CM.siguienteEscaneoCalib(CM_EST), FS.registros[1], FS.registros[2], SE, sim.L, tr.id);
+      reg = registroDeFase(3);
+      filasPintadas = -1;
+      refrescarDom(true);
+    });
+    $("btn-calib-todo").addEventListener("click", function () {
+      if (!sim) return;
+      detener();
+      CM.completarCalibracionCompleta(CM_EST, FS.registros[1], FS.registros[2], SE, sim.L, tr.id);
+      reg = registroDeFase(3);
+      filasPintadas = -1;
+      refrescarDom(true);
+    });
+    $("btn-ir-mvp").addEventListener("click", function () { cambiarFase(4); });
+    /* Controles de Operación MVP */
+    Array.prototype.forEach.call(document.querySelectorAll("[data-dest-mvp]"), function (b) {
+      b.addEventListener("click", function () {
+        CM_EST.destinoMvp = b.getAttribute("data-dest-mvp");
+        refrescarDom(true);
+      });
+    });
+    $("btn-sim-obstaculo").addEventListener("click", alternarObstaculoMvp);
+    $("btn-mvp-mas1").addEventListener("click", function () {
+      if (!sim || !CM_EST.calibrada) return;
+      CM.completarViajeOperativo(CM_EST, CM_EST.destinoMvp, sim.L, FS.registros[1], FS.registros[2], SE);
+      refrescarDom(true);
+    });
+    $("btn-mvp-lote8").addEventListener("click", function () {
+      if (!sim || !CM_EST.calibrada) return;
+      CM.simularLoteHasta8(CM_EST, sim.L, FS.registros[1], FS.registros[2], SE);
+      refrescarDom(true);
+    });
+    /* Controles de Parada programable (viajes >= 8) */
+    Array.prototype.forEach.call(document.querySelectorAll("[data-parada-seg]"), function (b) {
+      b.addEventListener("click", function () {
+        paradaSegSel = b.getAttribute("data-parada-seg");
+        actualizarEtiquetaParadaSlider();
+        refrescarDom(true);
+      });
+    });
+    $("parada-pct").addEventListener("input", actualizarEtiquetaParadaSlider);
+    $("btn-fijar-parada").addEventListener("click", function () {
+      if (!sim) return;
+      CM.programarParada(CM_EST, paradaSegSel, Number($("parada-pct").value), sim.L, SE);
+      refrescarDom(true);
+    });
+    $("btn-quitar-parada").addEventListener("click", function () {
+      CM.quitarParada(CM_EST);
+      refrescarDom(true);
+    });
+    $("btn-reanudar-parada").addEventListener("click", function () { reanudar(); });
+    $("btn-volver-base").addEventListener("click", function () {
+      CM_EST.enParadaProgramada = false;
+      limpiarViaje(true);
+    });
+    $("lienzo-pista").addEventListener("click", clickEnCanvasParada);
     Array.prototype.forEach.call(document.querySelectorAll("[data-vel]"), function (b) {
       b.addEventListener("click", function () {
         velSim = Number(b.getAttribute("data-vel"));
@@ -985,14 +1334,35 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     window.addEventListener("resize", function () { redimensionar(); ajustarVista(); if (sim) dibujar(performance.now()); });
   }
 
-  /* ---- 4) Panel, alertas y cajón (escaneo administrado: pista despejada, sin obstáculos simulados) ---- */
+  /* ---- 4) Panel, alertas y cajón ---- */
   function alertaActual(f, zf, za) {
     var vel = fmt(Math.abs(sim.vLineal), 2);
-    if (sim.nav.paradaSeguridad || reg.motivo) return { n: "", t: "ESCANEO INTERRUMPIDO · " + (reg.motivo || sim.motivoParada || "parada de seguridad") + " · reintenta el " + (FS.fase === 2 ? "segundo" : "primer") + " escaneo" };
+    if (avisoBloqueoMvp) return { n: "aviso", t: avisoBloqueoMvp };
+    if (sim.nav.paradaSeguridad || reg.motivo) return { n: "", t: "RECORRIDO INTERRUMPIDO · " + (reg.motivo || sim.motivoParada || "parada de seguridad") + " · reintenta el viaje" };
     if (f < 0) return { n: "", t: "FALLO SENSOR FRONTAL (sin eco) · parada" };
+    if (faseActual === 4) {
+      if (CM_EST.enParadaProgramada && CM_EST.paradaProgramada) {
+        return { n: "ok", t: "DETENIDO EN " + CM_EST.paradaProgramada.etiqueta.toUpperCase() + " · pulsa Reanudar destino o Volver a Base" };
+      }
+      var evEco = CM.evaluarEcoUltrasonico(CM_EST, sim.s, sim.L, f, SE);
+      if (evEco.esObjetoReal && sim.ultimaSalida && sim.ultimaSalida.frenadoCritico) {
+        return { n: "", t: "PARADA POR OBJETO REAL · " + evEco.texto + " · " + vel + " m/s" };
+      }
+      if (evEco.esObjetoReal && evEco.severidad === "precaucion") {
+        return { n: "aviso", t: "PRECAUCIÓN · " + evEco.texto };
+      }
+      if (sim.frenoRemoto) return { n: "aviso", t: "FRENO REMOTO ACTIVO · misión en pausa" };
+      if (reg.completo) {
+        return { n: "ok", t: "MISIÓN MVP COMPLETA (" + CM_EST.destinoMvp + ") · Viajes verificados: " + CM_EST.viajesOperativos + "/" + CM.C.META_VIAJES_PARADA + (CM.paradaDesbloqueada(CM_EST) ? " · Parada programable desbloqueada ✔" : "") };
+      }
+      return null;
+    }
     if (sim.ultimaSalida && sim.ultimaSalida.frenadoCritico && reg.activo) return { n: "", t: "PARADA: el HC-SR04P frontal lee < 20 cm · la pista del escaneo administrado debe estar despejada · " + vel + " m/s" };
     if (sim.frenoRemoto) return { n: "aviso", t: "FRENO REMOTO ACTIVO · el registro se conserva" };
-    if (reg.completo && FS.fase === 2) {
+    if (faseActual === 3 && CM_EST.calibrada) {
+      return { n: "ok", t: "RUTA CALIBRADA (5/5) · Lista para operación mínima (MVP) · perfiles S1, S2 y S3 unificados" };
+    }
+    if (reg.completo && faseActual === 2) {
       var rs = SE.resumenPorSegmento(reg.muestras);
       return { n: "ok", t: "SEGUNDO ESCANEO COMPLETO · " + reg.muestras.length + " puntos · S1 " + rs.S1 + " · S2 " + rs.S2 + " · S3 " + rs.S3 };
     }
@@ -1002,7 +1372,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 
   function filaHtml(m) {
     var us = (m.frente_cm === null ? "sin eco" : fmt(m.frente_cm, 0)) + " / " + fmt(m.atras_cm, 0);
-    var seg = FS.fase === 2 && m.seg ? m.seg : null;
+    var seg = usaSegmentos() && m.seg ? m.seg : null;
     var cls = (m.final ? "final" : "") + (seg ? " seg-" + seg.toLowerCase() : "");
     var oculto = seg && filtroSeg !== "todos" && filtroSeg !== seg ? " hidden" : "";
     return "<tr" + (cls.trim() ? ' class="' + cls.trim() + '"' : "") + (seg ? ' data-seg="' + seg + '"' : "") + oculto + '><td data-label="#">' + m.n + "</td>" +
@@ -1010,16 +1380,51 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       '</td><td class="col-ancha" data-label="Pose x, y · θ">' + fmt(m.x, 2) + ", " + fmt(m.y, 2) + " · " + fmt(m.angulo, 0) + '°</td><td class="tcrt-c" data-label="TCRT">' + m.tcrt.join("") +
       '</td><td class="paredes col-ancha" data-label="Paredes ref. F / A">' + us + ' cm</td><td data-label="Yaw">' + fmt(m.yaw_deg, 1) + '°</td><td data-label="v (m/s)">' + fmt(m.v_ms, 2) + "</td></tr>";
   }
+  function htmlPerfilUnificado() {
+    var pf = CM_EST.perfilUnificado;
+    return ["S1", "S2", "S3"].map(function (id) {
+      var p = pf[id];
+      var pared = (p.paredFrenteCm === null ? "desp." : fmt(p.paredFrenteCm, 0) + " cm") + " / " + fmt(p.paredAtrasCm, 0) + " cm";
+      return '<div class="seg-unif-card ' + id.toLowerCase() + '"><b>' + id + " · " + fmt(p.distanciaM, 2) + ' m</b>' +
+        "<span>TCRT: " + fmt(p.estabilidadTcrtPct, 0) + "%</span>" +
+        "<span>Pared: " + pared + "</span>" +
+        "<span>Conf.: <strong>" + fmt(p.confianzaPct, 1) + "%</strong></span></div>";
+    }).join("");
+  }
+  function htmlEventosOperativos() {
+    if (!CM_EST.eventosOperativos.length) return '<div class="ev-item">Sin eventos operativos todavía.</div>';
+    return CM_EST.eventosOperativos.slice(-10).reverse().map(function (e) {
+      var cls = e.tipo.indexOf("OBSTACULO") === 0 ? "obs" : (e.tipo === "PARADA_PROGRAMADA" ? "parada" : "ok");
+      return '<div class="ev-item ' + cls + '"><b>[' + e.seg + " · " + fmt(e.s_m, 2) + " m]</b> " + e.detalle + "</div>";
+    }).join("");
+  }
   function refrescarRegistro() {
     var ms = reg.muestras;
     if (modalAbierto) refrescarTabla(ms);
     refrescarResumenVisual(ms);
     refrescarTextosRegistro(ms);
+    var mostrarUnif = faseActual >= 3;
+    $("perfil-unificado-grid").hidden = !mostrarUnif;
+    $("datos-consolidado").hidden = !mostrarUnif;
+    if (mostrarUnif) {
+      var hUnif = htmlPerfilUnificado();
+      $("perfil-unificado-grid").innerHTML = hUnif;
+      $("datos-consolidado").innerHTML = hUnif;
+    }
+    var mostrarEv = faseActual === 4;
+    $("grupo-eventos-consola").hidden = !mostrarEv;
+    $("datos-eventos").hidden = !mostrarEv;
+    if (mostrarEv) {
+      var hEv = htmlEventosOperativos();
+      $("consola-eventos").innerHTML = hEv;
+      $("datos-eventos").innerHTML = hEv;
+    }
   }
   function refrescarTabla(ms) {
     var tb = $("reg-filas");
     if (!ms.length) {
-      if (filasPintadas !== 0 || tb.textContent.indexOf(FS.fase === 2 ? "segundo" : "primer") < 0) { tb.innerHTML = '<tr class="vacia"><td colspan="9">Sin muestras: inicia el ' + (FS.fase === 2 ? "segundo" : "primer") + ' escaneo.</td></tr>'; filasPintadas = 0; }
+      var etqVacia = faseActual === 4 ? "una misión MVP" : (faseActual === 3 ? "un escaneo de calibración" : (faseActual === 2 ? "el segundo escaneo" : "el primer escaneo"));
+      if (filasPintadas !== 0 || tb.textContent.indexOf(etqVacia) < 0) { tb.innerHTML = '<tr class="vacia"><td colspan="9">Sin muestras: inicia ' + etqVacia + '.</td></tr>'; filasPintadas = 0; }
     } else if (filasPintadas < 0 || filasPintadas > ms.length) {
       tb.innerHTML = ms.map(filaHtml).join(""); filasPintadas = ms.length;
     } else if (filasPintadas < ms.length || (ms[ms.length - 1].final && !tb.lastElementChild.classList.contains("final"))) {
@@ -1031,9 +1436,25 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
   function refrescarTextosRegistro(ms) {
     var st = $("reg-estado");
+    if (faseActual === 3) {
+      st.textContent = CM_EST.calibrada ? "Calibrada ✔" : ("Escaneo " + CM.conteoEscaneos(CM_EST) + "/5");
+      st.className = "seg-pill" + (CM_EST.calibrada ? " ok" : (reg.activo ? " activo" : ""));
+      $("reg-resumen").textContent = $("datos-resumen").textContent = CM_EST.calibrada
+        ? "Ruta Calibrada (5/5) · perfiles S1, S2 y S3 unificados · lista para Operación MVP."
+        : "Calibración " + CM.conteoEscaneos(CM_EST) + "/5 · pista despejada · promediando TCRT5000 y paredes HC-SR04P por segmento.";
+      return;
+    }
+    if (faseActual === 4) {
+      st.textContent = "MVP · " + CM_EST.viajesOperativos + "/" + CM.C.META_VIAJES_PARADA;
+      st.className = "seg-pill" + (CM.paradaDesbloqueada(CM_EST) ? " ok" : " activo");
+      $("reg-resumen").textContent = $("datos-resumen").textContent =
+        "Operación MVP · Destino " + CM_EST.destinoMvp + " · Viajes verificados: " + CM_EST.viajesOperativos + "/" + CM.C.META_VIAJES_PARADA +
+        (CM_EST.paradaProgramada ? " · " + CM_EST.paradaProgramada.etiqueta : "");
+      return;
+    }
     st.textContent = reg.activo ? (corriendo ? "Escaneando" : "En pausa") : (reg.completo ? "Completo" : (reg.motivo ? "Interrumpido" : "Sin iniciar"));
     st.className = "seg-pill" + (reg.activo ? " activo" : (reg.completo ? " ok" : ""));
-    if (FS.fase === 2) {
+    if (faseActual === 2) {
       var rs = SE.resumenPorSegmento(ms);
       $("reg-resumen").textContent = $("datos-resumen").textContent = ms.length
         ? "Pista " + reg.pista + " · " + ms.length + " muestra(s) · S1 " + rs.S1 + " · S2 " + rs.S2 + " · S3 " + rs.S3 + " · último punto s = " + fmt(ms[ms.length - 1].s_m, 2) + " m · crucero " + fmt(CFG[2].velMs, 2) + " m/s"
@@ -1051,7 +1472,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     return (b[1] || b[2]) && !b[0] && !b[3] ? 2 : 1;       /* 2 = centrada · 1 = corrigiendo */
   }
   function refrescarResumenVisual(ms) {
-    var n = ms.length, ult = n ? ms[n - 1] : null, L = sim.L, fase2 = FS.fase === 2;
+    var n = ms.length, ult = n ? ms[n - 1] : null, L = sim.L, fase2 = usaSegmentos();
     var tS = reg.activo ? sim.t - reg.t0 : (n ? reg.tFinS : 0), dist = ult ? Math.max(ult.s_m, reg.activo ? sim.s : 0) : 0;
     $("kpi-n").textContent = String(n);
     $("kpi-n-det").textContent = fase2 && n ? (function (r) { return "S1 " + r.S1 + " · S2 " + r.S2 + " · S3 " + r.S3; })(SE.resumenPorSegmento(ms)) : "1 cada 2 s";
@@ -1060,7 +1481,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("kpi-t").innerHTML = fmt(tS, 1) + "<small>s</small>";
     $("kpi-t-det").textContent = reg.completo ? "viaje completo" : (reg.activo ? (corriendo ? "en curso" : "en pausa") : "sin iniciar");
     $("kpi-v").innerHTML = fmt(tS > 0.5 ? dist / tS : 0, 2) + "<small>m/s</small>";
-    $("kpi-v-det").textContent = "media · consigna " + fmt(CFG[FS.fase].velMs, 2) + " m/s";
+    $("kpi-v-det").textContent = "media · consigna " + fmt(CFG[faseActual].velMs, 2) + " m/s";
     $("perfil-svg").innerHTML = perfilSvg(ms, L, fase2);
     $("perfil-leyenda").innerHTML = fase2
       ? '<span><i style="background:' + PAL.seg1 + '"></i>S1</span><span><i style="background:' + PAL.seg2 + '"></i>S2</span><span><i style="background:' + PAL.seg3 + '"></i>S3</span><span>barra alta = centrada · media = corrigiendo · baja = sin línea</span>'
@@ -1126,13 +1547,19 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("us-frente").className = "val " + zf; $("us-atras").className = "val " + za;
     $("us-frente").textContent = f > 0 ? fmt(f, 0) + " cm" : "despejado";
     $("us-atras").textContent = fmt(a, 0) + " cm";
+    if (faseActual === 4) {
+      var ecoInfo = CM.evaluarEcoUltrasonico(CM_EST, sim.s, sim.L, f, SE);
+      $("us-contraste").textContent = ecoInfo.texto;
+    } else {
+      $("us-contraste").textContent = "Pista despejada (Escaneos 1–5) · línea base de paredes fija";
+    }
     var omega = (sim.vIzq - sim.vDer) * S.P.V_MAX_MS / S.P.ANCHO_EJES_M * 180 / Math.PI;
     $("mpu-rumbo").textContent = fmt(S.yawMedido(sim), 1) + "°";
     $("mpu-omega").textContent = fmt(omega, 1) + " °/s";
     var vel = fmt(Math.abs(sim.vLineal), 2);
     $("mov-vel").textContent = vel + " m/s";
     $("mov-pwm").textContent = fmt(sim.vIzq, 2) + " / " + fmt(sim.vDer, 2);
-    $("mov-detalle").textContent = "consigna " + (sim.velObjetivoMs ? fmt(sim.velObjetivoMs, 3) + " m/s (" + (FS.fase === 2 ? "crucero TG_ROBOT" : "PWM " + Math.round(VEL.pwmLento * 100) + " %") + ")" : "—") + " · desvío " + fmt(sim.y * 100, 1) + " cm";
+    $("mov-detalle").textContent = "consigna " + (sim.velObjetivoMs ? fmt(sim.velObjetivoMs, 3) + " m/s (" + (usaSegmentos() ? "crucero TG_ROBOT" : "PWM " + Math.round(VEL.pwmLento * 100) + " %") + ")" : "—") + " · desvío " + fmt(sim.y * 100, 1) + " cm";
 
     /* Velocímetro SVG (0,00–0,46 m/s) */
     var v = R.velocimetro(sim.vLineal);
@@ -1145,8 +1572,61 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var tViaje = reg.activo ? sim.t - reg.t0 : (reg.muestras.length ? reg.tFinS : 0), prox = PE.faltaS(reg, sim);
     $("hud-t").textContent = fmt(tViaje, 1) + " s";
     $("hud-s").textContent = fmt(sim.s, 2) + " / " + fmt(sim.L, 2) + " m";
-    $("hud-n").textContent = String(reg.muestras.length) + (FS.fase === 2 ? " · " + SE.segmentoDe(sim.s, sim.L) : "");
+    $("hud-n").textContent = String(reg.muestras.length) + (usaSegmentos() ? " · " + SE.segmentoDe(sim.s, sim.L) : "");
     $("hud-prox").textContent = prox === null ? (reg.completo ? "listo ✔" : "—") : "en " + fmt(prox, 1) + " s";
+
+    /* Badges de pestañas y barras de Calibración (3–5) + Operación MVP + Parada programable */
+    var nCal = CM.conteoEscaneos(CM_EST), sigCal = CM.siguienteEscaneoCalib(CM_EST);
+    $("fase3-pill").textContent = CM_EST.calibrada ? "Calibrada ✔" : (nCal + "/5");
+    $("fase3-pill").className = "fase-pill" + (CM_EST.calibrada ? " ok" : "");
+    $("fase4-pill").textContent = CM_EST.calibrada ? (CM_EST.viajesOperativos + "/8") : "🔒 5/5";
+    $("fase4-pill").className = "fase-pill" + (CM.paradaDesbloqueada(CM_EST) ? " ok" : "");
+    $("ref-calib-estado").textContent = CM_EST.calibrada ? "Calibrada · Lista para operación mínima (MVP)" : (nCal + "/5 escaneos");
+    $("ref-mvp-estado").textContent = "Viajes verificados: " + CM_EST.viajesOperativos + "/" + CM.C.META_VIAJES_PARADA;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-cd]"), function (el) {
+      var k = Number(el.getAttribute("data-cd"));
+      el.className = "calib-dot" + (CM_EST.escaneosCompletos[k] ? " done" : (k === sigCal ? " act" : ""));
+    });
+    $("calib-badge").textContent = CM_EST.calibrada ? "Calibrada · Lista para operación mínima (MVP)" : ("Escaneo " + sigCal + "/5 pendiente (" + nCal + "/5)");
+    $("calib-badge").className = "seg-pill" + (CM_EST.calibrada ? " ok" : " activo");
+    $("btn-calib-rapido").textContent = CM_EST.calibrada ? "✔ Escaneos 3–5 listos" : ("⚡ Completar escaneo " + sigCal + "/5");
+    $("btn-calib-rapido").disabled = CM_EST.calibrada;
+    $("btn-calib-todo").disabled = CM_EST.calibrada;
+    $("btn-ir-mvp").disabled = !CM_EST.calibrada;
+
+    /* Operación MVP */
+    Array.prototype.forEach.call(document.querySelectorAll("[data-dest-mvp]"), function (b) {
+      var on = b.getAttribute("data-dest-mvp") === CM_EST.destinoMvp;
+      b.classList.toggle("sel", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    var hayObs = sim.obstaculoS !== null;
+    $("btn-sim-obstaculo").disabled = !CM.obstaculosPermitidos(faseActual, CM_EST);
+    $("btn-sim-obstaculo").textContent = hayObs ? "✅ Retirar objeto" : "📦 Simular objeto";
+    $("btn-sim-obstaculo").className = "ctrl-btn " + (hayObs ? "peligro" : "aviso");
+    $("btn-sim-obstaculo").setAttribute("aria-pressed", String(hayObs));
+    $("mvp-viajes-badge").textContent = "Viajes verificados: " + CM_EST.viajesOperativos + "/" + CM.C.META_VIAJES_PARADA;
+    $("mvp-viajes-badge").className = "seg-pill" + (CM.paradaDesbloqueada(CM_EST) ? " ok" : " activo");
+    $("btn-mvp-lote8").disabled = !CM_EST.calibrada || CM.paradaDesbloqueada(CM_EST);
+
+    /* Parada programable (viajes >= 8) */
+    var desbloq = CM.paradaDesbloqueada(CM_EST);
+    $("parada-estado-txt").className = "parada-lock" + (desbloq ? " ok" : "");
+    $("parada-estado-txt").textContent = desbloq
+      ? (CM_EST.paradaProgramada ? "📍 " + CM_EST.paradaProgramada.etiqueta + " (o clic en el mapa)" : "🔓 Parada programable desbloqueada (" + CM_EST.viajesOperativos + "/8) · elige segmento o clic en mapa")
+      : ("🔒 Programar parada en segmento · Disponible tras 8 viajes verificados (" + CM_EST.viajesOperativos + "/8)");
+    Array.prototype.forEach.call(document.querySelectorAll("[data-parada-seg]"), function (b) {
+      var on = b.getAttribute("data-parada-seg") === paradaSegSel;
+      b.disabled = !desbloq;
+      b.classList.toggle("sel", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    $("parada-pct").disabled = !desbloq;
+    $("btn-fijar-parada").disabled = !desbloq;
+    $("btn-quitar-parada").hidden = !(desbloq && CM_EST.paradaProgramada);
+    $("btn-reanudar-parada").hidden = !CM_EST.enParadaProgramada;
+    $("btn-volver-base").hidden = !CM_EST.enParadaProgramada;
+    $("lienzo-pista").style.cursor = (faseActual === 4 && desbloq) ? "crosshair" : "default";
 
     /* Ranura fija de alertas (visibility, delta = 0 px) */
     var al = alertaActual(f, zf, za), el = $("alerta");
@@ -1155,7 +1635,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 
     /* Botones */
     $("btn-principal-ctx").textContent = textoPrincipal();
-    $("btn-principal-ctx").className = "btn-ctx" + (reg.completo && !reg.activo ? " ok" : "");
+    $("btn-principal-ctx").className = "btn-ctx" + ((reg.completo && !reg.activo) || (faseActual === 3 && CM_EST.calibrada) ? " ok" : "");
     $("btn-encender").setAttribute("aria-pressed", String(corriendo));
     $("btn-encender-txt").textContent = corriendo ? "⏹ Detener" : "⚡ Encender";
     if (cajonAbierto || modalAbierto) refrescarRegistro();
@@ -1224,7 +1704,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.clearRect(0, 0, w, h);
     c.font = "10.5px JetBrains Mono, monospace"; c.textBaseline = "middle";
 
-    var sinIniciar = !ms.length, fase2 = FS.fase === 2;
+    var sinIniciar = !ms.length, fase2 = usaSegmentos();
     var prog = Math.max(0.12, Math.min(1, sim.s / Math.max(0.1, sim.L)));
     dibujarPiso(c, fase2 ? 0.9 : (sinIniciar ? 0.35 : (reg.completo ? 1 : 0.3 + 0.7 * prog)));
     if (fase2) dibujarRutaSegmentos(c);
@@ -1237,12 +1717,47 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.fillStyle = PAL.acento; c.textAlign = "left";
     if (fase2) { c.textAlign = "right"; c.fillText("Base", VX(pIni.x) - Math.max(14, 0.16 * vista.sc), VY(pIni.y) - Math.max(16, 0.12 * vista.sc)); } /* PC3 rotula abajo */
     else c.fillText("Inicio", VX(pIni.x) - 12, VY(pIni.y) + 24);
-    if (sinIniciar && fase2) {
+    if (sinIniciar && faseActual === 2) {
       c.fillStyle = "rgba(148,163,184,0.85)"; c.textAlign = "center";
       c.fillText("Camino completo · 3 segmentos · segundo escaneo a " + fmt(CFG[2].velMs, 2) + " m/s, 1 punto cada 2 s", w / 2, h - 14);
+    } else if (sinIniciar && faseActual === 3) {
+      c.fillStyle = "rgba(148,163,184,0.85)"; c.textAlign = "center";
+      c.fillText("Calibración " + CM.conteoEscaneos(CM_EST) + "/5 · verificación y unificación de S1, S2 y S3 (pista despejada)", w / 2, h - 14);
+    } else if (sinIniciar && faseActual === 4) {
+      c.fillStyle = "rgba(148,163,184,0.85)"; c.textAlign = "center";
+      c.fillText("Operación MVP · Destino " + CM_EST.destinoMvp + " · Viajes " + CM_EST.viajesOperativos + "/8" + (CM.paradaDesbloqueada(CM_EST) ? " · clic sobre la ruta para fijar parada" : ""), w / 2, h - 14);
     } else if (sinIniciar) {
       c.fillStyle = "rgba(148,163,184,0.85)"; c.textAlign = "center";
       c.fillText("Espacio sin mapear · primer escaneo a " + fmt(VEL.lentaMs, 2) + " m/s, 1 punto cada 2 s", w / 2, h - 14);
+    }
+
+    /* Fase 4 · Marcador de Parada Programada en S1/S2/S3 */
+    if (faseActual === 4 && CM_EST.paradaProgramada) {
+      var pp = CM_EST.paradaProgramada, ptP = tr.puntoEn(pp.sM), pxP = VX(ptP.x), pyP = VY(ptP.y);
+      c.save();
+      c.fillStyle = PAL.aviso; c.strokeStyle = PAL.fondo; c.lineWidth = 2.5;
+      c.beginPath(); c.arc(pxP, pyP, 9, 0, 7); c.fill(); c.stroke();
+      c.fillStyle = PAL.fondo; c.beginPath(); c.arc(pxP, pyP, 3.5, 0, 7); c.fill();
+      var txtP = pp.etiqueta;
+      c.font = "bold 11px JetBrains Mono, monospace"; c.textAlign = "center";
+      var tw = c.measureText(txtP).width + 12;
+      c.fillStyle = "rgba(11,18,32,0.92)"; c.fillRect(pxP - tw / 2, pyP - 30, tw, 18);
+      c.strokeStyle = PAL.aviso; c.lineWidth = 1.5; c.strokeRect(pxP - tw / 2, pyP - 30, tw, 18);
+      c.fillStyle = PAL.avisoTexto; c.fillText(txtP, pxP, pyP - 21);
+      c.restore();
+    }
+
+    /* Fase 4 · Marcador de Objeto Real simulado sobre la pista */
+    if (faseActual === 4 && sim.obstaculoS !== null) {
+      var ptO = tr.puntoEn(sim.obstaculoS), pxO = VX(ptO.x), pyO = VY(ptO.y);
+      c.save();
+      c.translate(pxO, pyO);
+      c.fillStyle = PAL.fallo; c.strokeStyle = "#fff"; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(0, -10); c.lineTo(10, 0); c.lineTo(0, 10); c.lineTo(-10, 0); c.closePath(); c.fill(); c.stroke();
+      c.font = "bold 10.5px JetBrains Mono, monospace"; c.textAlign = "center";
+      c.fillStyle = "rgba(185,28,28,0.92)"; c.fillRect(-38, -28, 76, 16);
+      c.fillStyle = "#fff"; c.fillText("OBJETO", 0, -20);
+      c.restore();
     }
 
     /* Puntos discretos (uno por muestra de 2 s): sin línea que los una */
@@ -1273,11 +1788,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.restore();
 
     c.textAlign = "left"; c.fillStyle = PAL.muted;
-    if (fase2) c.fillText((sinIniciar ? "Camino completo · Pista " + tr.id : "Segundo escaneo · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · " + ms.length + " puntos · " + SE.segmentoDe(sim.s, sim.L)), 10, 14);
+    if (faseActual === 4) c.fillText("Operación MVP · Destino " + CM_EST.destinoMvp + " · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · Viajes " + CM_EST.viajesOperativos + "/8", 10, 14);
+    else if (faseActual === 3) c.fillText("Calibración " + CM.conteoEscaneos(CM_EST) + "/5 · " + (CM_EST.calibrada ? "Calibrada ✔" : "Escaneo " + CM.siguienteEscaneoCalib(CM_EST) + "/5") + " · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m", 10, 14);
+    else if (faseActual === 2) c.fillText((sinIniciar ? "Camino completo · Pista " + tr.id : "Segundo escaneo · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · " + ms.length + " puntos · " + SE.segmentoDe(sim.s, sim.L)), 10, 14);
     else c.fillText(sinIniciar ? "Sin mapear · Pista " + tr.id : "Primer escaneo · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · " + ms.length + " puntos", 10, 14);
   }
 
-  /* Segundo escaneo: camino completo en 3 segmentos de color + PC1, PC2 y PC3 sobre la ruta */
+  /* Segundo escaneo / Calibración / MVP: camino completo en 3 segmentos de color + PC1, PC2 y PC3 sobre la ruta */
   function dibujarRutaSegmentos(c) {
     var L = sim.L, paso = 0.05;
     SE.segmentos(L).forEach(function (sg) {
@@ -1296,16 +1813,29 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.font = "bold 11px JetBrains Mono, monospace"; c.textAlign = "center";
     SE.puntosControl(L).forEach(function (pc, i) {
       var p = tr.puntoEn(pc.posicionM), x = VX(p.x), y = VY(p.y), ang = tr.rumboPistaGrados(Math.min(pc.posicionM, L - 0.01)) * Math.PI / 180;
-      c.fillStyle = PAL.fondo; c.strokeStyle = COL_SEG["S" + (i + 1)]; c.lineWidth = 2.5;
+      var esDest = faseActual === 4 && CM_EST.destinoMvp === pc.id;
+      c.fillStyle = esDest ? PAL.ok : PAL.fondo; c.strokeStyle = esDest ? "#fff" : COL_SEG["S" + (i + 1)]; c.lineWidth = esDest ? 3 : 2.5;
       c.fillRect(x - 7, y - 7, 14, 14); c.strokeRect(x - 7, y - 7, 14, 14);
       var dl = Math.max(22, 0.13 * vista.sc + 10), lx = x + Math.sin(ang) * dl, ly = y + Math.cos(ang) * dl; /* fuera del robot */
       c.fillStyle = PAL.fondo; c.globalAlpha = 0.85; c.fillRect(lx - 16, ly - 8, 32, 16); c.globalAlpha = 1;
-      c.fillStyle = PAL.texto; c.fillText(pc.id, lx, ly);
+      c.fillStyle = esDest ? PAL.ok : PAL.texto; c.fillText(pc.id, lx, ly);
     });
     c.font = "10.5px JetBrains Mono, monospace";
   }
 
-  window.__p05 = { get sim() { return sim; }, get reg() { return reg; }, get fase() { return FS.fase; }, registros: FS.registros, get corriendo() { return corriendo; }, get modalAbierto() { return modalAbierto; }, cambiarFase: function (f) { cambiarFase(f); }, VEL: VEL, cargarPista: function (id) { cargarPista(id); }, refrescar: refrescarDom };
+  window.__p05 = {
+    get sim() { return sim; },
+    get reg() { return reg; },
+    get fase() { return faseActual; },
+    get calib() { return CM_EST; },
+    registros: FS.registros,
+    get corriendo() { return corriendo; },
+    get modalAbierto() { return modalAbierto; },
+    cambiarFase: function (f) { return cambiarFase(f); },
+    VEL: VEL,
+    cargarPista: function (id) { cargarPista(id); },
+    refrescar: refrescarDom
+  };
 })();
 </script>
 </body>

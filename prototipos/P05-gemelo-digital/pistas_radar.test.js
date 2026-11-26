@@ -218,12 +218,13 @@ module.exports = async function (ctx) {
     assert.ok(/data-pista="A"/.test(html) && /data-pista="B"/.test(html));
     for (const id of ["lienzo-pista", "velocimetro", "velo-arco", "velo-aguja", "alerta"]) assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     assert.ok(!html.includes('id="base-obstaculo"') && !/obs-base|obs-ficha|modo-colocar/.test(html), "no queda el control de obstáculo");
-    assert.ok(!/colocarObstaculo|forzarFrente|inyectarObstaculo|pointerdown/.test(html), "ningún atajo inyecta obstáculos durante el primer escaneo");
+    assert.ok(!/colocarObstaculo|forzarFrente|pointerdown/.test(html), "ningún atajo suelto inyecta obstáculos");
+    assert.ok(/obstaculosPermitidos\(faseActual,\s*CM_EST\)/.test(html), "los obstáculos solo se habilitan en Operación MVP tras calibrar 5/5");
     assert.ok(html.includes("../P04-simulador-1-esp32/codigo/pista.js"), "usa las pistas de SIM1 sin copiarlas");
   });
 
   await prueba("los archivos nuevos no reimplementan la máquina de estados ni mencionan 'IA'", () => {
-    for (const f of ["pistas_sim1.js", "radar_us.js", "gemelo_estado.js", "simulador_movimiento.js", "aprendizaje_gemelo.js", "index.html"]) {
+    for (const f of ["pistas_sim1.js", "radar_us.js", "gemelo_estado.js", "simulador_movimiento.js", "aprendizaje_gemelo.js", "calibracion_mvp.js", "index.html"]) {
       const src = fs.readFileSync(path.join(__dirname, f), "utf8");
       assert.ok(!/nav\.estado\s*=[^=]/.test(src), f + " asigna nav.estado");
       assert.ok(!/case\s+(ESTADO|nucleo\.ESTADO)\./.test(src), f + " reimplementa el switch");
@@ -801,7 +802,7 @@ module.exports = async function (ctx) {
     assert.ok(/--seg1:[^;]+;\s*--seg2:[^;]+;\s*--seg3:/.test(html) && /seg1: \[/.test(html) && /seg2: \[/.test(html) && /seg3: \[/.test(html));
     for (const f of ["todos", "S1", "S2", "S3"]) assert.ok(html.includes('data-seg-filtro="' + f + '"'), "falta filtro " + f);
     assert.ok(html.includes('class="col-seg"') && /seg-chip/.test(html) && /data-seg=/.test(html));
-    assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b|colocarObstaculo/i.test(html), "sin torretas ni obstáculos en ninguna fase");
+    assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "sin torretas ni balizas en ninguna fase");
   });
 
   await prueba("Registro del viaje: resumen visual por defecto (4 KPIs + perfil SVG TCRT/paredes) y modal «Datos exactos» con todas las columnas, filtro por segmento y tarjetas en móvil", () => {
@@ -818,5 +819,99 @@ module.exports = async function (ctx) {
     assert.ok(/\.modal-datos-cuerpo\s*\{[^}]*overflow-x:\s*hidden/.test(html), "el modal no hace scroll horizontal");
     assert.ok(/td::before\s*\{[^}]*content:\s*attr\(data-label\)/.test(html) && /data-label="Paredes ref\. F \/ A"/.test(html), "tarjetas con etiquetas en móvil");
     assert.ok(/function perfilSvg/.test(html) && /COL_SEG\[m\.seg\]/.test(html.slice(html.indexOf("function perfilSvg"))), "el perfil usa los colores S1/S2/S3 en el Escaneo 2");
+  });
+
+  /* ---- Calibración 3–5, Operación MVP con obstáculos y Parada Programable (>= 8 viajes) ---- */
+  const CM = require("./calibracion_mvp.js");
+
+  await prueba("Calibración 3–5: verifica y unifica S1, S2 y S3 (TCRT, paredes ref. y confianza) y marca Calibrada exactamente al 5/5", () => {
+    const est = CM.crearEstado(PE, SE, 9.0);
+    const r1 = PE.crear(), r2 = PE.crear();
+    assert.strictEqual(est.calibrada, false);
+    assert.strictEqual(CM.conteoEscaneos(est), 0);
+    assert.strictEqual(CM.siguienteEscaneoCalib(est), 3);
+
+    CM.completarEscaneoRapido(est, 3, r1, r2, SE, 9.0, "B");
+    assert.strictEqual(CM.conteoEscaneos(est), 3);
+    assert.strictEqual(est.calibrada, false, "3/5 aún no calibra");
+    const conf3 = est.perfilUnificado.S2.confianzaPct;
+
+    CM.completarEscaneoRapido(est, 4, r1, r2, SE, 9.0, "B");
+    assert.strictEqual(CM.conteoEscaneos(est), 4);
+    assert.strictEqual(est.calibrada, false, "4/5 aún no calibra");
+    const conf4 = est.perfilUnificado.S2.confianzaPct;
+    assert.ok(conf4 > conf3, "confianza sube de 3/5 a 4/5");
+
+    CM.completarEscaneoRapido(est, 5, r1, r2, SE, 9.0, "B");
+    assert.strictEqual(CM.conteoEscaneos(est), 5);
+    assert.strictEqual(est.calibrada, true, "5/5 marca Calibrada");
+    for (const segId of ["S1", "S2", "S3"]) {
+      const p = est.perfilUnificado[segId];
+      assert.strictEqual(p.distanciaM, 3.0);
+      assert.ok(p.muestras > 0 && p.estabilidadTcrtPct >= 80 && p.confianzaPct > conf4, segId + " unificado con alta confianza");
+    }
+  });
+
+  await prueba("Operación MVP: obstáculos bloqueados en Escaneos 1–5 y habilitados solo en Fase 4 con contraste contra paredes de referencia", () => {
+    const est = CM.crearEstado(PE, SE, 9.0);
+    const r1 = PE.crear(), r2 = PE.crear();
+    assert.strictEqual(CM.obstaculosPermitidos(1, est), false);
+    assert.strictEqual(CM.obstaculosPermitidos(2, est), false);
+    assert.strictEqual(CM.obstaculosPermitidos(3, est), false);
+    assert.strictEqual(CM.obstaculosPermitidos(4, est), false, "sin calibrar 5/5 sigue bloqueado");
+
+    CM.completarCalibracionCompleta(est, r1, r2, SE, 9.0, "B");
+    assert.strictEqual(CM.obstaculosPermitidos(1, est), false);
+    assert.strictEqual(CM.obstaculosPermitidos(2, est), false);
+    assert.strictEqual(CM.obstaculosPermitidos(3, est), false);
+    assert.strictEqual(CM.obstaculosPermitidos(4, est), true, "habilitado solo en Operación MVP tras 5/5");
+
+    /* Simular pared fija conocida a 70 cm en S2: lectura de 66 cm NO debe ser falso positivo */
+    est.perfilUnificado.S2.paredFrenteCm = 70;
+    const pared = CM.evaluarEcoUltrasonico(est, 4.5, 9.0, 66, SE);
+    assert.strictEqual(pared.tipo, "pared_fija");
+    assert.strictEqual(pared.esObjetoReal, false);
+
+    /* Objeto real a 16 cm en S2 (muy por debajo de la pared de 70 cm): se detecta como objeto real crítico */
+    const obj = CM.evaluarEcoUltrasonico(est, 4.5, 9.0, 16, SE);
+    assert.strictEqual(obj.tipo, "objeto_real");
+    assert.strictEqual(obj.esObjetoReal, true);
+    assert.strictEqual(obj.severidad, "critica");
+    assert.strictEqual(obj.seg, "S2");
+  });
+
+  await prueba("Parada programable: bloqueada en 0–7 viajes, desbloqueada exactamente al 8.º viaje en S1, S2 o S3", () => {
+    const est = CM.crearEstado(PE, SE, 9.0);
+    const r1 = PE.crear(), r2 = PE.crear();
+    CM.completarCalibracionCompleta(est, r1, r2, SE, 9.0, "B");
+
+    for (let i = 1; i <= 7; i++) {
+      assert.strictEqual(CM.completarViajeOperativo(est, "PC3", 9.0, r1, r2, SE), true);
+      assert.strictEqual(est.viajesOperativos, i);
+      assert.strictEqual(CM.paradaDesbloqueada(est), false, "bloqueada con " + i + "/8 viajes");
+      assert.strictEqual(CM.programarParada(est, "S2", 60, 9.0, SE), null);
+    }
+    const confAntes = est.perfilUnificado.S2.confianzaPct;
+    assert.strictEqual(CM.completarViajeOperativo(est, "PC2", 9.0, r1, r2, SE), true);
+    assert.strictEqual(est.viajesOperativos, 8);
+    assert.strictEqual(CM.paradaDesbloqueada(est), true, "desbloqueada al 8.º viaje");
+    assert.ok(est.perfilUnificado.S2.confianzaPct >= confAntes, "confianza reforzada por viajes");
+
+    const pS2 = CM.programarParada(est, "S2", 60, 9.0, SE);
+    assert.ok(pS2 && pS2.seg === "S2" && Math.abs(pS2.sM - 4.8) < 0.01 && pS2.etiqueta.includes("Parada · S2 (4.8 m)"));
+    const pS3 = CM.programarParadaEnS(est, 7.5, 9.0, SE);
+    assert.ok(pS3 && pS3.seg === "S3" && Math.abs(pS3.sM - 7.5) < 0.05);
+    CM.quitarParada(est);
+    assert.strictEqual(est.paradaProgramada, null);
+  });
+
+  await prueba("Página P05: fases 3 y 4 integradas (calibración 3–5, obstáculos solo en MVP, parada >= 8 viajes y notas App)", () => {
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    assert.ok(html.includes('src="calibracion_mvp.js"'));
+    for (const id of ["barra-calib", "btn-calib-rapido", "btn-calib-todo", "btn-ir-mvp", "barra-mvp", "btn-sim-obstaculo", "mvp-viajes-badge", "btn-mvp-lote8", "panel-parada", "parada-pct", "btn-fijar-parada", "perfil-unificado-grid", "datos-consolidado", "datos-eventos", "nota-app3", "nota-app4"]) {
+      assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
+    }
+    assert.ok(/Disponible tras 8 viajes verificados/.test(html), "texto de bloqueo de parada programable");
+    assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "cero torretas o balizas");
   });
 };
