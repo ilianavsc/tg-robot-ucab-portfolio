@@ -336,6 +336,36 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .escaneo-hud strong { display: block; font-family: var(--font-mono); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tg-dark-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .escaneo-hud strong.cyan { color: var(--tg-dark-accent); }
 
+/* ---- Selector de fase: Escaneo 1 (muestreo base) / Escaneo 2 (3 segmentos) ---- */
+:root { --seg1: var(--tg-dark-accent); --seg2: var(--tg-dark-warning); --seg3: var(--tg-dark-alarm); }
+[data-solo-fase][hidden] { display: none !important; }
+.fase-fila { display: grid; grid-template-columns: 1fr 1fr; background: var(--s2-bg); border-bottom: 1px solid var(--s2-borde); }
+.fase-op {
+  min-height: 44px; padding: 6px 10px; border: none; border-right: 1px solid var(--s2-borde); border-bottom: 3px solid transparent;
+  background: transparent; color: var(--s2-muted); font-family: var(--font-display); font-weight: 700; font-size: 13.5px;
+  cursor: pointer; touch-action: manipulation; text-align: center; line-height: 1.2;
+}
+.fase-op:last-child { border-right: none; }
+.fase-op[aria-pressed="true"] { color: #fff; background: rgba(56, 189, 248, 0.14); border-bottom-color: var(--s2-prim); }
+.fase-op:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: -2px; }
+.fase-op .fase-n { font-family: var(--font-mono); font-size: 11px; color: var(--tg-dark-accent); margin-right: 4px; }
+.seg-sw { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.seg-sw.s1 { background: var(--seg1); } .seg-sw.s2 { background: var(--seg2); } .seg-sw.s3 { background: var(--seg3); }
+.seg-leyenda {
+  position: absolute; top: 26px; right: 10px; z-index: 2; display: grid; gap: 3px; padding: 6px 9px; border-radius: 10px;
+  background: rgba(11, 18, 32, 0.9); border: 1px solid rgba(148, 163, 184, 0.3); pointer-events: none;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--tg-dark-text); font-variant-numeric: tabular-nums;
+}
+.seg-leyenda b { font-weight: 700; }
+.seg-chip { display: inline-block; min-width: 26px; padding: 1px 5px; border-radius: 6px; font-weight: 700; text-align: center; color: var(--tg-dark-bg); }
+.seg-chip.s1 { background: var(--seg1); } .seg-chip.s2 { background: var(--seg2); } .seg-chip.s3 { background: var(--seg3); }
+.seg-filtro { display: inline-flex; flex-wrap: wrap; background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; overflow: hidden; margin: 0 0 6px; }
+.seg-filtro button { min-height: 36px; padding: 4px 12px; border: none; border-right: 1px solid var(--s2-borde); background: transparent; color: var(--s2-muted); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; cursor: pointer; }
+.seg-filtro button:last-child { border-right: none; }
+.seg-filtro button[aria-pressed="true"] { background: rgba(56, 189, 248, 0.2); color: #fff; }
+.seg-filtro button:focus-visible { outline: 2px solid var(--s2-prim); outline-offset: -2px; }
+.nota-seg { margin: 0 0 6px; font-family: var(--font-mono); font-size: 11px; color: var(--s2-muted); }
+
 /* ---- Cajón · Bloque 1: registro del primer viaje (una fila por punto) ---- */
 .tabla-wrap { overflow-x: auto; max-height: 300px; overflow-y: auto; border: 1px solid var(--s2-borde); border-radius: 8px; background: var(--s2-bg); margin: 6px 0 8px; }
 .tabla-muestras { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--tg-dark-text); }
@@ -344,6 +374,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .tabla-muestras td:first-child, .tabla-muestras th:first-child { text-align: center; color: var(--tg-dark-accent); }
 .tabla-muestras td.tcrt-c { text-align: center; letter-spacing: 0.06em; }
 .tabla-muestras tr.final td { color: var(--tg-dark-ok); }
+.tabla-muestras .col-seg { text-align: center; }
+.tabla-muestras:not(.con-seg) .col-seg { display: none; }
+.tabla-muestras tr.seg-s1 td:first-child { box-shadow: inset 3px 0 0 var(--seg1); }
+.tabla-muestras tr.seg-s2 td:first-child { box-shadow: inset 3px 0 0 var(--seg2); }
+.tabla-muestras tr.seg-s3 td:first-child { box-shadow: inset 3px 0 0 var(--seg3); }
 .tabla-muestras .vacia td { text-align: center; color: var(--s2-muted); white-space: normal; padding: 12px 8px; }
 
 /* ---- Cajón · Bloque 2: consola de sensores en vivo (paleta oscura de P02) ---- */
@@ -357,6 +392,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   .escaneo-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .escaneo-hud > div { padding: 5px 8px; }
   #btn-principal-ctx { flex: 1 1 0; min-width: 0; padding: 8px 10px; }
+  .fase-op { font-size: 12px; padding: 4px 6px; }
+  .fase-op .fase-largo { display: none; }
+  .seg-leyenda { top: 24px; right: 6px; font-size: 9.5px; padding: 5px 7px; }
   #btn-freno { padding: 8px 10px; font-size: 13px; }
 }
 
@@ -417,7 +455,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       Prototipos
     </a>
     <p class="ceja">P05 · Gemelo Digital</p>
-    <h1>Primer escaneo de la ruta, <em>punto a punto</em></h1>
+    <h1>Escaneos de la ruta, <em>punto a punto</em></h1>
     <span class="tg-ejec tg-ejec--sil" role="note" title="Se ejecuta en el navegador, sin hardware real (SIL)."><i aria-hidden="true"></i>SIMULACIÓN LOCAL · SIL · DATOS SINTÉTICOS</span>
   </div>
   <p id="aviso-carga" role="status">Cargando núcleo teach-and-repeat y pistas de SIM1…</p>
@@ -426,7 +464,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     <!-- 1. Cabecera 44 px: nombre + encender + velocidad SIL + ⚙ Ingeniería / Datos -->
     <div class="cockpit-hdr">
       <div class="cockpit-id">
-        <p class="cockpit-titulo" id="t-sim">Cockpit<span class="tit-largo"> · Primer escaneo lento</span></p>
+        <p class="cockpit-titulo" id="t-sim">Cockpit<span class="tit-largo" id="t-sim-fase"> · Primer escaneo lento</span></p>
       </div>
       <div class="cockpit-hdr-der">
         <button type="button" class="btn-encender" id="btn-encender" aria-pressed="false" aria-label="Encender o detener el escaneo conservando el registro"><span class="enc-dot" aria-hidden="true"></span><span id="btn-encender-txt">⚡ Encender</span></button>
@@ -439,23 +477,39 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       </div>
     </div>
 
+    <!-- 1b. Selector de fase: Escaneo 1 (muestreo base) / Escaneo 2 (ruta con 3 segmentos) -->
+    <div class="fase-fila" role="group" aria-label="Fase del escaneo">
+      <button type="button" class="fase-op" data-fase="1" aria-pressed="true"><span class="fase-n">1</span>Escaneo 1<span class="fase-largo"> · Muestreo base</span></button>
+      <button type="button" class="fase-op" data-fase="2" aria-pressed="false"><span class="fase-n">2</span>Escaneo 2<span class="fase-largo"> · Ruta con 3 segmentos</span></button>
+    </div>
+
     <!-- 2. Pista de SIM1 + velocidad real del escaneo (P04 / TG_ROBOT) -->
     <div class="pista-fila">
       <div class="pista-seg" role="group" aria-label="Pista del simulador">
         <button class="pista-op" type="button" data-pista="A" aria-pressed="false">PISTA A · 8,05 m</button>
         <button class="pista-op sel" type="button" data-pista="B" aria-pressed="true">PISTA B · 9,00 m</button>
       </div>
-      <p class="escaneo-ref" id="escaneo-ref" style="margin:0">
+      <p class="escaneo-ref" id="escaneo-ref" data-solo-fase="1" style="margin:0">
         <span>Escaneo lento <b id="ref-lenta">0,23 m/s</b> · 1 punto cada <b>2 s</b></span>
         <span class="ref-paredes">HC-SR04P → paredes de referencia (línea base) · pista despejada</span>
         <span class="ref-fuente" id="ref-fuente">PWM 40 % (P04) × 0,57 m/s · crucero 0,41 · máx. 0,46 m/s (TG_ROBOT)</span>
       </p>
+      <p class="escaneo-ref" id="escaneo-ref2" data-solo-fase="2" hidden style="margin:0">
+        <span>Escaneo 2 a crucero <b id="ref-crucero">0,41 m/s</b> · 1 punto cada <b>2 s</b></span>
+        <span id="ref-pcs">PC1 3,00 · PC2 6,00 · PC3 9,00 m (tercios de la ruta)</span>
+        <span class="ref-fuente">TG_ROBOT.velocidad.cruceroMs</span>
+      </p>
     </div>
 
     <!-- 3. Nota de integración con la App móvil -->
-    <aside class="nota-app" id="nota-app" role="note" aria-label="Nota de integración con la App">
+    <aside class="nota-app" id="nota-app" data-solo-fase="1" role="note" aria-label="Nota de integración con la App">
       <span class="nota-ico" aria-hidden="true">i</span>
       <p style="margin:0"><strong>Nota de integración App:</strong> Durante este primer escaneo de calibración/muestreo, el Gemelo Digital muestra el registro técnico punto a punto, pero en la aplicación móvil (<code>tg-robot-ucab-app</code>) el usuario únicamente verá una pantalla de <strong class="cargando">"Cargando..."</strong>.</p>
+    </aside>
+
+    <aside class="nota-app" id="nota-app2" data-solo-fase="2" hidden role="note" aria-label="Nota de integración con la App · segundo escaneo">
+      <span class="nota-ico" aria-hidden="true">i</span>
+      <p style="margin:0"><strong>Nota de integración App:</strong> En este simulador de Gemelo Digital la ruta se divide en 3 colores para analizar los datos por tramo. En la aplicación móvil (<code>tg-robot-ucab-app</code>), el mapa se mostrará con los mismos 3 puntos de control pero en <strong>un solo color limpio</strong>.</p>
     </aside>
 
     <!-- 4. Ranura fija de alertas (altura fija 62px / 46px, visibility, delta = 0 px) -->
@@ -463,6 +517,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 
     <!-- 5. Canvas: el gemelo dibuja SOLO un punto discreto cada 2 s (sin línea de recorrido) -->
     <div class="radar-escena">
+      <div class="seg-leyenda" id="seg-leyenda" data-solo-fase="2" hidden aria-label="Leyenda de los 3 segmentos"></div>
       <canvas class="lienzo" id="lienzo-pista" role="img" aria-label="Vista cenital del primer escaneo administrado en pista despejada: el robot, los conos de los dos ultrasonidos (paredes de referencia) y un punto por cada muestra tomada cada 2 segundos"></canvas>
 
       <div class="velo" id="velocimetro" aria-label="Velocímetro del robot, de 0,00 a 0,46 metros por segundo">
@@ -508,14 +563,21 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         <h3 id="t-registro">1 · Registro del primer viaje · línea base</h3>
         <span class="seg-pill" id="reg-estado">Sin iniciar</span>
       </div>
-      <p class="nota-paredes" id="nota-paredes"><strong>Escaneo administrado (pista despejada):</strong> las lecturas ultrasónicas registradas en este viaje se guardan como paredes de referencia para evitar falsos positivos durante la operación normal. En recorridos sucesivos sobre la misma ruta, el robot refina progresivamente su comprensión del entorno fijo.</p>
+      <p class="nota-paredes" id="nota-paredes" data-solo-fase="1"><strong>Escaneo administrado (pista despejada):</strong> las lecturas ultrasónicas registradas en este viaje se guardan como paredes de referencia para evitar falsos positivos durante la operación normal. En recorridos sucesivos sobre la misma ruta, el robot refina progresivamente su comprensión del entorno fijo.</p>
+      <p class="nota-seg" id="nota-seg" data-solo-fase="2" hidden>Cada fila lleva su segmento (S1 · S2 · S3) con el mismo color del mapa.</p>
+      <div class="seg-filtro" id="seg-filtro" data-solo-fase="2" hidden role="group" aria-label="Filtrar filas por segmento">
+        <button type="button" data-seg-filtro="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-seg-filtro="S1" aria-pressed="false"><i class="seg-sw s1" aria-hidden="true"></i>S1</button>
+        <button type="button" data-seg-filtro="S2" aria-pressed="false"><i class="seg-sw s2" aria-hidden="true"></i>S2</button>
+        <button type="button" data-seg-filtro="S3" aria-pressed="false"><i class="seg-sw s3" aria-hidden="true"></i>S3</button>
+      </div>
       <p class="nota" id="reg-resumen">Una fila cada 2 s: tiempo, pose y distancia recorrida, la lectura instantánea de los sensores y el perfil de paredes (HC-SR04P) como línea base.</p>
       <div class="tabla-wrap">
-        <table class="tabla-muestras">
+        <table class="tabla-muestras" id="tabla-muestras">
           <thead>
-            <tr><th scope="col">#</th><th scope="col">t (s)</th><th scope="col">s (m)</th><th scope="col">Pose x, y (m) · θ</th><th scope="col">TCRT</th><th scope="col" class="paredes" title="HC-SR04P frontal / trasero guardados como perfil de paredes de referencia (línea base)">Paredes ref. F / A (cm)</th><th scope="col">Yaw</th><th scope="col">v (m/s)</th></tr>
+            <tr><th scope="col">#</th><th scope="col" class="col-seg">Seg.</th><th scope="col">t (s)</th><th scope="col">s (m)</th><th scope="col">Pose x, y (m) · θ</th><th scope="col">TCRT</th><th scope="col" class="paredes" title="HC-SR04P frontal / trasero guardados como perfil de paredes de referencia (línea base)">Paredes ref. F / A (cm)</th><th scope="col">Yaw</th><th scope="col">v (m/s)</th></tr>
           </thead>
-          <tbody id="reg-filas"><tr class="vacia"><td colspan="8">Sin muestras: inicia el primer escaneo.</td></tr></tbody>
+          <tbody id="reg-filas"><tr class="vacia"><td colspan="9">Sin muestras: inicia el primer escaneo.</td></tr></tbody>
         </table>
       </div>
       <div class="fila">
@@ -570,6 +632,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 <script src="radar_us.js"></script>
 <script src="simulador_movimiento.js"></script>
 <script src="primer_escaneo.js"></script>
+<script src="segundo_escaneo.js"></script>
 <script>
 (function () {
   "use strict";
@@ -578,7 +641,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     acento: ["--tg-dark-accent", "#00F2FE"], ok: ["--tg-dark-ok", "#34D399"], aviso: ["--tg-dark-warning-solid", "#F59E0B"],
     fallo: ["--tg-dark-danger-solid", "#EF4444"], avisoTexto: ["--tg-dark-warning", "#FBBF24"],
     texto: ["--tg-dark-text", "#E2E8F0"], muted: ["--tg-dark-text-muted", "#94A3B8"],
-    fondo: ["--tg-dark-bg", "#10141A"], realce: ["--tg-dark-raised", "#20252D"]
+    fondo: ["--tg-dark-bg", "#10141A"], realce: ["--tg-dark-raised", "#20252D"],
+    /* Segundo escaneo: 3 segmentos de alto contraste (mismos colores que --seg1/2/3 del CSS) */
+    seg1: ["--tg-dark-accent", "#00F2FE"], seg2: ["--tg-dark-warning", "#FBBF24"], seg3: ["--tg-dark-alarm", "#A78BFA"]
   });
   var BASE = "../../";
   var URL_SIM1 = "../P04-simulador-1-esp32/codigo/pista.js"; /* las 2 pistas de SIM1, sin copiarlas */
@@ -586,10 +651,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   var RADIO_LLEGADA_M = 0.40, CERCA_LLEGADA_M = 0.15; /* parámetros internos de la planta para cerrar el viaje (supuesto de simulación) */
   var TICK_MS = 20;
   var $ = function (id) { return document.getElementById(id); };
-  var S = SimMovimiento, R = RadarUS, PE = PrimerEscaneo;
+  var S = SimMovimiento, R = RadarUS, PE = PrimerEscaneo, SE = SegundoEscaneo;
   /* Velocidad real del escaneo: PWM lento de P04 × TG_ROBOT.velocidad.pwm100Ms (techo TG_ROBOT.velocidad.maxMs) */
   var VEL = PE.velocidades(window.TG_ROBOT);
-  var reg = PE.crear();
+  /* Fases: 1 = Escaneo 1 · Muestreo base · 2 = Escaneo 2 · Ruta con 3 segmentos; cada una conserva su registro */
+  var FS = SE.crearEstado(PE), reg = SE.registroActual(FS);
+  var CFG = { 1: SE.configFase(1, window.TG_ROBOT, PE), 2: SE.configFase(2, window.TG_ROBOT, PE) };
+  var COL_SEG = { S1: PAL.seg1, S2: PAL.seg2, S3: PAL.seg3 }, filtroSeg = "todos";
   var avisoEl = $("aviso-carga");
   var nucleo = null, canonica = null, sim1 = null, pistaObj = null, tr = null, sim = null;
   var corriendo = false, velSim = 1, ultimoFrame = 0, acum = 0, ultimoDom = 0, filasPintadas = 0;
@@ -624,14 +692,15 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     pistaObj = PistasSim1.pistaPara(id, canonica, p1.largo);
     /* Primer escaneo: TODA la cinta puesta; el núcleo teach-and-repeat sigue la línea */
     sim = S.crear(nucleo, pistaObj, { trazado: tr, cintaCompleta: true, bleRadioM: RADIO_LLEGADA_M, bleCercaM: CERCA_LLEGADA_M });
-    PE.reiniciar(reg);
-    acum = 0;
+    PE.reiniciar(FS.registros[1]); PE.reiniciar(FS.registros[2]);
+    acum = 0; filasPintadas = -1;
     Array.prototype.forEach.call(document.querySelectorAll("[data-pista]"), function (b) {
       var on = b.getAttribute("data-pista") === id;
       b.classList.toggle("sel", on);
       b.setAttribute("aria-pressed", String(on));
     });
     ajustarVista();
+    pintarReferenciasFase2();
     avisoEl.className = "listo";
     refrescarDom(true);
   }
@@ -644,8 +713,10 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("ref-lenta").textContent = fmt(VEL.lentaMs, 2) + " m/s";
     $("ref-fuente").textContent = "PWM " + Math.round(VEL.pwmLento * 100) + " % (mín. Base PD de P04) × " + fmt(VEL.pwm100Ms, 2) +
       " m/s · crucero " + fmt(VEL.cruceroMs, 2) + " · máx. " + fmt(VEL.maxMs, 2) + " m/s (TG_ROBOT)";
+    $("ref-crucero").textContent = fmt(CFG[2].velMs, 2) + " m/s";
     redimensionar();
     enlazar();
+    aplicarFase(1);
     cargarPista("B");
   }
 
@@ -660,7 +731,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       var n = 0;
       while (acum >= TICK_MS && n < 60) {
         S.paso(sim, TICK_MS);
-        PE.tick(reg, sim, S);
+        if (PE.tick(reg, sim, S) && FS.fase === 2) SE.etiquetar(reg.muestras, sim.L);
         acum -= TICK_MS; n++;
         if (sim.llegadaCompleta || sim.nav.paradaSeguridad) break;
       }
@@ -674,6 +745,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
   function cerrarViaje() {
     PE.finalizar(reg, sim, S, sim.nav.paradaSeguridad ? (sim.motivoParada || "parada_seguridad") : null);
+    if (FS.fase === 2) SE.etiquetar(reg.muestras, sim.L);
     sim.velObjetivoMs = null;
     detener();
     refrescarDom(true);
@@ -693,11 +765,17 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     if (!document.hidden && corriendo && !rafId) { ultimoFrame = performance.now(); rafId = requestAnimationFrame(bucle); }
   });
 
-  /* ---- 3) Acciones del primer escaneo ---- */
+  /* ---- 3) Acciones del escaneo (fase 1: muestreo base · fase 2: ruta con 3 segmentos) ---- */
   function iniciarEscaneo() {
-    S.iniciarEnsenanza(sim, 1);         /* pasada con toda la cinta: el núcleo sigue la línea */
-    sim.velObjetivoMs = VEL.lentaMs;    /* consigna lenta real (P04 / TG_ROBOT) */
+    if (FS.fase === 2) {
+      S.nuevoViaje(sim, 1);             /* segundo escaneo: la misma ruta con toda la cinta */
+      sim.velObjetivoMs = CFG[2].velMs; /* crucero real TG_ROBOT.velocidad.cruceroMs */
+    } else {
+      S.iniciarEnsenanza(sim, 1);       /* pasada con toda la cinta: el núcleo sigue la línea */
+      sim.velObjetivoMs = VEL.lentaMs;  /* consigna lenta real (P04 / TG_ROBOT) */
+    }
     PE.iniciar(reg, sim, S);            /* punto #1 en t = 0 */
+    if (FS.fase === 2) SE.etiquetar(reg.muestras, sim.L);
     filasPintadas = 0;
     reproducir();
   }
@@ -739,9 +817,55 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       if (corriendo) return "⏸ Pausar escaneo";
       return sim.frenoRemoto ? "▶ Reanudar tras Freno Remoto" : "▶ Reanudar escaneo";
     }
-    if (reg.completo) return "♻ Repetir primer escaneo";
-    if (reg.motivo) return "♻ Reintentar primer escaneo";
-    return "🎓 Iniciar primer escaneo";
+    var nom = FS.fase === 2 ? "segundo" : "primer";
+    if (reg.completo) return "♻ Repetir " + nom + " escaneo";
+    if (reg.motivo) return "♻ Reintentar " + nom + " escaneo";
+    return FS.fase === 2 ? "🧭 Iniciar segundo escaneo" : "🎓 Iniciar primer escaneo";
+  }
+
+  /* Cambio de fase: el robot vuelve al inicio; un escaneo sin terminar de la fase que se deja se descarta,
+     los escaneos completos de cada fase se conservan */
+  function aplicarFase(fase) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-fase]"), function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-fase")) === fase));
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-solo-fase]"), function (el) {
+      el.hidden = Number(el.getAttribute("data-solo-fase")) !== fase;
+    });
+    $("tabla-muestras").classList.toggle("con-seg", fase === 2);
+    $("t-sim-fase").textContent = fase === 2 ? " · Segundo escaneo (3 segmentos)" : " · Primer escaneo lento";
+    $("t-registro").textContent = fase === 2 ? "1 · Registro del segundo viaje · 3 segmentos" : "1 · Registro del primer viaje · línea base";
+    $("lienzo-pista").setAttribute("aria-label", fase === 2
+      ? "Vista cenital del segundo escaneo: el camino completo dividido en 3 segmentos de colores (Base → PC1, PC1 → PC2, PC2 → PC3), los 3 puntos de control y un punto por cada muestra de 2 segundos"
+      : "Vista cenital del primer escaneo administrado en pista despejada: el robot, los conos de los dos ultrasonidos (paredes de referencia) y un punto por cada muestra tomada cada 2 segundos");
+  }
+  function cambiarFase(fase) {
+    if (!sim || !SE.cambiarFase(FS, fase)) return;
+    detener();
+    if (reg.activo) PE.reiniciar(reg);  /* escaneo a medias de la fase anterior: se descarta */
+    reg = SE.registroActual(FS);
+    if (reg.activo) PE.reiniciar(reg);
+    S.nuevoViaje(sim, 1);
+    sim.velObjetivoMs = null;
+    filasPintadas = -1;
+    aplicarFase(fase);
+    refrescarDom(true);
+  }
+  function pintarReferenciasFase2() {
+    var L = sim.L, pcs = SE.puntosControl(L);
+    $("ref-pcs").textContent = pcs.map(function (p) { return p.id + " " + fmt(p.posicionM, 2); }).join(" · ") + " m (tercios de la ruta)";
+    $("seg-leyenda").innerHTML = SE.segmentos(L).map(function (sg, i) {
+      return '<span><i class="seg-sw s' + (i + 1) + '" aria-hidden="true"></i><b>' + sg.id + "</b> " + sg.nombre + " · " + fmt(sg.desdeM, 2) + "–" + fmt(sg.hastaM, 2) + " m</span>";
+    }).join("");
+  }
+  function aplicarFiltroSeg(f) {
+    filtroSeg = f;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-seg-filtro]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-seg-filtro") === f));
+    });
+    Array.prototype.forEach.call($("reg-filas").querySelectorAll("tr[data-seg]"), function (tr) {
+      tr.hidden = f !== "todos" && tr.getAttribute("data-seg") !== f;
+    });
   }
 
   function abrirCajon(abrir) {
@@ -766,6 +890,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("btn-principal-ctx").addEventListener("click", accionPrincipal);
     $("btn-freno").addEventListener("click", accionFreno);
     $("btn-limpiar-viaje").addEventListener("click", function () { limpiarViaje(true); });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-fase]"), function (b) {
+      b.addEventListener("click", function () { cambiarFase(Number(b.getAttribute("data-fase"))); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-seg-filtro]"), function (b) {
+      b.addEventListener("click", function () { aplicarFiltroSeg(b.getAttribute("data-seg-filtro")); });
+    });
     Array.prototype.forEach.call(document.querySelectorAll("[data-vel]"), function (b) {
       b.addEventListener("click", function () {
         velSim = Number(b.getAttribute("data-vel"));
@@ -782,24 +912,32 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   /* ---- 4) Panel, alertas y cajón (escaneo administrado: pista despejada, sin obstáculos simulados) ---- */
   function alertaActual(f, zf, za) {
     var vel = fmt(Math.abs(sim.vLineal), 2);
-    if (sim.nav.paradaSeguridad || reg.motivo) return { n: "", t: "ESCANEO INTERRUMPIDO · " + (reg.motivo || sim.motivoParada || "parada de seguridad") + " · reintenta el primer escaneo" };
+    if (sim.nav.paradaSeguridad || reg.motivo) return { n: "", t: "ESCANEO INTERRUMPIDO · " + (reg.motivo || sim.motivoParada || "parada de seguridad") + " · reintenta el " + (FS.fase === 2 ? "segundo" : "primer") + " escaneo" };
     if (f < 0) return { n: "", t: "FALLO SENSOR FRONTAL (sin eco) · parada" };
     if (sim.ultimaSalida && sim.ultimaSalida.frenadoCritico && reg.activo) return { n: "", t: "PARADA: el HC-SR04P frontal lee < 20 cm · la pista del escaneo administrado debe estar despejada · " + vel + " m/s" };
     if (sim.frenoRemoto) return { n: "aviso", t: "FRENO REMOTO ACTIVO · el registro se conserva" };
+    if (reg.completo && FS.fase === 2) {
+      var rs = SE.resumenPorSegmento(reg.muestras);
+      return { n: "ok", t: "SEGUNDO ESCANEO COMPLETO · " + reg.muestras.length + " puntos · S1 " + rs.S1 + " · S2 " + rs.S2 + " · S3 " + rs.S3 };
+    }
     if (reg.completo) return { n: "ok", t: "PRIMER ESCANEO COMPLETO · " + reg.muestras.length + " puntos en " + fmt(reg.tFinS, 1) + " s" };
     return null;
   }
 
   function filaHtml(m) {
     var us = (m.frente_cm === null ? "—" : fmt(m.frente_cm, 0)) + " / " + fmt(m.atras_cm, 0);
-    return "<tr" + (m.final ? ' class="final"' : "") + "><td>" + m.n + "</td><td>" + fmt(m.t_s, 1) + "</td><td>" + fmt(m.s_m, 2) +
+    var seg = FS.fase === 2 && m.seg ? m.seg : null;
+    var cls = (m.final ? "final" : "") + (seg ? " seg-" + seg.toLowerCase() : "");
+    var oculto = seg && filtroSeg !== "todos" && filtroSeg !== seg ? " hidden" : "";
+    return "<tr" + (cls.trim() ? ' class="' + cls.trim() + '"' : "") + (seg ? ' data-seg="' + seg + '"' : "") + oculto + "><td>" + m.n + "</td>" +
+      '<td class="col-seg">' + (seg ? '<span class="seg-chip ' + seg.toLowerCase() + '">' + seg + "</span>" : "") + "</td><td>" + fmt(m.t_s, 1) + "</td><td>" + fmt(m.s_m, 2) +
       "</td><td>" + fmt(m.x, 2) + ", " + fmt(m.y, 2) + " · " + fmt(m.angulo, 0) + "°</td><td class=\"tcrt-c\">" + m.tcrt.join("") +
       "</td><td class=\"paredes\">" + us + "</td><td>" + fmt(m.yaw_deg, 1) + "°</td><td>" + fmt(m.v_ms, 2) + "</td></tr>";
   }
   function refrescarRegistro() {
     var tb = $("reg-filas"), ms = reg.muestras;
     if (!ms.length) {
-      if (filasPintadas !== 0) { tb.innerHTML = '<tr class="vacia"><td colspan="8">Sin muestras: inicia el primer escaneo.</td></tr>'; filasPintadas = 0; }
+      if (filasPintadas !== 0 || tb.textContent.indexOf(FS.fase === 2 ? "segundo" : "primer") < 0) { tb.innerHTML = '<tr class="vacia"><td colspan="9">Sin muestras: inicia el ' + (FS.fase === 2 ? "segundo" : "primer") + ' escaneo.</td></tr>'; filasPintadas = 0; }
     } else if (filasPintadas < 0 || filasPintadas > ms.length) {
       tb.innerHTML = ms.map(filaHtml).join(""); filasPintadas = ms.length;
     } else if (filasPintadas < ms.length || (ms[ms.length - 1].final && !tb.lastElementChild.classList.contains("final"))) {
@@ -811,6 +949,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var st = $("reg-estado");
     st.textContent = reg.activo ? (corriendo ? "Escaneando" : "En pausa") : (reg.completo ? "Completo" : (reg.motivo ? "Interrumpido" : "Sin iniciar"));
     st.className = "seg-pill" + (reg.activo ? " activo" : (reg.completo ? " ok" : ""));
+    if (FS.fase === 2) {
+      var rs = SE.resumenPorSegmento(ms);
+      $("reg-resumen").textContent = ms.length
+        ? "Pista " + reg.pista + " · " + ms.length + " muestra(s) · S1 " + rs.S1 + " · S2 " + rs.S2 + " · S3 " + rs.S3 + " · último punto s = " + fmt(ms[ms.length - 1].s_m, 2) + " m · crucero " + fmt(CFG[2].velMs, 2) + " m/s"
+        : "Una fila cada 2 s, etiquetada con su segmento (S1 · S2 · S3): sensores y paredes de referencia por tramo.";
+      return;
+    }
     $("reg-resumen").textContent = ms.length
       ? "Pista " + reg.pista + " · " + ms.length + " muestra(s) · último punto t = " + fmt(ms[ms.length - 1].t_s, 1) + " s, s = " + fmt(ms[ms.length - 1].s_m, 2) + " m · escaneo a " + fmt(VEL.lentaMs, 2) + " m/s · perfil de paredes de referencia: " + PE.perfilParedes(reg).length + " puntos de línea base"
       : "Una fila cada 2 s: tiempo, pose y distancia recorrida, la lectura instantánea de los sensores y el perfil de paredes (HC-SR04P) como línea base.";
@@ -840,7 +985,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var vel = fmt(Math.abs(sim.vLineal), 2);
     $("mov-vel").textContent = vel + " m/s";
     $("mov-pwm").textContent = fmt(sim.vIzq, 2) + " / " + fmt(sim.vDer, 2);
-    $("mov-detalle").textContent = "consigna " + (sim.velObjetivoMs ? fmt(sim.velObjetivoMs, 3) + " m/s (PWM " + Math.round(VEL.pwmLento * 100) + " %)" : "—") + " · desvío " + fmt(sim.y * 100, 1) + " cm";
+    $("mov-detalle").textContent = "consigna " + (sim.velObjetivoMs ? fmt(sim.velObjetivoMs, 3) + " m/s (" + (FS.fase === 2 ? "crucero TG_ROBOT" : "PWM " + Math.round(VEL.pwmLento * 100) + " %") + ")" : "—") + " · desvío " + fmt(sim.y * 100, 1) + " cm";
 
     /* Velocímetro SVG (0,00–0,46 m/s) */
     var v = R.velocimetro(sim.vLineal);
@@ -853,7 +998,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var tViaje = reg.activo ? sim.t - reg.t0 : (reg.muestras.length ? reg.tFinS : 0), prox = PE.faltaS(reg, sim);
     $("hud-t").textContent = fmt(tViaje, 1) + " s";
     $("hud-s").textContent = fmt(sim.s, 2) + " / " + fmt(sim.L, 2) + " m";
-    $("hud-n").textContent = String(reg.muestras.length);
+    $("hud-n").textContent = String(reg.muestras.length) + (FS.fase === 2 ? " · " + SE.segmentoDe(sim.s, sim.L) : "");
     $("hud-prox").textContent = prox === null ? (reg.completo ? "listo ✔" : "—") : "en " + fmt(prox, 1) + " s";
 
     /* Ranura fija de alertas (visibility, delta = 0 px) */
@@ -932,18 +1077,23 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.clearRect(0, 0, w, h);
     c.font = "10.5px JetBrains Mono, monospace"; c.textBaseline = "middle";
 
-    var sinIniciar = !ms.length;
+    var sinIniciar = !ms.length, fase2 = FS.fase === 2;
     var prog = Math.max(0.12, Math.min(1, sim.s / Math.max(0.1, sim.L)));
-    dibujarPiso(c, sinIniciar ? 0.35 : (reg.completo ? 1 : 0.3 + 0.7 * prog));
+    dibujarPiso(c, fase2 ? 0.9 : (sinIniciar ? 0.35 : (reg.completo ? 1 : 0.3 + 0.7 * prog)));
+    if (fase2) dibujarRutaSegmentos(c);
 
     /* Inicio de la ruta */
     var pIni = tr.puntoEn(0), pulso = 0.5 + 0.5 * Math.sin(ahora / 350);
-    c.strokeStyle = sinIniciar ? "rgba(56,189,248," + (0.25 + 0.45 * pulso).toFixed(2) + ")" : "rgba(148,163,184,0.5)";
+    c.strokeStyle = sinIniciar && !fase2 ? "rgba(56,189,248," + (0.25 + 0.45 * pulso).toFixed(2) + ")" : "rgba(148,163,184,0.5)";
     c.lineWidth = 2;
-    c.beginPath(); c.arc(VX(pIni.x), VY(pIni.y), sinIniciar ? 12 + pulso * 5 : 11, 0, 7); c.stroke();
+    c.beginPath(); c.arc(VX(pIni.x), VY(pIni.y), sinIniciar && !fase2 ? 12 + pulso * 5 : 11, 0, 7); c.stroke();
     c.fillStyle = PAL.acento; c.textAlign = "left";
-    c.fillText("Inicio", VX(pIni.x) - 12, VY(pIni.y) + 24);
-    if (sinIniciar) {
+    if (fase2) { c.textAlign = "right"; c.fillText("Base", VX(pIni.x) - Math.max(14, 0.16 * vista.sc), VY(pIni.y) - Math.max(16, 0.12 * vista.sc)); } /* PC3 rotula abajo */
+    else c.fillText("Inicio", VX(pIni.x) - 12, VY(pIni.y) + 24);
+    if (sinIniciar && fase2) {
+      c.fillStyle = "rgba(148,163,184,0.85)"; c.textAlign = "center";
+      c.fillText("Camino completo · 3 segmentos · segundo escaneo a " + fmt(CFG[2].velMs, 2) + " m/s, 1 punto cada 2 s", w / 2, h - 14);
+    } else if (sinIniciar) {
       c.fillStyle = "rgba(148,163,184,0.85)"; c.textAlign = "center";
       c.fillText("Espacio sin mapear · primer escaneo a " + fmt(VEL.lentaMs, 2) + " m/s, 1 punto cada 2 s", w / 2, h - 14);
     }
@@ -951,7 +1101,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     /* Puntos discretos (uno por muestra de 2 s): sin línea que los una */
     for (i = 0; i < ms.length; i++) {
       var m = ms[i], x = VX(m.x), y = VY(m.y), ult = i === ms.length - 1;
-      c.fillStyle = m.final ? PAL.ok : PAL.acento;
+      c.fillStyle = fase2 && m.seg ? COL_SEG[m.seg] : (m.final ? PAL.ok : PAL.acento);
       c.strokeStyle = PAL.fondo; c.lineWidth = 2;
       c.beginPath(); c.arc(x, y, ult ? 6 : 4.5, 0, 7); c.fill(); c.stroke();
       if (ult && reg.activo) {
@@ -976,10 +1126,39 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     c.restore();
 
     c.textAlign = "left"; c.fillStyle = PAL.muted;
-    c.fillText(sinIniciar ? "Sin mapear · Pista " + tr.id : "Primer escaneo · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · " + ms.length + " puntos", 10, 14);
+    if (fase2) c.fillText((sinIniciar ? "Camino completo · Pista " + tr.id : "Segundo escaneo · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · " + ms.length + " puntos · " + SE.segmentoDe(sim.s, sim.L)), 10, 14);
+    else c.fillText(sinIniciar ? "Sin mapear · Pista " + tr.id : "Primer escaneo · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · " + ms.length + " puntos", 10, 14);
   }
 
-  window.__p05 = { get sim() { return sim; }, get reg() { return reg; }, get corriendo() { return corriendo; }, VEL: VEL, cargarPista: function (id) { cargarPista(id); }, refrescar: refrescarDom };
+  /* Segundo escaneo: camino completo en 3 segmentos de color + PC1, PC2 y PC3 sobre la ruta */
+  function dibujarRutaSegmentos(c) {
+    var L = sim.L, paso = 0.05;
+    SE.segmentos(L).forEach(function (sg) {
+      var col = COL_SEG[sg.id], s0, p;
+      [[10, 0.22], [4.5, 1]].forEach(function (capa) {
+        c.save(); c.globalAlpha = capa[1]; c.strokeStyle = col; c.lineWidth = capa[0]; c.lineCap = "round"; c.lineJoin = "round";
+        c.beginPath();
+        for (s0 = sg.desdeM; s0 <= sg.hastaM + 1e-9; s0 += paso) {
+          p = tr.puntoEn(Math.min(s0, sg.hastaM));
+          if (s0 === sg.desdeM) c.moveTo(VX(p.x), VY(p.y)); else c.lineTo(VX(p.x), VY(p.y));
+        }
+        p = tr.puntoEn(sg.hastaM); c.lineTo(VX(p.x), VY(p.y));
+        c.stroke(); c.restore();
+      });
+    });
+    c.font = "bold 11px JetBrains Mono, monospace"; c.textAlign = "center";
+    SE.puntosControl(L).forEach(function (pc, i) {
+      var p = tr.puntoEn(pc.posicionM), x = VX(p.x), y = VY(p.y), ang = tr.rumboPistaGrados(Math.min(pc.posicionM, L - 0.01)) * Math.PI / 180;
+      c.fillStyle = PAL.fondo; c.strokeStyle = COL_SEG["S" + (i + 1)]; c.lineWidth = 2.5;
+      c.fillRect(x - 7, y - 7, 14, 14); c.strokeRect(x - 7, y - 7, 14, 14);
+      var dl = Math.max(22, 0.13 * vista.sc + 10), lx = x + Math.sin(ang) * dl, ly = y + Math.cos(ang) * dl; /* fuera del robot */
+      c.fillStyle = PAL.fondo; c.globalAlpha = 0.85; c.fillRect(lx - 16, ly - 8, 32, 16); c.globalAlpha = 1;
+      c.fillStyle = PAL.texto; c.fillText(pc.id, lx, ly);
+    });
+    c.font = "10.5px JetBrains Mono, monospace";
+  }
+
+  window.__p05 = { get sim() { return sim; }, get reg() { return reg; }, get fase() { return FS.fase; }, registros: FS.registros, get corriendo() { return corriendo; }, cambiarFase: function (f) { cambiarFase(f); }, VEL: VEL, cargarPista: function (id) { cargarPista(id); }, refrescar: refrescarDom };
 })();
 </script>
 </body>

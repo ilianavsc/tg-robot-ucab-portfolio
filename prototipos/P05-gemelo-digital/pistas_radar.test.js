@@ -723,4 +723,82 @@ module.exports = async function (ctx) {
     assert.ok(/Paredes ref\. F \/ A/.test(cajon) && /línea base/.test(cajon), "el registro etiqueta los HC-SR04P como línea base de paredes");
     for (const id of ["nota-paredes", "reg-filas", "btn-limpiar-viaje", "tcrt-bin", "us-frente", "us-atras", "mpu-rumbo", "mpu-omega", "mov-vel", "mov-pwm"]) assert.ok(cajon.includes('id="' + id + '"'), "falta #" + id);
   });
+
+  /* ---- Segundo escaneo: ruta con 3 segmentos a color y 3 puntos de control ---- */
+  const SE = require("./segundo_escaneo.js");
+
+  await prueba("Segundo escaneo: exactamente 3 segmentos contiguos (Base → PC1 → PC2 → PC3) que cubren toda la ruta, con PC en tercios iguales y 3 colores distintos", () => {
+    for (const L of [9.0, 8.05]) {
+      const pcs = SE.puntosControl(L), segs = SE.segmentos(L);
+      assert.deepStrictEqual(pcs.map((p) => p.id), ["PC1", "PC2", "PC3"]);
+      assert.deepStrictEqual(pcs.map((p) => p.posicionM), A.calcularPuntosControlEquitativos(L).map((p) => p.posicionM), "misma regla que aprendizaje_gemelo.js");
+      assert.strictEqual(segs.length, 3);
+      assert.deepStrictEqual(segs.map((x) => x.id), ["S1", "S2", "S3"]);
+      assert.deepStrictEqual(segs.map((x) => x.nombre), ["Base → PC1", "PC1 → PC2", "PC2 → PC3"]);
+      assert.strictEqual(segs[0].desdeM, 0); assert.strictEqual(segs[2].hastaM, pcs[2].posicionM);
+      assert.ok(Math.abs(segs[2].hastaM - L) < 0.006, "S3 termina en el final de la ruta");
+      for (let i = 1; i < 3; i++) assert.strictEqual(segs[i].desdeM, segs[i - 1].hastaM, "segmentos contiguos");
+      assert.strictEqual(new Set(segs.map((x) => x.color)).size, 3, "3 colores distintos");
+      assert.strictEqual(SE.segmentoDe(0, L), "S1"); assert.strictEqual(SE.segmentoDe(pcs[0].posicionM - 0.01, L), "S1");
+      assert.strictEqual(SE.segmentoDe(pcs[0].posicionM, L), "S2"); assert.strictEqual(SE.segmentoDe(pcs[1].posicionM - 0.01, L), "S2");
+      assert.strictEqual(SE.segmentoDe(pcs[1].posicionM, L), "S3"); assert.strictEqual(SE.segmentoDe(L, L), "S3");
+    }
+    assert.deepStrictEqual(SE.puntosControl(9.0).map((p) => p.posicionM), [3, 6, 9]);
+  });
+
+  await prueba("Transición Escaneo 1 → Escaneo 2: cada fase tiene su registro y su velocidad real (0,228 / 0,41 m/s), el 1 queda intacto y el 2 etiqueta S1 → S2 → S3", () => {
+    const est = SE.crearEstado(PE);
+    assert.strictEqual(est.fase, 1);
+    assert.strictEqual(SE.cambiarFase(est, 1), false, "misma fase: sin cambio");
+    assert.strictEqual(SE.cambiarFase(est, 3), false, "fase inválida");
+    const c1 = SE.configFase(1, TG, PE), c2 = SE.configFase(2, TG, PE);
+    assert.strictEqual(c1.velMs, 0.228); assert.strictEqual(c2.velMs, TG.velocidad.cruceroMs);
+    assert.strictEqual(c1.muestraMs, 2000); assert.strictEqual(c2.muestraMs, 2000);
+    assert.ok(c1.ensenanza && !c1.segmentos && c2.segmentos && !c2.ensenanza);
+    for (const id of ["B", "A"]) {
+      const m = mundo(id), e = SE.crearEstado(PE);
+      const correrFase = (fase) => {
+        SE.cambiarFase(e, fase);
+        const cfg = SE.configFase(fase, TG, PE), reg = SE.registroActual(e);
+        if (cfg.ensenanza) assert.ok(S.iniciarEnsenanza(m.sim, 1)); else S.nuevoViaje(m.sim, 1);
+        m.sim.velObjetivoMs = cfg.velMs;
+        PE.iniciar(reg, m.sim, S);
+        let vmax = 0;
+        correr(m.sim, 120, (x) => { if (PE.tick(reg, x, S) && cfg.segmentos) SE.etiquetar(reg.muestras, x.L); vmax = Math.max(vmax, Math.abs(x.vLineal)); return x.llegadaCompleta || x.nav.paradaSeguridad; });
+        PE.finalizar(reg, m.sim, S, m.sim.nav.paradaSeguridad ? "parada" : null);
+        if (cfg.segmentos) SE.etiquetar(reg.muestras, m.sim.L);
+        assert.ok(reg.completo, id + " fase " + fase + " llega");
+        assert.ok(vmax <= cfg.velMs + 0.005, id + " fase " + fase + " vmax " + vmax);
+        return reg;
+      };
+      const r1 = correrFase(1), copia1 = JSON.stringify(r1.muestras);
+      assert.ok(r1.muestras.every((x) => !x.seg), "el escaneo 1 no lleva segmentos");
+      const r2 = correrFase(2);
+      assert.strictEqual(e.fase, 2); assert.notStrictEqual(r1, r2);
+      assert.strictEqual(JSON.stringify(e.registros[1].muestras), copia1, "el escaneo 1 queda intacto");
+      const segs = r2.muestras.map((x) => x.seg), orden = { S1: 1, S2: 2, S3: 3 };
+      assert.ok(segs.every((x) => orden[x]), "cada muestra del escaneo 2 tiene segmento");
+      for (let i = 1; i < segs.length; i++) assert.ok(orden[segs[i]] >= orden[segs[i - 1]], "S1 → S2 → S3 sin retrocesos");
+      const rs = SE.resumenPorSegmento(r2.muestras);
+      assert.ok(rs.S1 > 0 && rs.S2 > 0 && rs.S3 > 0, id + ": " + JSON.stringify(rs));
+      r2.muestras.forEach((x) => assert.strictEqual(x.seg, SE.segmentoDe(x.s_m, m.sim.L)));
+      assert.ok(r2.muestras.every((x) => x.paredes_ref && x.paredes_ref.linea_base), "también guarda las paredes por tramo");
+      assert.ok(r2.muestras.length < r1.muestras.length, "a crucero hay menos puntos que en el muestreo lento");
+      assert.strictEqual(SE.cambiarFase(e, 1), true); assert.strictEqual(SE.registroActual(e), r1);
+    }
+  });
+
+  await prueba("Página P05: selector Escaneo 1 / Escaneo 2, leyenda de 3 segmentos, PC1–PC3, nota de la App en un solo color y tabla con filtro por segmento", () => {
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    assert.ok(/data-fase="1"[^>]*>[\s\S]*?Escaneo 1[\s\S]*?Muestreo base/.test(html) && /data-fase="2"[^>]*>[\s\S]*?Escaneo 2[\s\S]*?Ruta con 3 segmentos/.test(html));
+    assert.ok(html.includes('src="segundo_escaneo.js"'));
+    assert.ok(html.includes("En este simulador de Gemelo Digital la ruta se divide en 3 colores para analizar los datos por tramo.") &&
+      html.includes("el mapa se mostrará con los mismos 3 puntos de control pero en <strong>un solo color limpio</strong>"), "nota de la App en un solo color");
+    assert.ok(/id="nota-app2"[^>]*data-solo-fase="2"/.test(html) && /id="nota-app"[^>]*data-solo-fase="1"/.test(html));
+    assert.ok(html.includes('id="seg-leyenda"') && /function dibujarRutaSegmentos/.test(html) && /SE\.puntosControl\(L\)/.test(html));
+    assert.ok(/--seg1:[^;]+;\s*--seg2:[^;]+;\s*--seg3:/.test(html) && /seg1: \[/.test(html) && /seg2: \[/.test(html) && /seg3: \[/.test(html));
+    for (const f of ["todos", "S1", "S2", "S3"]) assert.ok(html.includes('data-seg-filtro="' + f + '"'), "falta filtro " + f);
+    assert.ok(html.includes('class="col-seg"') && /seg-chip/.test(html) && /data-seg=/.test(html));
+    assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b|colocarObstaculo/i.test(html), "sin torretas ni obstáculos en ninguna fase");
+  });
 };
