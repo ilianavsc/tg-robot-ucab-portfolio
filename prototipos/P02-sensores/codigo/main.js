@@ -419,10 +419,18 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
     ponModo(b.dataset.modo);
     publicar(true);
   }));
-  // las teclas no se roban cuando se usa un control (sliders de las consolas, botones, enlaces)
+  // Las teclas de manejo solo se ceden donde ya tienen un uso propio (como en P04, que no filtra el foco):
+  //  · campos de texto y listas: todas;
+  //  · sliders de las consolas: flechas, Inicio/Fin y Re/Av Pág mueven su valor (W A S D sí manejan);
+  //  · botones y enlaces: Espacio y Enter los pulsan (flechas y W A S D sí manejan).
+  // Antes se ignoraba toda tecla con el foco en cualquier botón o en el panel (p. ej. tras «⚡ Encender» o el D-Pad).
   const enControl = (e) => {
     const t = e.target;
-    return t && t.closest && Boolean(t.closest('input, select, textarea, button, a, summary, #hw-panel'));
+    if (!t || !t.closest) return false;
+    if (t.closest('textarea, select, [contenteditable=""], [contenteditable="true"], input:not([type="range"])')) return true;
+    if (t.closest('input[type="range"]')) return /^(Arrow|Page)|^(Home|End|Space)$/.test(e.code);
+    if (t.closest('button, a, summary, [role="button"]')) return e.code === 'Space' || e.code === 'Enter';
+    return false;
   };
   addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey || enControl(e)) return;
@@ -431,9 +439,13 @@ function iniciar({demo, renderer, scene, camera, controls, sol, pose, resize}) {
       publicar(true);
       return;
     }
-    if (!ui.encendido) return;
     const k = MAPA[e.code];
     if (!k) return;
+    // igual que el D-Pad: una tecla de movimiento enciende el robot; Espacio (frenar) no lo enciende
+    if (!ui.encendido) {
+      if (k === 'stop') return;
+      ponEncendido(true);
+    }
     e.preventDefault();
     if (!teclas.has(k)) {
       teclas.add(k);

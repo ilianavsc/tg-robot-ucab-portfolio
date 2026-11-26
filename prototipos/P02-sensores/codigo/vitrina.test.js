@@ -582,4 +582,38 @@ prueba('UX P02: barra superior limpia, menús agrupados, D-pad solo en manual, p
   assert.ok(main.includes('ponSheet') && main.includes('MOVIL_CHIP'), 'lógica Bottom Sheet y fichas compactas en móvil');
 });
 
+prueba('teclado (W A S D, flechas, Espacio): maneja aunque el foco quede en un botón o en el panel; solo cede donde la tecla ya tiene uso', () => {
+  const main = leerAqui('main.js');
+  const m = main.match(/const enControl = (\(e\) => \{[\s\S]*?\n {2}\});/);
+  assert.ok(m, 'existe enControl');
+  const enControl = new Function('return ' + m[1])();
+  // elemento falso: solo entiende los selectores simples que usa enControl
+  const el = (tag, attrs = {}) => ({
+    closest(sel) {
+      return sel.split(',').map((x) => x.trim()).some((x) => {
+        if (x === tag) return true;
+        if (x === 'input[type="range"]') return tag === 'input' && attrs.type === 'range';
+        if (x === 'input:not([type="range"])') return tag === 'input' && attrs.type !== 'range';
+        if (x === '[role="button"]') return attrs.role === 'button';
+        if (x.startsWith('[contenteditable')) return attrs.contenteditable !== undefined;
+        return false;
+      }) ? this : null;
+    },
+  });
+  const cede = (tag, attrs, code) => enControl({target: el(tag, attrs), code});
+  for (const code of ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) {
+    assert.strictEqual(cede('button', {}, code), false, code + ' maneja con el foco en un botón (⚡ Encender, D-Pad, Vivo/OK…)');
+    assert.strictEqual(cede('div', {}, code), false, code + ' maneja con el foco en el panel o la escena');
+  }
+  for (const code of ['KeyW', 'KeyA', 'KeyS', 'KeyD']) assert.strictEqual(cede('input', {type: 'range'}, code), false, code + ' maneja desde un slider');
+  for (const code of ['ArrowUp', 'ArrowLeft', 'Home', 'End', 'PageUp', 'Space']) assert.strictEqual(cede('input', {type: 'range'}, code), true, code + ' sigue moviendo el slider');
+  for (const code of ['Space', 'Enter']) assert.strictEqual(cede('button', {}, code), true, code + ' sigue pulsando el botón enfocado');
+  assert.strictEqual(cede('input', {type: 'text'}, 'KeyW'), true, 'no se roba la escritura');
+  assert.ok(!/#hw-panel/.test(m[1]), 'ya no bloquea todo el panel');
+  const kd = main.slice(main.indexOf("addEventListener('keydown', (e) => {\n    if (e.ctrlKey"), main.indexOf("addEventListener('keyup'"));
+  assert.ok(/if \(!ui\.encendido\) \{\s*if \(k === 'stop'\) return;\s*ponEncendido\(true\);/.test(kd), 'una tecla de movimiento enciende el robot, como el D-Pad');
+  for (const [code, dir] of [['KeyW', 'arriba'], ['ArrowUp', 'arriba'], ['KeyS', 'abajo'], ['ArrowDown', 'abajo'], ['KeyA', 'izq'], ['ArrowLeft', 'izq'], ['KeyD', 'der'], ['ArrowRight', 'der'], ['Space', 'stop']])
+    assert.ok(main.includes(code + ": '" + dir + "'"), code + ' → ' + dir);
+});
+
 console.log(`\nP02 inspector: ${ok}/${ok} pruebas pasaron`);
