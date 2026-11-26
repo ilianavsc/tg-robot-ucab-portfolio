@@ -207,8 +207,19 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .btn-freno-perm:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 #btn-principal-ctx { flex: 1 1 220px; width: auto; }
+#btn-siguiente-paso { flex: 1 1 220px; width: auto; }
 #btn-freno { flex: 0 0 auto; }
 .btn-ctx[hidden] { display: none; }
+.overlay-apagado {
+  position: absolute; inset: 0; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 24px; text-align: center;
+  background: var(--s2-bg); color: var(--s2-txt);
+}
+.overlay-apagado[hidden] { display: none !important; }
+.overlay-apagado .ov-ico { font-size: 36px; line-height: 1; opacity: 0.9; }
+.overlay-apagado h2 { margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 800; color: #fff; }
+.overlay-apagado p { margin: 0; max-width: 400px; font-size: 13px; line-height: 1.45; color: var(--s2-muted); }
 
 /* ---- 6. Cajón deslizable ⚙ Ingeniería / Datos (nunca empuja el canvas ni pausa) ---- */
 .cajon-backdrop {
@@ -624,7 +635,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         <span class="ref-fuente" id="ref-fuente">PWM 40 % (P04) × 0,57 m/s · crucero 0,41 · máx. 0,46 m/s (TG_ROBOT)</span>
       </p>
       <p class="escaneo-ref" id="escaneo-ref2" data-solo-fase="2" hidden style="margin:0">
-        <span>Escaneo 2 a crucero <b id="ref-crucero">0,41 m/s</b> · 1 punto cada <b>2 s</b></span>
+        <span>Escaneo 2 a crucero <b id="ref-crucero">0,41 m/s</b> · línea punteada · 1 punto cada <b>1 s</b></span>
         <span id="ref-pcs">PC1 3,00 · PC2 6,00 · PC3 9,00 m (tercios de la ruta)</span>
         <span class="ref-fuente">TG_ROBOT.velocidad.cruceroMs</span>
       </p>
@@ -693,7 +704,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
           </div>
           <div class="ctrl-grupo">
             <button type="button" class="ctrl-btn" id="btn-fijar-parada" title="Usa esta selección para un viaje puntual sin re-escaneo ni confirmación del receptor" disabled>📍 Usar como parada temporal</button>
-            <button type="button" class="ctrl-btn prim" id="btn-fijar-permanente" title="Fija la parada permanentemente tras 8 viajes, solicita re-escaneo lineal continuo y activa confirmación del receptor" disabled>📌 Fijar parada permanente</button>
+            <button type="button" class="ctrl-btn prim" id="btn-fijar-permanente" title="Fija la parada permanentemente tras 8 viajes, solicita re-escaneo lineal continuo y activa confirmación del receptor" hidden disabled>📌 Fijar parada permanente</button>
             <button type="button" class="ctrl-btn" id="btn-quitar-parada" hidden>✕ Quitar parada</button>
             <button type="button" class="ctrl-btn" id="btn-salir-lineal" hidden>↩ Circuito cerrado</button>
             <button type="button" class="ctrl-btn ok" id="btn-reanudar-parada" hidden>✅ Confirmar entrega y continuar</button>
@@ -727,8 +738,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     <!-- 4. Ranura fija de alertas (altura fija 62px / 46px, visibility, delta = 0 px) -->
     <div class="alerta-slot" aria-live="polite"><div class="alerta vacia" id="alerta" role="status">Sin alertas</div></div>
 
-    <!-- 5. Canvas: el gemelo dibuja SOLO un punto discreto cada 2 s (sin línea de recorrido) -->
+    <!-- 5. Canvas: pantalla vacía/apagada hasta pulsar Encender -->
     <div class="radar-escena">
+      <div class="overlay-apagado" id="overlay-apagado" role="status" aria-live="polite">
+        <span class="ov-ico" aria-hidden="true">⚡</span>
+        <h2>Gemelo Digital apagado</h2>
+        <p>Presiona <strong>Encender</strong> para activar el visor del mapa, la telemetría de sensores y comenzar con el Escaneo 1.</p>
+        <button type="button" class="btn-encender" id="btn-encender-overlay"><span class="enc-dot" aria-hidden="true"></span>⚡ Encender simulador</button>
+      </div>
       <div class="lineal-vista-bar" id="lineal-vista-bar" hidden role="group" aria-label="Vista de rutas lineales">
         <button type="button" data-lineal-vista="ida" aria-pressed="false">Ida (I1–I3)</button>
         <button type="button" data-lineal-vista="regreso" aria-pressed="false">Regreso (R1–R3)</button>
@@ -758,10 +775,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       <div><small>Próximo punto</small><strong id="hud-prox">—</strong></div>
     </div>
 
-    <!-- 7. Dock: 1 botón principal + Freno Remoto -->
+    <!-- 7. Dock: 1 botón principal + Siguiente paso guiado + Freno Remoto -->
     <div class="acciones-barra" role="region" aria-label="Acciones principales">
-      <button type="button" class="btn-ctx" id="btn-principal-ctx">🎓 Iniciar primer escaneo</button>
-      <button type="button" class="btn-freno-perm" id="btn-freno">⛔ Freno Remoto</button>
+      <button type="button" class="btn-ctx" id="btn-principal-ctx" disabled>🎓 Iniciar primer escaneo</button>
+      <button type="button" class="btn-ctx ok" id="btn-siguiente-paso" hidden>Continuar al Escaneo 2 →</button>
+      <button type="button" class="btn-freno-perm" id="btn-freno" disabled>⛔ Freno Remoto</button>
     </div>
   </section>
 </main>
@@ -958,11 +976,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   var paradaSegSel = "S1", borradorParadaS = 1.5, obsRegistradoEnViaje = false, avisoBloqueoMvp = "";
   var avisoEl = $("aviso-carga");
   var nucleo = null, canonica = null, sim1 = null, pistaObj = null, tr = null, sim = null;
-  var corriendo = false, velSim = 1, ultimoFrame = 0, acum = 0, ultimoDom = 0, filasPintadas = 0;
+  var encendidoSim = false, corriendo = false, velSim = 1, ultimoFrame = 0, acum = 0, ultimoDom = 0, filasPintadas = 0;
   var cajonAbierto = false, tcrtEls = [];
 
   function fmt(x, d) { return Number(x).toFixed(d).replace(".", ","); }
   function usaSegmentos() { return faseActual >= 2; }
+  function intervaloActualMs() { return faseActual === 2 ? CM.C.MUESTRA_ESCANEO2_MS : PE.C.MUESTRA_MS; }
   function modoLinealActivo() { return faseActual === 4 && Boolean(CM_EST.lineal && CM_EST.lineal.activo); }
   function muestrasActivas() { return modoLinealActivo() ? CM_EST.lineal.muestras : reg.muestras; }
   function registroDeFase(f) {
@@ -1073,7 +1092,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
           if (sim.nav.paradaSeguridad) break;
           continue;
         }
-        if (PE.tick(reg, sim, S) && usaSegmentos()) SE.etiquetar(reg.muestras, sim.L);
+        if (CM.tickMuestreo(reg, sim, S, PE, intervaloActualMs()) && usaSegmentos()) SE.etiquetar(reg.muestras, sim.L);
         /* En Fase 4 (Operación y asignación de paradas): parada programada (temporal o fijada) */
         if (faseActual === 4 && reg.activo) {
           if (CM_EST.paradaProgramada && CM_EST.paradaProgramada.activa && !CM_EST.paradaCumplidaEnViaje && sim.s >= CM_EST.paradaProgramada.sM - CM.C.PARADA_TOLERANCIA_M) {
@@ -1145,18 +1164,19 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       S.nuevoViaje(sim, 1);
       sim.velObjetivoMs = CFG[4].velMs;
     }
-    PE.iniciar(reg, sim, S);            /* punto #1 en t = 0 */
+    CM.iniciarMuestreo(reg, sim, S, PE, intervaloActualMs()); /* punto #1 en t = 0 (cada 1 s en Escaneo 2, cada 2 s en Escaneo 1) */
     if (usaSegmentos()) SE.etiquetar(reg.muestras, sim.L);
     filasPintadas = 0;
     reproducir();
   }
   function reanudar() {
+    if (!encendidoSim) return;
     if (sim.frenoRemoto) S.reanudar(sim);
     CM_EST.enParadaProgramada = false;
     reproducir();
   }
   function accionPrincipal() {
-    if (!sim) return;
+    if (!sim || !encendidoSim) return;
     if (faseActual === 4 && CM_EST.enParadaProgramada) {
       reanudar();
       return;
@@ -1171,8 +1191,27 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
   function accionEncender() {
     if (!sim) return;
-    if (corriendo) { detener(); refrescarDom(true); return; }
-    accionPrincipal();
+    if (!encendidoSim) {
+      encendidoSim = true;
+      aplicarFase(faseActual);
+      refrescarDom(true);
+      return;
+    }
+    detener();
+    encendidoSim = false;
+    refrescarDom(true);
+  }
+  function accionSiguientePaso() {
+    if (!sim || !encendidoSim) return;
+    var paso = CM.siguientePasoGuiado(faseActual, reg.completo, CM_EST);
+    if (!paso) return;
+    if (paso.accion === "ir_fase") {
+      cambiarFase(paso.destinoFase);
+    } else if (paso.accion === "iniciar_calib") {
+      reg = registroDeFase(3);
+      limpiarViaje(false);
+      iniciarEscaneo();
+    }
   }
   function accionFreno() {
     if (!sim) return;
@@ -1386,7 +1425,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       b.addEventListener("click", function () { cargarPista(b.getAttribute("data-pista")); });
     });
     $("btn-encender").addEventListener("click", accionEncender);
+    $("btn-encender-overlay").addEventListener("click", accionEncender);
     $("btn-principal-ctx").addEventListener("click", accionPrincipal);
+    $("btn-siguiente-paso").addEventListener("click", accionSiguientePaso);
     $("btn-freno").addEventListener("click", accionFreno);
     $("btn-limpiar-viaje").addEventListener("click", function () { limpiarViaje(true); });
     Array.prototype.forEach.call(document.querySelectorAll("[data-fase]"), function (b) {
@@ -1876,11 +1917,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       $("parada-estado-txt").textContent = "🔓 Fijar parada permanente desbloqueado (" + CM_EST.viajesOperativos + "/8) · elige PC o Segmento (o clic en el mapa)";
     }
     $("btn-fijar-parada").disabled = !tieneSel;
+    $("btn-fijar-permanente").hidden = !desbloq;
     $("btn-fijar-permanente").disabled = !(desbloq && tieneSel);
     $("btn-quitar-parada").hidden = !(CM_EST.paradaProgramada || tieneSel);
     var linAct = modoLinealActivo();
     $("btn-salir-lineal").hidden = !linAct;
-    $("lineal-vista-bar").hidden = !linAct;
+    $("lineal-vista-bar").hidden = !encendidoSim || !linAct;
     if (linAct) {
       Array.prototype.forEach.call(document.querySelectorAll("[data-lineal-vista]"), function (b) {
         b.setAttribute("aria-pressed", String(b.getAttribute("data-lineal-vista") === CM_EST.lineal.vista));
@@ -1899,18 +1941,44 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       ? "✅ Confirmar entrega (continuar regreso a Base)"
       : "▶ Reanudar recorrido";
     $("btn-volver-base").hidden = !CM_EST.enParadaProgramada;
-    $("lienzo-pista").style.cursor = faseActual === 4 ? "crosshair" : "default";
+    $("lienzo-pista").style.cursor = (encendidoSim && faseActual === 4) ? "crosshair" : "default";
+
+    /* Estado de encendido inicial: visor vacío/apagado y controles deshabilitados hasta pulsar Encender */
+    $("overlay-apagado").hidden = encendidoSim;
+    $("velocimetro").hidden = !encendidoSim;
+    $("seg-leyenda").hidden = !encendidoSim || faseActual < 2;
+    Array.prototype.forEach.call(document.querySelectorAll(".fase-op, .pista-op"), function (b) {
+      b.disabled = !encendidoSim;
+    });
+    if (!encendidoSim) {
+      $("barra-calib").hidden = true;
+      $("barra-mvp").hidden = true;
+      $("hud-t").textContent = "—";
+      $("hud-s").textContent = "—";
+      $("hud-n").textContent = "—";
+      $("hud-prox").textContent = "apagado";
+      estEl.textContent = "APAGADO";
+      estEl.className = "estado-badge";
+    } else {
+      $("barra-calib").hidden = faseActual !== 3;
+      $("barra-mvp").hidden = faseActual !== 4;
+    }
 
     /* Ranura fija de alertas (visibility, delta = 0 px) */
-    var al = alertaActual(f, zf, za), el = $("alerta");
+    var al = encendidoSim ? alertaActual(f, zf, za) : null, el = $("alerta");
     if (al) { el.textContent = al.t; el.className = "alerta ver" + (al.n ? " " + al.n : ""); }
     else { el.textContent = "Sin alertas"; el.className = "alerta vacia"; }
 
-    /* Botones */
+    /* Botones principales + botón guiado de Siguiente paso */
     $("btn-principal-ctx").textContent = textoPrincipal();
+    $("btn-principal-ctx").disabled = !encendidoSim;
     $("btn-principal-ctx").className = "btn-ctx" + ((reg.completo && !reg.activo) || (faseActual === 3 && CM_EST.calibrada) ? " ok" : "");
-    $("btn-encender").setAttribute("aria-pressed", String(corriendo));
-    $("btn-encender-txt").textContent = corriendo ? "⏹ Detener" : "⚡ Encender";
+    $("btn-freno").disabled = !encendidoSim;
+    var pasoSig = encendidoSim && !corriendo ? CM.siguientePasoGuiado(faseActual, reg.completo, CM_EST) : null;
+    $("btn-siguiente-paso").hidden = !pasoSig;
+    if (pasoSig) $("btn-siguiente-paso").textContent = pasoSig.texto;
+    $("btn-encender").setAttribute("aria-pressed", String(encendidoSim));
+    $("btn-encender-txt").textContent = encendidoSim ? "⏹ Detener" : "⚡ Encender";
     if (cajonAbierto || modalAbierto) refrescarRegistro();
   }
 
@@ -1975,6 +2043,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     var c = ctxP, w = dimP.w, h = dimP.h, ms = muestrasActivas(), i;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, w, h);
+    if (!encendidoSim) return; /* Simulador apagado: visor vacío sin trazado, robot ni telemetría */
     c.font = "10.5px JetBrains Mono, monospace"; c.textBaseline = "middle";
 
     var sinIniciar = !ms.length, fase2 = usaSegmentos(), linAct = modoLinealActivo();
@@ -2070,35 +2139,45 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     else c.fillText(sinIniciar ? "Sin mapear · Pista " + tr.id : "Primer escaneo · " + fmt(sim.s, 2) + "/" + fmt(sim.L, 2) + " m · " + ms.length + " puntos", 10, 14);
   }
 
-  /* Segundo escaneo / Calibración / Operación: trazo base neutro + COLOREADO PROGRESIVO S1 → S2 → S3 conforme avanza el robot */
+  /* Escaneo 2: línea punteada coloreada progresiva (cada 1 s) · Escaneo 3 (Calibración): punteada completa → sólida progresiva S1 → S2 → S3 · Fase 4: sólida */
   function dibujarRutaSegmentos(c) {
     var L = sim.L, paso = 0.05;
-    /* Trazo base neutro de toda la ruta antes de colorearse */
-    c.save(); c.strokeStyle = "rgba(148,163,184,0.24)"; c.lineWidth = 4; c.lineCap = "round"; c.lineJoin = "round";
-    c.beginPath();
-    for (var sb = 0; sb <= L + 1e-6; sb += paso) {
-      var pb = tr.puntoEn(Math.min(sb, L));
-      if (sb === 0) c.moveTo(VX(pb.x), VY(pb.y)); else c.lineTo(VX(pb.x), VY(pb.y));
-    }
-    c.stroke(); c.restore();
+    var estilos = CM.estiloTrazoSegmentos(faseActual, sim.s, reg.completo, CM_EST, L, SE);
 
-    /* En fase 4 (ruta ya calibrada) o cuando el escaneo actual ya se completó, se muestra coloreada completa;
-       durante el escaneo se colorea progresivamente S1 → S2 → S3 según sim.s */
-    var completo = faseActual === 4 || (faseActual === 3 && CM_EST.calibrada && !reg.activo) || Boolean(reg.completo);
-    var progreso = CM.progresoColorSegmentos(sim.s, completo, L, SE);
-    progreso.forEach(function (sg) {
-      if (!sg.activo) return;
-      var col = COL_SEG[sg.id], s0, p;
-      [[10, 0.22], [4.5, 1]].forEach(function (capa) {
-        c.save(); c.globalAlpha = capa[1]; c.strokeStyle = col; c.lineWidth = capa[0]; c.lineCap = "round"; c.lineJoin = "round";
-        c.beginPath();
-        for (s0 = sg.desdeM; s0 <= sg.pintadoHastaM + 1e-9; s0 += paso) {
-          p = tr.puntoEn(Math.min(s0, sg.pintadoHastaM));
-          if (s0 === sg.desdeM) c.moveTo(VX(p.x), VY(p.y)); else c.lineTo(VX(p.x), VY(p.y));
-        }
-        p = tr.puntoEn(sg.pintadoHastaM); c.lineTo(VX(p.x), VY(p.y));
-        c.stroke(); c.restore();
-      });
+    function trazoSeg(sIni, sFin, col, ancho, alfa, punteado) {
+      if (sFin <= sIni + 1e-6) return;
+      c.save();
+      c.globalAlpha = alfa;
+      c.strokeStyle = col;
+      c.lineWidth = ancho;
+      c.lineCap = "round";
+      c.lineJoin = "round";
+      if (punteado) c.setLineDash([6, 6]);
+      c.beginPath();
+      for (var s0 = sIni; s0 <= sFin + 1e-9; s0 += paso) {
+        var p = tr.puntoEn(Math.min(s0, sFin));
+        if (s0 === sIni) c.moveTo(VX(p.x), VY(p.y)); else c.lineTo(VX(p.x), VY(p.y));
+      }
+      var pF = tr.puntoEn(sFin); c.lineTo(VX(pF.x), VY(pF.y));
+      c.stroke();
+      c.restore();
+    }
+
+    /* Trazo base: en Escaneo 2 es neutro tenue; en Calibración (3–5) toda la pista empieza en línea punteada */
+    trazoSeg(0, L, "rgba(148,163,184,0.28)", 3.5, 1, faseActual === 3);
+
+    estilos.forEach(function (sg) {
+      var col = COL_SEG[sg.id];
+      if (sg.punteadoBase) {
+        trazoSeg(sg.desdeM, sg.hastaM, col, 3.5, 0.42, true);
+      }
+      if (sg.punteadoColorHastaM > sg.desdeM + 1e-6) {
+        trazoSeg(sg.desdeM, sg.punteadoColorHastaM, col, 4.5, 1, true);
+      }
+      if (sg.solidoHastaM > sg.desdeM + 1e-6) {
+        trazoSeg(sg.desdeM, sg.solidoHastaM, col, 10, 0.22, false);
+        trazoSeg(sg.desdeM, sg.solidoHastaM, col, 4.5, 1, false);
+      }
     });
     c.font = "bold 11px JetBrains Mono, monospace"; c.textAlign = "center";
     SE.puntosControl(L).forEach(function (pc, i) {
@@ -2172,6 +2251,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     get sim() { return sim; },
     get reg() { return reg; },
     get fase() { return faseActual; },
+    get encendido() { return encendidoSim; },
     get calib() { return CM_EST; },
     registros: FS.registros,
     get corriendo() { return corriendo; },

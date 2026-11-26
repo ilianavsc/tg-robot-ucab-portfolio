@@ -32,6 +32,7 @@
   var C = Object.freeze({
     TOTAL_ESCANEOS: 5,
     META_VIAJES_PARADA: 8,
+    MUESTRA_ESCANEO2_MS: 1000, /* Escaneo 2: línea punteada con muestreo cada 1 s */
     TOLERANCIA_PARED_CM: 12,
     UMBRAL_CRITICO_CM: 20,
     UMBRAL_PRECAUCION_CM: 50,
@@ -155,6 +156,86 @@
   /* En P05 (Gemelo Digital de escaneos y asignación de paradas) no hay simulación de obstáculos */
   function obstaculosPermitidos() {
     return false;
+  }
+
+  /* Muestreo con intervalo configurable (1000 ms para Escaneo 2; 2000 ms para Escaneo 1 y calibración) */
+  function iniciarMuestreo(reg, sim, S, PE, intervaloMs) {
+    PE.iniciar(reg, sim, S);
+    if (intervaloMs && intervaloMs > 0) reg.proximaMs = intervaloMs;
+    return reg;
+  }
+
+  function tickMuestreo(reg, sim, S, PE, intervaloMs) {
+    if (!reg.activo) return 0;
+    var pasoMs = intervaloMs && intervaloMs > 0 ? intervaloMs : PE.C.MUESTRA_MS;
+    var tMs = Math.round((sim.t - reg.t0) * 1000), n = 0;
+    while (tMs >= reg.proximaMs) {
+      reg.muestras.push(PE.muestra(reg, sim, S, reg.proximaMs, false));
+      reg.proximaMs += pasoMs;
+      n++;
+    }
+    return n;
+  }
+
+  /* Navegación guiada: determina el botón destacado de "Siguiente paso" al terminar cada escaneo */
+  function siguientePasoGuiado(fase, regCompleto, est) {
+    if (fase === 1 && regCompleto) {
+      return { texto: "Continuar al Escaneo 2 →", accion: "ir_fase", destinoFase: 2 };
+    }
+    if (fase === 2 && regCompleto) {
+      return { texto: "Continuar a Calibración (Escaneo 3) →", accion: "ir_fase", destinoFase: 3 };
+    }
+    if (fase === 3 && est) {
+      if (est.calibrada) {
+        return { texto: "Ir a Operación y paradas →", accion: "ir_fase", destinoFase: 4 };
+      }
+      var sig = siguienteEscaneoCalib(est);
+      if (sig === 4 && est.escaneosCompletos[3]) {
+        return { texto: "Iniciar Escaneo 4 →", accion: "iniciar_calib", siguienteEscaneo: 4 };
+      }
+      if (sig === 5 && est.escaneosCompletos[4]) {
+        return { texto: "Iniciar Escaneo 5 →", accion: "iniciar_calib", siguienteEscaneo: 5 };
+      }
+    }
+    return null;
+  }
+
+  /* Estilo de trazo por segmento:
+   * - Fase 2: línea punteada coloreada progresiva (S1 → S2 → S3)
+   * - Fase 3: pista completa en línea punteada + transición progresiva a línea sólida coloreada (S1 → S2 → S3)
+   * - Fase 4: línea sólida coloreada completa */
+  function estiloTrazoSegmentos(fase, sActual, regCompleto, est, largoM, SE) {
+    var L = Math.max(0.5, Number(largoM) || 9.0);
+    var prog = progresoColorSegmentos(
+      sActual,
+      fase === 4 || (fase === 2 && Boolean(regCompleto)) || (fase === 3 && Boolean(est && est.calibrada) && !regCompleto),
+      L, SE
+    );
+    var progF3 = progresoColorSegmentos(sActual, Boolean(regCompleto) || Boolean(est && est.calibrada), L, SE);
+    return SE.segmentos(L).map(function (sg, idx) {
+      if (fase === 2) {
+        return {
+          id: sg.id, desdeM: sg.desdeM, hastaM: sg.hastaM,
+          punteadoBase: false,
+          punteadoColorHastaM: prog[idx].pintadoHastaM,
+          solidoHastaM: sg.desdeM
+        };
+      }
+      if (fase === 3) {
+        return {
+          id: sg.id, desdeM: sg.desdeM, hastaM: sg.hastaM,
+          punteadoBase: true,
+          punteadoColorHastaM: sg.desdeM,
+          solidoHastaM: progF3[idx].pintadoHastaM
+        };
+      }
+      return {
+        id: sg.id, desdeM: sg.desdeM, hastaM: sg.hastaM,
+        punteadoBase: false,
+        punteadoColorHastaM: sg.desdeM,
+        solidoHastaM: sg.hastaM
+      };
+    });
   }
 
   /* Coloreado progresivo de segmentos (S1 → S2 → S3) conforme avanza la posición s del robot */
@@ -743,6 +824,10 @@
     conteoEscaneos: conteoEscaneos,
     siguienteEscaneoCalib: siguienteEscaneoCalib,
     obstaculosPermitidos: obstaculosPermitidos,
+    iniciarMuestreo: iniciarMuestreo,
+    tickMuestreo: tickMuestreo,
+    siguientePasoGuiado: siguientePasoGuiado,
+    estiloTrazoSegmentos: estiloTrazoSegmentos,
     progresoColorSegmentos: progresoColorSegmentos,
     seleccionarModoRutaCompleta: seleccionarModoRutaCompleta,
     seleccionarPorPC: seleccionarPorPC,

@@ -710,9 +710,9 @@ module.exports = async function (ctx) {
     assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "quedan referencias a torretas/balizas");
     assert.ok(!/aprendizaje_gemelo\.js|capa3_operacional\.js/.test(html), "la página no carga fases futuras");
     assert.ok(html.includes('src="primer_escaneo.js"') && html.includes("../../assets/js/parametros_robot.js"));
-    const escena = html.slice(html.indexOf("function dibujarEscena"), html.indexOf("window.__p05"));
-    assert.ok(escena.length > 200 && !/setLineDash/.test(escena), "el trazado no usa línea punteada");
-    assert.ok(!/setLineDash\(\[[1-9]/.test(html), "no queda ninguna línea punteada en el canvas");
+    const escena1 = html.slice(html.indexOf("function dibujarEscena"), html.indexOf("function dibujarRutaSegmentos"));
+    assert.ok(escena1.length > 200 && !/setLineDash/.test(escena1), "el Escaneo 1 dibuja solo puntos discretos sin línea punteada");
+    assert.ok(/setLineDash\(\[6,\s*6\]\)/.test(html.slice(html.indexOf("function dibujarRutaSegmentos"))), "Escaneo 2 y 3 usan trazo punteado progresivo");
     assert.ok(/Nota de integración App:/.test(html) && html.includes("tg-robot-ucab-app") && html.includes('"Cargando..."'));
     const cajon = html.slice(html.indexOf('id="cajon-ing"'), html.indexOf("</aside>", html.indexOf('id="cajon-ing"')));
     assert.strictEqual((cajon.match(/<section class="panel"/g) || []).length, 2, "Ingeniería / Datos tiene exactamente 2 bloques");
@@ -1008,10 +1008,55 @@ module.exports = async function (ctx) {
       assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
     }
     assert.ok(!html.includes('id="btn-sim-obstaculo"') && !html.includes('id="btn-calib-todo"') && !html.includes('id="btn-calib-rapido"'), "sin obstáculos ni saltos en Punto 3");
-    assert.ok(/progresoColorSegmentos\(/.test(html), "coloreado progresivo S1 → S2 → S3 en canvas");
+    assert.ok(/estiloTrazoSegmentos\(/.test(html), "estilo punteado/sólido progresivo S1 → S2 → S3 en canvas");
     for (const v of ["ida", "regreso", "ambos"]) assert.ok(html.includes('data-lineal-vista="' + v + '"'));
     for (const f of ["todos", "ida", "regreso", "I1", "I2", "I3", "R1", "R2", "R3"]) assert.ok(html.includes('data-lin-filtro="' + f + '"'));
     assert.ok(/function dibujarRutaLineal/.test(html) && /function perfilSvgLineal/.test(html));
     assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "cero torretas o balizas");
+  });
+
+  await prueba("Encendido inicial obligatorio, navegación guiada 1→2→3→4→5→Operación, Escaneo 2 punteado cada 1 s, Escaneo 3 punteado→sólido y ocultamiento de Fijar parada < 8 viajes", () => {
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    /* 1. Estado inicial apagado hasta pulsar Encender */
+    assert.ok(html.includes('id="overlay-apagado"') && html.includes('id="btn-encender-overlay"'), "overlay de simulador apagado");
+    assert.ok(/var encendidoSim = false/.test(html) && /if \(!encendidoSim\) return;/.test(html), "inicia apagado con canvas vacío");
+    /* 2. Navegación guiada tras cada escaneo */
+    const est = CM.crearEstado(PE, SE, 9.0);
+    const r1 = PE.crear(), r2 = PE.crear();
+    assert.strictEqual(CM.siguientePasoGuiado(1, false, est), null);
+    assert.strictEqual(CM.siguientePasoGuiado(1, true, est).texto, "Continuar al Escaneo 2 →");
+    assert.strictEqual(CM.siguientePasoGuiado(2, true, est).texto, "Continuar a Calibración (Escaneo 3) →");
+    CM.completarEscaneoRapido(est, 3, r1, r2, SE, 9.0, "B");
+    assert.strictEqual(CM.siguientePasoGuiado(3, true, est).texto, "Iniciar Escaneo 4 →");
+    CM.completarEscaneoRapido(est, 4, r1, r2, SE, 9.0, "B");
+    assert.strictEqual(CM.siguientePasoGuiado(3, true, est).texto, "Iniciar Escaneo 5 →");
+    CM.completarEscaneoRapido(est, 5, r1, r2, SE, 9.0, "B");
+    assert.strictEqual(CM.siguientePasoGuiado(3, true, est).texto, "Ir a Operación y paradas →");
+    assert.ok(html.includes('id="btn-siguiente-paso"'), "botón guiado en barra de acciones");
+    /* 3. Muestreo cada 1 s en Escaneo 2 + trazo punteado (Escaneo 2) y punteado → sólido (Escaneo 3) */
+    assert.strictEqual(CM.C.MUESTRA_ESCANEO2_MS, 1000);
+    const m = mundo("B");
+    S.nuevoViaje(m.sim, 1);
+    m.sim.velObjetivoMs = TG.velocidad.cruceroMs;
+    const reg2_1s = CM.iniciarMuestreo(PE.crear(), m.sim, S, PE, CM.C.MUESTRA_ESCANEO2_MS);
+    correr(m.sim, 5.2, (x) => { CM.tickMuestreo(reg2_1s, x, S, PE, CM.C.MUESTRA_ESCANEO2_MS); return false; });
+    assert.strictEqual(reg2_1s.muestras.length, 6, "0 s, 1 s, 2 s, 3 s, 4 s, 5 s = 6 muestras");
+    assert.deepStrictEqual(reg2_1s.muestras.map((x) => x.t_s), [0, 1, 2, 3, 4, 5]);
+
+    const estF2 = CM.estiloTrazoSegmentos(2, 4.2, false, est, 9.0, SE);
+    assert.strictEqual(estF2[0].punteadoColorHastaM, 3.0);
+    assert.strictEqual(estF2[1].punteadoColorHastaM, 4.2);
+    assert.strictEqual(estF2[0].solidoHastaM, 0, "Escaneo 2 es punteado, no sólido");
+
+    const estCal = CM.crearEstado(PE, SE, 9.0);
+    const estF3 = CM.estiloTrazoSegmentos(3, 4.2, false, estCal, 9.0, SE);
+    assert.ok(estF3.every((x) => x.punteadoBase === true), "Escaneo 3 arranca toda la pista punteada");
+    assert.strictEqual(estF3[0].solidoHastaM, 3.0, "S1 consolidado sólido");
+    assert.strictEqual(estF3[1].solidoHastaM, 4.2, "S2 consolidándose progresivamente");
+    assert.strictEqual(estF3[2].solidoHastaM, 6.0, "S3 aún en punteado");
+
+    /* 4. Ocultar Fijar parada permanente hasta 8 viajes */
+    assert.ok(/id="btn-fijar-permanente"[^>]*hidden/.test(html), "oculto por defecto en HTML");
+    assert.ok(/\$\("btn-fijar-permanente"\)\.hidden\s*=\s*!desbloq/.test(html), "oculto dinámicamente con < 8 viajes");
   });
 };
