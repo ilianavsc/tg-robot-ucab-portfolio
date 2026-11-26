@@ -337,7 +337,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .escaneo-hud strong.cyan { color: var(--tg-dark-accent); }
 
 /* ---- Selector de fase: Escaneo 1 / Escaneo 2 / Calibración (3–5) / Operación MVP ---- */
-:root { --seg1: var(--tg-dark-accent); --seg2: var(--tg-dark-warning); --seg3: var(--tg-dark-alarm); }
+:root {
+  --seg1: var(--tg-dark-accent); --seg2: var(--tg-dark-warning); --seg3: var(--tg-dark-alarm);
+  /* Nueva paleta lineal (6 colores distintos a S1–S3): Ida I1–I3 y Regreso R1–R3 */
+  --lin-i1: #2DD4BF; --lin-i2: #4ADE80; --lin-i3: #60A5FA;
+  --lin-r1: #FB7185; --lin-r2: #F97316; --lin-r3: #E879F9;
+}
 [data-solo-fase][hidden] { display: none !important; }
 .fase-fila { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--s2-bg); border-bottom: 1px solid var(--s2-borde); }
 .fase-op {
@@ -398,14 +403,32 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 .ev-item.ok { border-left-color: var(--s2-ok); }
 .seg-sw { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
 .seg-sw.s1 { background: var(--seg1); } .seg-sw.s2 { background: var(--seg2); } .seg-sw.s3 { background: var(--seg3); }
+.seg-sw.i1 { background: var(--lin-i1); } .seg-sw.i2 { background: var(--lin-i2); } .seg-sw.i3 { background: var(--lin-i3); }
+.seg-sw.r1 { background: var(--lin-r1); } .seg-sw.r2 { background: var(--lin-r2); } .seg-sw.r3 { background: var(--lin-r3); }
 .seg-leyenda {
   position: absolute; top: 26px; right: 10px; z-index: 2; display: grid; gap: 3px; padding: 6px 9px; border-radius: 10px;
   background: rgba(11, 18, 32, 0.9); border: 1px solid rgba(148, 163, 184, 0.3); pointer-events: none;
   font-family: var(--font-mono); font-size: 10.5px; color: var(--tg-dark-text); font-variant-numeric: tabular-nums;
 }
 .seg-leyenda b { font-weight: 700; }
+.lineal-vista-bar {
+  position: absolute; top: 26px; left: 10px; z-index: 3; display: inline-flex; background: rgba(11, 18, 32, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; overflow: hidden;
+}
+.lineal-vista-bar[hidden] { display: none !important; }
+.lineal-vista-bar button {
+  min-height: 32px; padding: 3px 9px; border: none; border-right: 1px solid rgba(148, 163, 184, 0.25);
+  background: transparent; color: var(--s2-muted); font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; cursor: pointer;
+}
+.lineal-vista-bar button:last-child { border-right: none; }
+.lineal-vista-bar button[aria-pressed="true"] { background: rgba(45, 212, 191, 0.22); color: #fff; }
 .seg-chip { display: inline-block; min-width: 26px; padding: 1px 5px; border-radius: 6px; font-weight: 700; text-align: center; color: var(--tg-dark-bg); }
 .seg-chip.s1 { background: var(--seg1); } .seg-chip.s2 { background: var(--seg2); } .seg-chip.s3 { background: var(--seg3); }
+.seg-chip.i1 { background: var(--lin-i1); } .seg-chip.i2 { background: var(--lin-i2); } .seg-chip.i3 { background: var(--lin-i3); }
+.seg-chip.r1 { background: var(--lin-r1); } .seg-chip.r2 { background: var(--lin-r2); } .seg-chip.r3 { background: var(--lin-r3); }
+.sent-chip { display: inline-block; padding: 1px 5px; border-radius: 6px; font-size: 9.5px; font-weight: 700; margin-right: 4px; background: var(--s2-surf2); color: var(--tg-dark-text); border: 1px solid var(--s2-borde); }
+.sent-chip.ida { border-color: var(--lin-i1); color: var(--lin-i1); }
+.sent-chip.regreso { border-color: var(--lin-r1); color: var(--lin-r1); }
 .seg-filtro { display: inline-flex; flex-wrap: wrap; background: var(--s2-bg); border: 1px solid var(--s2-borde); border-radius: 8px; overflow: hidden; margin: 0 0 6px; }
 .seg-filtro button { min-height: 36px; padding: 4px 12px; border: none; border-right: 1px solid var(--s2-borde); background: transparent; color: var(--s2-muted); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; cursor: pointer; }
 .seg-filtro button:last-child { border-right: none; }
@@ -649,6 +672,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
           <span id="parada-metros-txt">S1 · 1,50 m</span>
           <button type="button" class="ctrl-btn ok" id="btn-fijar-parada" disabled>📍 Fijar parada</button>
           <button type="button" class="ctrl-btn" id="btn-quitar-parada" hidden>✕ Quitar</button>
+          <button type="button" class="ctrl-btn info" id="btn-reescanear-lineal" hidden>🔄 Re-escanear como rutas lineales (Ida y Regreso)</button>
+          <button type="button" class="ctrl-btn ok" id="btn-lineal-rapido" hidden>⚡ Completar lineal</button>
+          <button type="button" class="ctrl-btn" id="btn-salir-lineal" hidden>↩ Circuito cerrado</button>
           <button type="button" class="ctrl-btn ok" id="btn-reanudar-parada" hidden>▶ Reanudar destino</button>
           <button type="button" class="ctrl-btn aviso" id="btn-volver-base" hidden>↩ Volver a Base</button>
         </div>
@@ -681,7 +707,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 
     <!-- 5. Canvas: el gemelo dibuja SOLO un punto discreto cada 2 s (sin línea de recorrido) -->
     <div class="radar-escena">
-      <div class="seg-leyenda" id="seg-leyenda" data-solo-fase="2" hidden aria-label="Leyenda de los 3 segmentos"></div>
+      <div class="lineal-vista-bar" id="lineal-vista-bar" hidden role="group" aria-label="Vista de rutas lineales">
+        <button type="button" data-lineal-vista="ida" aria-pressed="false">Ida (I1–I3)</button>
+        <button type="button" data-lineal-vista="regreso" aria-pressed="false">Regreso (R1–R3)</button>
+        <button type="button" data-lineal-vista="ambos" aria-pressed="true">Ambos</button>
+      </div>
+      <div class="seg-leyenda" id="seg-leyenda" data-solo-fase="2" hidden aria-label="Leyenda de segmentos"></div>
       <canvas class="lienzo" id="lienzo-pista" role="img" aria-label="Vista cenital del primer escaneo administrado en pista despejada: el robot, los conos de los dos ultrasonidos (paredes de referencia) y un punto por cada muestra tomada cada 2 segundos"></canvas>
 
       <div class="velo" id="velocimetro" aria-label="Velocímetro del robot, de 0,00 a 0,46 metros por segundo">
@@ -808,6 +839,17 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
         <button type="button" data-seg-filtro="S2" aria-pressed="false"><i class="seg-sw s2" aria-hidden="true"></i>S2</button>
         <button type="button" data-seg-filtro="S3" aria-pressed="false"><i class="seg-sw s3" aria-hidden="true"></i>S3</button>
       </div>
+      <div class="seg-filtro" id="seg-filtro-lineal" hidden role="group" aria-label="Filtrar filas lineales por sentido o segmento">
+        <button type="button" data-lin-filtro="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-lin-filtro="ida" aria-pressed="false">Ida</button>
+        <button type="button" data-lin-filtro="regreso" aria-pressed="false">Regreso</button>
+        <button type="button" data-lin-filtro="I1" aria-pressed="false"><i class="seg-sw i1" aria-hidden="true"></i>I1</button>
+        <button type="button" data-lin-filtro="I2" aria-pressed="false"><i class="seg-sw i2" aria-hidden="true"></i>I2</button>
+        <button type="button" data-lin-filtro="I3" aria-pressed="false"><i class="seg-sw i3" aria-hidden="true"></i>I3</button>
+        <button type="button" data-lin-filtro="R1" aria-pressed="false"><i class="seg-sw r1" aria-hidden="true"></i>R1</button>
+        <button type="button" data-lin-filtro="R2" aria-pressed="false"><i class="seg-sw r2" aria-hidden="true"></i>R2</button>
+        <button type="button" data-lin-filtro="R3" aria-pressed="false"><i class="seg-sw r3" aria-hidden="true"></i>R3</button>
+      </div>
       <div class="tabla-wrap">
         <table class="tabla-muestras" id="tabla-muestras">
           <thead>
@@ -864,7 +906,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     3: SE.configFase(2, window.TG_ROBOT, PE),
     4: SE.configFase(2, window.TG_ROBOT, PE)
   };
-  var COL_SEG = { S1: PAL.seg1, S2: PAL.seg2, S3: PAL.seg3 }, filtroSeg = "todos", modalAbierto = false;
+  var COL_SEG = { S1: PAL.seg1, S2: PAL.seg2, S3: PAL.seg3 }, COL_LIN = CM.PALETA_LINEAL;
+  var filtroSeg = "todos", filtroLin = "todos", modalAbierto = false;
   var paradaSegSel = "S1", obsRegistradoEnViaje = false, avisoBloqueoMvp = "";
   var avisoEl = $("aviso-carga");
   var nucleo = null, canonica = null, sim1 = null, pistaObj = null, tr = null, sim = null;
@@ -873,6 +916,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 
   function fmt(x, d) { return Number(x).toFixed(d).replace(".", ","); }
   function usaSegmentos() { return faseActual >= 2; }
+  function modoLinealActivo() { return faseActual === 4 && Boolean(CM_EST.lineal && CM_EST.lineal.activo); }
+  function muestrasActivas() { return modoLinealActivo() ? CM_EST.lineal.muestras : reg.muestras; }
   function registroDeFase(f) {
     if (f === 1) return FS.registros[1];
     if (f === 2) return FS.registros[2];
@@ -952,6 +997,38 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       var n = 0;
       while (acum >= TICK_MS && n < 60) {
         S.paso(sim, TICK_MS);
+        /* Re-escaneo lineal animado (Ida Base -> Parada, luego Regreso Parada -> Base, pista despejada) */
+        if (faseActual === 4 && CM_EST.lineal && CM_EST.lineal.escaneando) {
+          var lin = CM_EST.lineal;
+          var nTick = PE.tick(reg, sim, S);
+          if (nTick) {
+            var ultM = reg.muestras[reg.muestras.length - 1];
+            CM.registrarMuestraLineal(CM_EST, ultM, lin.sentidoActual);
+          }
+          if (lin.sentidoActual === "ida" && sim.s >= lin.paradaS - 0.06) {
+            CM.registrarMuestraLineal(CM_EST, PE.muestra(reg, sim, S, Math.round((sim.t - reg.t0) * 1000), false), "ida");
+            lin.sentidoActual = "regreso";
+            S.nuevoViaje(sim, -1);
+            sim.s = lin.paradaS;
+            sim.velObjetivoMs = CFG[4].velMs;
+          } else if (lin.sentidoActual === "regreso" && sim.s <= 0.08) {
+            var tFin = Math.round((sim.t - reg.t0) * 1000);
+            CM.registrarMuestraLineal(CM_EST, PE.muestra(reg, sim, S, tFin, true), "regreso");
+            lin.escaneando = false;
+            lin.completo = true;
+            lin.tFinS = Math.round(tFin / 10) / 100;
+            PE.finalizar(reg, sim, S, null);
+            CM.registrarEvento(CM_EST, "REESCANEO_LINEAL_COMPLETO", "R3", 0,
+              "Re-escaneo lineal completo: Ida I1–I3 (" + fmt(lin.paradaS, 2) + " m) + Regreso R1–R3 (" + fmt(lin.paradaS, 2) + " m) · " + lin.muestras.length + " muestras");
+            sim.velObjetivoMs = null;
+            detener();
+            refrescarDom(true);
+            break;
+          }
+          acum -= TICK_MS; n++;
+          if (sim.nav.paradaSeguridad) break;
+          continue;
+        }
         if (PE.tick(reg, sim, S) && usaSegmentos()) SE.etiquetar(reg.muestras, sim.L);
         /* En Operación MVP: contraste de eco HC-SR04P contra paredes de referencia, parada programada y destino PC1/PC2/PC3 */
         if (faseActual === 4 && reg.activo) {
@@ -1213,9 +1290,26 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   function pintarReferenciasFase2() {
     var L = sim.L, pcs = SE.puntosControl(L);
     $("ref-pcs").textContent = pcs.map(function (p) { return p.id + " " + fmt(p.posicionM, 2); }).join(" · ") + " m (tercios de la ruta)";
+    if (modoLinealActivo()) { pintarLeyendaLineal(); return; }
     $("seg-leyenda").innerHTML = SE.segmentos(L).map(function (sg, i) {
       return '<span><i class="seg-sw s' + (i + 1) + '" aria-hidden="true"></i><b>' + sg.id + "</b> " + sg.nombre + " · " + fmt(sg.desdeM, 2) + "–" + fmt(sg.hastaM, 2) + " m</span>";
     }).join("");
+  }
+  function pintarLeyendaLineal() {
+    var lin = CM_EST.lineal;
+    if (!lin || !lin.activo) return;
+    var filas = [];
+    if (lin.vista === "ida" || lin.vista === "ambos") {
+      lin.segmentosIda.forEach(function (sg) {
+        filas.push('<span><i class="seg-sw ' + sg.id.toLowerCase() + '" aria-hidden="true"></i><b>' + sg.id + "</b> " + sg.nombre + " · " + fmt(sg.desdeM, 2) + "–" + fmt(sg.hastaM, 2) + " m</span>");
+      });
+    }
+    if (lin.vista === "regreso" || lin.vista === "ambos") {
+      lin.segmentosRegreso.forEach(function (sg) {
+        filas.push('<span><i class="seg-sw ' + sg.id.toLowerCase() + '" aria-hidden="true"></i><b>' + sg.id + "</b> " + sg.nombre + " · " + fmt(sg.recDesdeM, 2) + "–" + fmt(sg.recHastaM, 2) + " m</span>");
+      });
+    }
+    $("seg-leyenda").innerHTML = filas.join("");
   }
   function aplicarFiltroSeg(f) {
     filtroSeg = f;
@@ -1313,7 +1407,61 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     });
     $("btn-quitar-parada").addEventListener("click", function () {
       CM.quitarParada(CM_EST);
+      pintarReferenciasFase2();
+      filasPintadas = -1;
       refrescarDom(true);
+    });
+    $("btn-reescanear-lineal").addEventListener("click", function () {
+      if (!sim || !CM_EST.paradaProgramada) return;
+      detener();
+      S.quitarObstaculo(sim);
+      var lin = CM.iniciarReescaneoLineal(CM_EST);
+      if (!lin) return;
+      reg = CM_EST.regMvp;
+      S.nuevoViaje(sim, 1);
+      sim.velObjetivoMs = CFG[4].velMs;
+      PE.iniciar(reg, sim, S);
+      CM.registrarMuestraLineal(CM_EST, reg.muestras[0], "ida");
+      filtroLin = "todos";
+      filasPintadas = -1;
+      pintarLeyendaLineal();
+      reproducir();
+    });
+    $("btn-lineal-rapido").addEventListener("click", function () {
+      if (!sim || !CM_EST.paradaProgramada) return;
+      detener();
+      S.quitarObstaculo(sim);
+      CM.completarReescaneoLinealRapido(CM_EST, tr);
+      S.nuevoViaje(sim, 1);
+      sim.velObjetivoMs = null;
+      filtroLin = "todos";
+      filasPintadas = -1;
+      pintarLeyendaLineal();
+      refrescarDom(true);
+    });
+    $("btn-salir-lineal").addEventListener("click", function () {
+      detener();
+      CM.salirModoLineal(CM_EST);
+      pintarReferenciasFase2();
+      filasPintadas = -1;
+      refrescarDom(true);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-lineal-vista]"), function (b) {
+      b.addEventListener("click", function () {
+        if (!CM_EST.lineal) return;
+        CM_EST.lineal.vista = b.getAttribute("data-lineal-vista");
+        refrescarDom(true);
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-lin-filtro]"), function (b) {
+      b.addEventListener("click", function () {
+        filtroLin = b.getAttribute("data-lin-filtro");
+        Array.prototype.forEach.call(document.querySelectorAll("[data-lin-filtro]"), function (o) {
+          o.setAttribute("aria-pressed", String(o.getAttribute("data-lin-filtro") === filtroLin));
+        });
+        filasPintadas = -1;
+        if (modalAbierto) refrescarTabla(muestrasActivas());
+      });
     });
     $("btn-reanudar-parada").addEventListener("click", function () { reanudar(); });
     $("btn-volver-base").addEventListener("click", function () {
@@ -1372,11 +1520,22 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
 
   function filaHtml(m) {
     var us = (m.frente_cm === null ? "sin eco" : fmt(m.frente_cm, 0)) + " / " + fmt(m.atras_cm, 0);
+    var linAct = modoLinealActivo();
     var seg = usaSegmentos() && m.seg ? m.seg : null;
+    var sent = linAct && m.sentido ? m.sentido : null;
     var cls = (m.final ? "final" : "") + (seg ? " seg-" + seg.toLowerCase() : "");
-    var oculto = seg && filtroSeg !== "todos" && filtroSeg !== seg ? " hidden" : "";
-    return "<tr" + (cls.trim() ? ' class="' + cls.trim() + '"' : "") + (seg ? ' data-seg="' + seg + '"' : "") + oculto + '><td data-label="#">' + m.n + "</td>" +
-      '<td class="col-seg" data-label="Segmento">' + (seg ? '<span class="seg-chip ' + seg.toLowerCase() + '">' + seg + "</span>" : "") + '</td><td data-label="t (s)">' + fmt(m.t_s, 1) + '</td><td data-label="s (m)">' + fmt(m.s_m, 2) +
+    var oculto = "";
+    if (linAct && filtroLin !== "todos") {
+      if ((filtroLin === "ida" || filtroLin === "regreso") && sent !== filtroLin) oculto = " hidden";
+      else if (filtroLin !== "ida" && filtroLin !== "regreso" && seg !== filtroLin) oculto = " hidden";
+    } else if (!linAct && seg && filtroSeg !== "todos" && filtroSeg !== seg) {
+      oculto = " hidden";
+    }
+    var segHtml = seg
+      ? (sent ? '<span class="sent-chip ' + sent + '">' + (sent === "ida" ? "Ida" : "Reg") + "</span>" : "") + '<span class="seg-chip ' + seg.toLowerCase() + '">' + seg + "</span>"
+      : "";
+    return "<tr" + (cls.trim() ? ' class="' + cls.trim() + '"' : "") + (seg ? ' data-seg="' + seg + '"' : "") + (sent ? ' data-sent="' + sent + '"' : "") + oculto + '><td data-label="#">' + m.n + "</td>" +
+      '<td class="col-seg" data-label="Segmento">' + segHtml + '</td><td data-label="t (s)">' + fmt(m.t_s, 1) + '</td><td data-label="s (m)">' + fmt(m.s_m, 2) +
       '</td><td class="col-ancha" data-label="Pose x, y · θ">' + fmt(m.x, 2) + ", " + fmt(m.y, 2) + " · " + fmt(m.angulo, 0) + '°</td><td class="tcrt-c" data-label="TCRT">' + m.tcrt.join("") +
       '</td><td class="paredes col-ancha" data-label="Paredes ref. F / A">' + us + ' cm</td><td data-label="Yaw">' + fmt(m.yaw_deg, 1) + '°</td><td data-label="v (m/s)">' + fmt(m.v_ms, 2) + "</td></tr>";
   }
@@ -1399,7 +1558,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     }).join("");
   }
   function refrescarRegistro() {
-    var ms = reg.muestras;
+    var ms = muestrasActivas();
     if (modalAbierto) refrescarTabla(ms);
     refrescarResumenVisual(ms);
     refrescarTextosRegistro(ms);
@@ -1423,7 +1582,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   function refrescarTabla(ms) {
     var tb = $("reg-filas");
     if (!ms.length) {
-      var etqVacia = faseActual === 4 ? "una misión MVP" : (faseActual === 3 ? "un escaneo de calibración" : (faseActual === 2 ? "el segundo escaneo" : "el primer escaneo"));
+      var etqVacia = modoLinealActivo() ? "el re-escaneo lineal" : (faseActual === 4 ? "una misión MVP" : (faseActual === 3 ? "un escaneo de calibración" : (faseActual === 2 ? "el segundo escaneo" : "el primer escaneo")));
       if (filasPintadas !== 0 || tb.textContent.indexOf(etqVacia) < 0) { tb.innerHTML = '<tr class="vacia"><td colspan="9">Sin muestras: inicia ' + etqVacia + '.</td></tr>'; filasPintadas = 0; }
     } else if (filasPintadas < 0 || filasPintadas > ms.length) {
       tb.innerHTML = ms.map(filaHtml).join(""); filasPintadas = ms.length;
@@ -1436,6 +1595,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
   function refrescarTextosRegistro(ms) {
     var st = $("reg-estado");
+    if (modoLinealActivo()) {
+      var lin = CM_EST.lineal, rl = CM.resumenLinealPorSegmento(ms);
+      st.textContent = lin.completo ? "Lineal ✔ (3+3)" : (lin.escaneando ? "Re-escaneando " + lin.sentidoActual : "Lineal listo");
+      st.className = "seg-pill" + (lin.completo ? " ok" : " activo");
+      $("reg-resumen").textContent = $("datos-resumen").textContent =
+        "Re-escaneo lineal (Base ↔ Parada " + fmt(lin.paradaS, 2) + " m) · Ida: I1(" + rl.I1 + ") I2(" + rl.I2 + ") I3(" + rl.I3 + ") · Regreso: R1(" + rl.R1 + ") R2(" + rl.R2 + ") R3(" + rl.R3 + ")";
+      return;
+    }
     if (faseActual === 3) {
       st.textContent = CM_EST.calibrada ? "Calibrada ✔" : ("Escaneo " + CM.conteoEscaneos(CM_EST) + "/5");
       st.className = "seg-pill" + (CM_EST.calibrada ? " ok" : (reg.activo ? " activo" : ""));
@@ -1471,7 +1638,51 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     if (!(b[0] || b[1] || b[2] || b[3])) return 0;          /* sin línea */
     return (b[1] || b[2]) && !b[0] && !b[3] ? 2 : 1;       /* 2 = centrada · 1 = corrigiendo */
   }
+  function perfilSvgLineal(ms, lin) {
+    var X0 = 30, X1 = 314, W = X1 - X0, XM = X0 + W / 2, TA = 12, TB = 42, PA = 56, PB = 112;
+    var L = Math.max(0.3, lin.paradaS || 1), out = [];
+    out.push('<rect x="' + X0 + '" y="' + TA + '" width="' + W + '" height="' + (TB - TA) + '" fill="' + PAL.realce + '" rx="3"/>');
+    out.push('<rect x="' + X0 + '" y="' + PA + '" width="' + W + '" height="' + (PB - PA) + '" fill="' + PAL.realce + '" rx="3"/>');
+    var segs6 = [
+      { id: "I1", x0: X0, x1: X0 + W / 6 }, { id: "I2", x0: X0 + W / 6, x1: X0 + W / 3 }, { id: "I3", x0: X0 + W / 3, x1: XM },
+      { id: "R1", x0: XM, x1: XM + W / 6 }, { id: "R2", x0: XM + W / 6, x1: XM + W / 3 }, { id: "R3", x0: XM + W / 3, x1: X1 }
+    ];
+    segs6.forEach(function (g) {
+      var col = COL_LIN[g.id];
+      out.push('<rect x="' + g.x0.toFixed(1) + '" y="' + PA + '" width="' + (g.x1 - g.x0).toFixed(1) + '" height="' + (PB - PA) + '" fill="' + col + '" fill-opacity="0.16"/>');
+      out.push('<text x="' + ((g.x0 + g.x1) / 2).toFixed(1) + '" y="' + (PB + 9) + '" fill="' + col + '" font-size="7.5" text-anchor="middle" font-weight="700">' + g.id + "</text>");
+    });
+    out.push('<line x1="' + XM.toFixed(1) + '" x2="' + XM.toFixed(1) + '" y1="' + (TA - 4) + '" y2="' + PB + '" stroke="#fff" stroke-width="1.2"/>');
+    out.push('<text x="' + (X0 + W / 4).toFixed(1) + '" y="9" fill="' + COL_LIN.I1 + '" font-size="7.5" text-anchor="middle" font-weight="700">IDA (Base → Parada)</text>');
+    out.push('<text x="' + (XM + W / 4).toFixed(1) + '" y="9" fill="' + COL_LIN.R1 + '" font-size="7.5" text-anchor="middle" font-weight="700">REGRESO (Parada → Base)</text>');
+    var alto = [0.3, 0.65, 1];
+    ms.forEach(function (m) {
+      var prog = m.sentido === "regreso" ? (0.5 + 0.5 * Math.max(0, Math.min(1, (L - m.s_m) / L))) : (0.5 * Math.max(0, Math.min(1, m.s_m / L)));
+      var x = X0 + prog * W, e = estabilidadTcrt(m.tcrt), h = (TB - TA) * alto[e], col = COL_LIN[m.seg] || PAL.acento;
+      out.push('<rect x="' + (x - 2).toFixed(1) + '" y="' + (TB - h).toFixed(1) + '" width="4" height="' + h.toFixed(1) + '" fill="' + col + '"/>');
+      out.push('<circle cx="' + x.toFixed(1) + '" cy="' + (PA + 14).toFixed(1) + '" r="2.5" fill="' + col + '"/>');
+    });
+    out.push('<text x="2" y="' + ((TA + TB) / 2 + 3) + '" fill="' + PAL.muted + '" font-size="8">TCRT</text>');
+    out.push('<text x="2" y="' + ((PA + PB) / 2 + 3) + '" fill="' + PAL.muted + '" font-size="7.5">3+3</text>');
+    return out.join("");
+  }
   function refrescarResumenVisual(ms) {
+    if (modoLinealActivo()) {
+      var lin = CM_EST.lineal, rl = CM.resumenLinealPorSegmento(ms), totDist = lin.largoIda + lin.largoRegreso;
+      $("kpi-n").textContent = String(ms.length);
+      $("kpi-n-det").textContent = "Ida " + rl.ida + " (I1–I3) · Reg " + rl.regreso + " (R1–R3)";
+      $("kpi-d").innerHTML = fmt(totDist, 2) + "<small>m</small>";
+      $("kpi-d-det").textContent = "Ida " + fmt(lin.largoIda, 2) + " + Reg " + fmt(lin.largoRegreso, 2) + " m";
+      $("kpi-t").innerHTML = fmt(lin.tFinS || 0, 1) + "<small>s</small>";
+      $("kpi-t-det").textContent = lin.completo ? "lineal completo" : (lin.escaneando ? "escaneando " + lin.sentidoActual : "listo");
+      $("kpi-v").innerHTML = fmt(lin.tFinS > 0.5 ? totDist / lin.tFinS : CFG[4].velMs, 2) + "<small>m/s</small>";
+      $("kpi-v-det").textContent = "crucero · 6 segmentos lineales";
+      $("perfil-svg").innerHTML = perfilSvgLineal(ms, lin);
+      $("perfil-leyenda").innerHTML =
+        '<span><i style="background:' + COL_LIN.I1 + '"></i>I1</span><span><i style="background:' + COL_LIN.I2 + '"></i>I2</span><span><i style="background:' + COL_LIN.I3 + '"></i>I3</span>' +
+        '<span><i style="background:' + COL_LIN.R1 + '"></i>R1</span><span><i style="background:' + COL_LIN.R2 + '"></i>R2</span><span><i style="background:' + COL_LIN.R3 + '"></i>R3</span>';
+      return;
+    }
     var n = ms.length, ult = n ? ms[n - 1] : null, L = sim.L, fase2 = usaSegmentos();
     var tS = reg.activo ? sim.t - reg.t0 : (n ? reg.tFinS : 0), dist = ult ? Math.max(ult.s_m, reg.activo ? sim.s : 0) : 0;
     $("kpi-n").textContent = String(n);
@@ -1624,6 +1835,24 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     $("parada-pct").disabled = !desbloq;
     $("btn-fijar-parada").disabled = !desbloq;
     $("btn-quitar-parada").hidden = !(desbloq && CM_EST.paradaProgramada);
+    var linAct = modoLinealActivo();
+    $("btn-reescanear-lineal").hidden = !(desbloq && CM_EST.paradaProgramada);
+    $("btn-lineal-rapido").hidden = !(desbloq && CM_EST.paradaProgramada);
+    $("btn-salir-lineal").hidden = !linAct;
+    $("lineal-vista-bar").hidden = !linAct;
+    if (linAct) {
+      Array.prototype.forEach.call(document.querySelectorAll("[data-lineal-vista]"), function (b) {
+        b.setAttribute("aria-pressed", String(b.getAttribute("data-lineal-vista") === CM_EST.lineal.vista));
+      });
+      pintarLeyendaLineal();
+      $("nota-app4").querySelector("p").innerHTML =
+        '<strong>Nota de integración App:</strong> Aunque el Gemelo Digital usa los 6 colores nuevos (<strong>I1–I3</strong> ida y <strong>R1–R3</strong> regreso) para auditar ambos sentidos por separado, en la aplicación móvil (<code>tg-robot-ucab-app</code>) el trayecto hacia la parada y el retorno se muestran en <strong>una vista limpia de un solo color</strong> con los nuevos puntos de control.';
+    } else {
+      $("nota-app4").querySelector("p").innerHTML =
+        '<strong>Nota de integración App:</strong> En Operación MVP, <code>tg-robot-ucab-app</code> muestra el avance de la misión, alertas de objetos reales y —tras 8 viajes verificados— la <strong>parada personalizada</strong> sobre la ruta limpia de un solo color.';
+    }
+    $("seg-filtro").hidden = faseActual < 2 || linAct;
+    $("seg-filtro-lineal").hidden = !linAct;
     $("btn-reanudar-parada").hidden = !CM_EST.enParadaProgramada;
     $("btn-volver-base").hidden = !CM_EST.enParadaProgramada;
     $("lienzo-pista").style.cursor = (faseActual === 4 && desbloq) ? "crosshair" : "default";
@@ -1699,15 +1928,16 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
   }
 
   function dibujarEscena(ahora) {
-    var c = ctxP, w = dimP.w, h = dimP.h, ms = reg.muestras, i;
+    var c = ctxP, w = dimP.w, h = dimP.h, ms = muestrasActivas(), i;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, w, h);
     c.font = "10.5px JetBrains Mono, monospace"; c.textBaseline = "middle";
 
-    var sinIniciar = !ms.length, fase2 = usaSegmentos();
+    var sinIniciar = !ms.length, fase2 = usaSegmentos(), linAct = modoLinealActivo();
     var prog = Math.max(0.12, Math.min(1, sim.s / Math.max(0.1, sim.L)));
     dibujarPiso(c, fase2 ? 0.9 : (sinIniciar ? 0.35 : (reg.completo ? 1 : 0.3 + 0.7 * prog)));
-    if (fase2) dibujarRutaSegmentos(c);
+    if (linAct) dibujarRutaLineal(c);
+    else if (fase2) dibujarRutaSegmentos(c);
 
     /* Inicio de la ruta */
     var pIni = tr.puntoEn(0), pulso = 0.5 + 0.5 * Math.sin(ahora / 350);
@@ -1763,7 +1993,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
     /* Puntos discretos (uno por muestra de 2 s): sin línea que los una */
     for (i = 0; i < ms.length; i++) {
       var m = ms[i], x = VX(m.x), y = VY(m.y), ult = i === ms.length - 1;
-      c.fillStyle = fase2 && m.seg ? COL_SEG[m.seg] : (m.final ? PAL.ok : PAL.acento);
+      if (linAct && CM_EST.lineal.vista !== "ambos" && m.sentido !== CM_EST.lineal.vista) continue;
+      c.fillStyle = linAct && m.seg ? (COL_LIN[m.seg] || PAL.acento) : (fase2 && m.seg ? COL_SEG[m.seg] : (m.final ? PAL.ok : PAL.acento));
       c.strokeStyle = PAL.fondo; c.lineWidth = 2;
       c.beginPath(); c.arc(x, y, ult ? 6 : 4.5, 0, 7); c.fill(); c.stroke();
       if (ult && reg.activo) {
@@ -1820,6 +2051,58 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [role="button"]:fo
       c.fillStyle = PAL.fondo; c.globalAlpha = 0.85; c.fillRect(lx - 16, ly - 8, 32, 16); c.globalAlpha = 1;
       c.fillStyle = esDest ? PAL.ok : PAL.texto; c.fillText(pc.id, lx, ly);
     });
+    c.font = "10.5px JetBrains Mono, monospace";
+  }
+
+  /* Punto 5 (Extensión): Re-escaneo lineal con 3 segmentos de Ida (I1–I3) y 3 de Regreso (R1–R3) en 6 nuevos colores */
+  function dibujarRutaLineal(c) {
+    var lin = CM_EST.lineal, vistaL = lin.vista || "ambos", paso = 0.05;
+    /* Pista completa atenuada de referencia */
+    c.save(); c.strokeStyle = "rgba(148,163,184,0.18)"; c.lineWidth = 3; c.beginPath();
+    for (var sb = 0; sb <= sim.L; sb += 0.1) {
+      var pb = tr.puntoEn(sb);
+      if (sb === 0) c.moveTo(VX(pb.x), VY(pb.y)); else c.lineTo(VX(pb.x), VY(pb.y));
+    }
+    c.stroke(); c.restore();
+
+    function trazoConOffset(sIni, sFin, col, offPx) {
+      var dir = sFin >= sIni ? 1 : -1;
+      [[9, 0.2], [4.5, 1]].forEach(function (capa) {
+        c.save(); c.globalAlpha = capa[1]; c.strokeStyle = col; c.lineWidth = capa[0]; c.lineCap = "round"; c.lineJoin = "round";
+        c.beginPath();
+        var s = sIni, primero = true;
+        while ((dir > 0 && s <= sFin + 1e-6) || (dir < 0 && s >= sFin - 1e-6)) {
+          var sc = dir > 0 ? Math.min(s, sFin) : Math.max(s, sFin);
+          var p = tr.puntoEn(sc), ang = tr.rumboPistaGrados(Math.min(sc, sim.L - 0.01)) * Math.PI / 180;
+          var x = VX(p.x) - Math.sin(ang) * offPx, y = VY(p.y) - Math.cos(ang) * offPx;
+          if (primero) { c.moveTo(x, y); primero = false; } else c.lineTo(x, y);
+          s += dir * paso;
+        }
+        c.stroke(); c.restore();
+      });
+    }
+    function dibujaPcLineal(pc, col, offPx, ladoEtq) {
+      var p = tr.puntoEn(pc.posicionM), ang = tr.rumboPistaGrados(Math.min(pc.posicionM, sim.L - 0.01)) * Math.PI / 180;
+      var x = VX(p.x) - Math.sin(ang) * offPx, y = VY(p.y) - Math.cos(ang) * offPx;
+      c.fillStyle = PAL.fondo; c.strokeStyle = col; c.lineWidth = 2.5;
+      c.fillRect(x - 6, y - 6, 12, 12); c.strokeRect(x - 6, y - 6, 12, 12);
+      var lx = x + Math.sin(ang) * (20 * ladoEtq), ly = y + Math.cos(ang) * (20 * ladoEtq);
+      c.font = "bold 10px JetBrains Mono, monospace"; c.textAlign = "center";
+      var tw = c.measureText(pc.etiqueta).width + 8;
+      c.fillStyle = "rgba(11,18,32,0.88)"; c.fillRect(lx - tw / 2, ly - 7, tw, 14);
+      c.fillStyle = col; c.fillText(pc.etiqueta, lx, ly);
+    }
+
+    var offIda = vistaL === "ambos" ? -5 : 0;
+    var offReg = vistaL === "ambos" ? 5 : 0;
+    if (vistaL === "ida" || vistaL === "ambos") {
+      lin.segmentosIda.forEach(function (sg) { trazoConOffset(sg.desdeM, sg.hastaM, sg.color, offIda); });
+      lin.pcsIda.forEach(function (pc, idx) { dibujaPcLineal(pc, lin.segmentosIda[idx].color, offIda, -1); });
+    }
+    if (vistaL === "regreso" || vistaL === "ambos") {
+      lin.segmentosRegreso.forEach(function (sg) { trazoConOffset(sg.desdeM, sg.hastaM, sg.color, offReg); });
+      lin.pcsRegreso.forEach(function (pc, idx) { dibujaPcLineal(pc, lin.segmentosRegreso[idx].color, offReg, 1); });
+    }
     c.font = "10.5px JetBrains Mono, monospace";
   }
 

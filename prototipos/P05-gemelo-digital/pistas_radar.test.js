@@ -914,4 +914,57 @@ module.exports = async function (ctx) {
     assert.ok(/Disponible tras 8 viajes verificados/.test(html), "texto de bloqueo de parada programable");
     assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "cero torretas o balizas");
   });
+
+  await prueba("Punto 5 (Re-escaneo lineal): 3+3 segmentos (I1–I3 ida, R1–R3 regreso), nuevos PCs y 6 colores distintos a S1–S3", () => {
+    /* 1. Paleta de 6 colores lineales completamente distinta a S1–S3 */
+    const cerrados = Object.values(CM.PALETA_CERRADA).map((c) => c.toUpperCase());
+    const lineales = Object.values(CM.PALETA_LINEAL).map((c) => c.toUpperCase());
+    assert.strictEqual(lineales.length, 6, "6 colores lineales");
+    assert.strictEqual(new Set(lineales).size, 6, "6 colores lineales únicos entre sí");
+    for (const col of lineales) assert.ok(!cerrados.includes(col), "color lineal " + col + " no repite paleta cerrada");
+
+    /* 2. Cálculo 3+3 desde una parada fijada en S1, S2 o S3 */
+    for (const [segId, pct, sEsperado] of [["S1", 50, 1.5], ["S2", 60, 4.8], ["S3", 50, 7.5]]) {
+      const est = CM.crearEstado(PE, SE, 9.0);
+      const r1 = PE.crear(), r2 = PE.crear();
+      CM.completarCalibracionCompleta(est, r1, r2, SE, 9.0, "B");
+      CM.simularLoteHasta8(est, 9.0, r1, r2, SE);
+      const parada = CM.programarParada(est, segId, pct, 9.0, SE);
+      assert.ok(parada && Math.abs(parada.sM - sEsperado) < 0.05);
+
+      const lin = CM.iniciarReescaneoLineal(est);
+      assert.ok(lin && lin.activo && lin.escaneando);
+      assert.strictEqual(CM.obstaculosPermitidos(4, est), false, "obstáculos bloqueados durante re-escaneo lineal");
+      assert.deepStrictEqual(lin.segmentosIda.map((x) => x.id), ["I1", "I2", "I3"]);
+      assert.deepStrictEqual(lin.segmentosRegreso.map((x) => x.id), ["R1", "R2", "R3"]);
+      assert.deepStrictEqual(lin.pcsIda.map((p) => p.etiqueta), ["PC-I1", "PC-I2", "Parada (PC-I3)"]);
+      assert.deepStrictEqual(lin.pcsRegreso.map((p) => p.etiqueta), ["PC-R1", "PC-R2", "Base (PC-R3)"]);
+      assert.strictEqual(lin.pcsIda[2].posicionM, lin.paradaS);
+      assert.strictEqual(lin.pcsRegreso[2].posicionM, 0);
+
+      CM.completarReescaneoLinealRapido(est, null);
+      assert.strictEqual(est.lineal.completo, true);
+      assert.strictEqual(est.lineal.escaneando, false);
+      assert.strictEqual(CM.obstaculosPermitidos(4, est), true, "obstáculos vuelven a habilitarse al terminar re-escaneo");
+
+      const ms = est.lineal.muestras;
+      const res = CM.resumenLinealPorSegmento(ms);
+      assert.ok(res.ida > 0 && res.regreso > 0, segId + ": muestras de ida y regreso");
+      assert.strictEqual(CM.filtrarMuestrasLineal(ms, "ida").length, res.ida);
+      assert.strictEqual(CM.filtrarMuestrasLineal(ms, "regreso").length, res.regreso);
+      assert.strictEqual(CM.filtrarMuestrasLineal(ms, "I1").length, res.I1);
+      assert.strictEqual(CM.filtrarMuestrasLineal(ms, "R3").length, res.R3);
+      assert.strictEqual(CM.filtrarMuestrasLineal(ms, "todos").length, ms.length);
+    }
+
+    /* 3. Integración UI en index.html */
+    const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+    for (const id of ["btn-reescanear-lineal", "btn-lineal-rapido", "btn-salir-lineal", "lineal-vista-bar", "seg-filtro-lineal"]) {
+      assert.ok(html.includes('id="' + id + '"'), "falta #" + id);
+    }
+    for (const v of ["ida", "regreso", "ambos"]) assert.ok(html.includes('data-lineal-vista="' + v + '"'));
+    for (const f of ["todos", "ida", "regreso", "I1", "I2", "I3", "R1", "R2", "R3"]) assert.ok(html.includes('data-lin-filtro="' + f + '"'));
+    assert.ok(/function dibujarRutaLineal/.test(html) && /function perfilSvgLineal/.test(html));
+    assert.ok(!/torre|torreta|baliza|beacon|\bBLE\b/i.test(html), "cero torretas o balizas");
+  });
 };
