@@ -1,4 +1,4 @@
-> Borrador final, listo para revisión humana, del documento «Capítulo III. Marco metodológico» (Normas UCAB · citas IEEE), sincronizado con el Word `entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx`. Los índices con número de página se omitieron. Las marcas **[PENDIENTE DE VALIDACIÓN CON TUTOR]** señalan datos que Iliana y Andrea deben completar antes de la entrega.
+> Versión entregable del documento «Capítulo III. Marco metodológico» (Normas UCAB · citas IEEE) para el Seminario de Grado, sincronizada con el Word oficial `entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx`. Los índices con número de página se omitieron.
 
 ![Figura](media/capitulo_2/image1.png)
 
@@ -28,7 +28,7 @@ Caracas, noviembre de 2026
 
 En este capítulo se describe el procedimiento previsto para alcanzar el objetivo general del Trabajo de Grado: desarrollar un prototipo funcional de robot móvil autónomo de bajo costo, integrado con una aplicación de solicitudes y un sistema de comunicación IoT, para el transporte y la trazabilidad de componentes electrónicos en el laboratorio de la Escuela de Ingeniería en Telecomunicaciones de la UCAB, incorporando un mecanismo de alertas de seguridad ante manipulación no autorizada.
 
-El capítulo da continuidad a la propuesta del Trabajo de Grado, al reporte de productos, al Capítulo I y al Capítulo II. De la propuesta y del Capítulo I se retoman los nueve objetivos específicos, las siete fases de trabajo con una duración total de 32 semanas, los siete criterios de validación y los alcances y limitaciones del estudio; del reporte de productos, el producto verificable asociado a cada objetivo; y del Capítulo II, las bases teóricas y las métricas de desempeño con las que se evaluará el prototipo. Las actividades ya concluidas se redactan en pasado y las que corresponden a fases futuras se presentan como plan de ejecución. Los valores que todavía no cuentan con un respaldo verificable se señalan con la marca **[PENDIENTE DE VALIDACIÓN CON TUTOR]**.
+El capítulo da continuidad a la propuesta del Trabajo de Grado, al reporte de productos, al Capítulo I y al Capítulo II. De la propuesta y del Capítulo I se retoman los nueve objetivos específicos, las siete fases de trabajo con una duración total de 32 semanas, los siete criterios de validación y los alcances y limitaciones del estudio; del reporte de productos, el producto verificable asociado a cada objetivo; y del Capítulo II, las bases teóricas y las métricas de desempeño con las que se evaluará el prototipo. Las actividades ya concluidas se redactan en pasado y las que corresponden a fases futuras se presentan como plan de ejecución. Los valores numéricos de los parámetros de ensayo y de los criterios de aceptación se presentan como valores preliminares, establecidos a partir de los requerimientos del sistema, de las hojas de datos de los componentes y de la literatura revisada en el Capítulo II, y quedan sujetos a ajuste fino durante la calibración experimental en maqueta.
 
 ## III.1 Tipo y diseño de la investigación
 
@@ -43,10 +43,10 @@ Por la naturaleza de su resultado, el trabajo es además una investigación apli
 Arias [3] define el diseño de la investigación como la estrategia general que adopta el investigador para responder al problema planteado, y distingue los diseños documental, de campo y experimental. El presente trabajo combina los tres:
 
 - **Diseño documental:** se empleó en la revisión de las fuentes que sustentan el marco teórico, de las hojas de datos de los componentes y de los estándares técnicos, así como en el registro de búsquedas documentales y en el análisis de cinco trabajos de grado previos.
-- **Diseño de campo:** se aplicó en el levantamiento de información directamente en el laboratorio de la Escuela mediante una entrevista semiestructurada al personal encargado del almacén de componentes, realizada el 14 de noviembre de 2026, y se completará con la observación directa del recorrido, del piso, de la iluminación y de la cobertura de la red inalámbrica **[PENDIENTE DE VALIDACIÓN CON TUTOR: fecha y resultados de la observación]**.
-- **Diseño experimental:** se aplicará en la evaluación del prototipo, en la que se manipularán de forma deliberada variables independientes, como el modo de navegación (línea pura, híbrido o autónomo en rutas conocidas) y el nivel de QoS de los mensajes (0, 1 o 2), y se medirá su efecto sobre variables dependientes, como el error de posición, el tiempo de entrega y la latencia de comunicación, bajo condiciones controladas.
+- **Diseño de campo:** se aplicó en el levantamiento de información directamente en el laboratorio de la Escuela mediante una entrevista semiestructurada al personal encargado del almacén de componentes, realizada el 14 de noviembre de 2026, y se completará con la observación directa del recorrido, del piso, de la iluminación y de la cobertura de la red inalámbrica, cuyos resultados servirán para dimensionar la maqueta de ensayo.
+- **Diseño experimental:** se aplicará en la evaluación del prototipo, en la que se manipularán de forma deliberada los factores del experimento, como el modo de navegación (línea pura, híbrido o autónomo en rutas conocidas) y el nivel de QoS de los mensajes (0, 1 o 2), y se medirá su efecto sobre las variables de respuesta, como el error de posición, el tiempo de entrega y la latencia de comunicación, bajo condiciones controladas.
 
-El desarrollo del prototipo sigue una estrategia iterativa e incremental. Cada subsistema se diseña, se implementa y se verifica de forma independiente antes de integrarse con los demás, de modo que cada fase culmina en un entregable verificable y el riesgo técnico se reduce de manera progresiva. La lógica del firmware se verifica primero mediante pruebas unitarias ejecutadas en un computador y, después, en el hardware real con los sensores y los motores definitivos; los resultados de la verificación previa de la lógica no se extrapolan al desempeño físico del robot, que solo se reportará a partir de mediciones en el hardware y en la maqueta. La Tabla 1 resume la caracterización metodológica del estudio.
+El desarrollo del prototipo sigue una estrategia iterativa e incremental. Cada subsistema se diseña, se implementa y se verifica por separado antes de integrarse con los demás, de modo que cada fase culmina en un entregable verificable y el riesgo técnico se reduce de manera progresiva. La lógica del firmware se verifica primero mediante pruebas unitarias ejecutadas en un computador y, después, en el hardware real con los sensores y los motores definitivos; los resultados de la verificación previa de la lógica no se extrapolan al desempeño físico del robot, que solo se reportará a partir de mediciones en el hardware y en la maqueta. La Tabla 1 resume la caracterización metodológica del estudio.
 
 | Dimensión | Clasificación adoptada | Justificación en el Trabajo de Grado |
 | --- | --- | --- |
@@ -74,7 +74,7 @@ La maqueta consistirá en una ruta guiada por una cinta negra de alto contraste 
 
 | Parámetro | Valor nominal o condición prevista |
 | --- | --- |
-| Longitud de la ruta de ensayo y número de segmentos | **[PENDIENTE DE VALIDACIÓN CON TUTOR]**: se fijarán con las medidas del trayecto real del laboratorio |
+| Longitud de la ruta de ensayo y número de segmentos | Ruta de ida de 10 m a 15 m, dividida en 3 a 5 segmentos de 2 m a 4 m; valor preliminar que se ajustará a las medidas del trayecto real del laboratorio |
 | Guía de recuperación | Cinta negra de 19 mm sobre piso claro |
 | Puntos de referencia para el error de posición | Al menos uno por segmento, medidos con cinta métrica de 1 mm de resolución |
 | Velocidad de diseño | Crucero de 0,41 m/s en seguimiento de línea y máxima de 0,46 m/s en recta, valores nominales que se verificarán en el hardware; el requerimiento RNF-03 admite entre 0,35 m/s y 0,6 m/s |
@@ -82,8 +82,8 @@ La maqueta consistirá en una ruta guiada por una cinta negra de alto contraste 
 | Periodo de publicación del estado del robot | Un mensaje cada 2 s (RF-02) |
 | Batería | Li-Ion 3S, de 12,6 V a plena carga, con corte de protección por software a 9,9 V |
 | Infraestructura de re-localización | Dos balizas BLE fijas en los extremos de la ruta (RF-06) |
-| Red de comunicación | Red Wi-Fi del laboratorio con un broker MQTT accesible desde ella **[PENDIENTE DE VALIDACIÓN CON TUTOR: red concreta y tipo de autenticación]** |
-| Carga transportada | Componentes electrónicos livianos colocados de forma manual en un compartimiento simple; masa máxima **[PENDIENTE DE VALIDACIÓN CON TUTOR]** (RF-07) |
+| Red de comunicación | Punto de acceso Wi-Fi dedicado a las pruebas, IEEE 802.11 b/g/n en la banda de 2,4 GHz, única banda en la que opera el ESP32 [5], con autenticación WPA2-Personal y un broker MQTT accesible desde esa red |
+| Carga transportada | Componentes electrónicos livianos colocados de forma manual en un compartimiento simple; masa útil máxima preliminar de 200 g (RF-07), acorde con un pedido típico de pocas piezas livianas |
 
 **Tabla 2.** Parámetros nominales de diseño y condiciones de ensayo previstas en la maqueta.
 
@@ -124,7 +124,7 @@ La primera fase estableció la base documental y los requerimientos del sistema,
 
 La segunda fase transforma los requerimientos en un diseño del sistema y atiende el OE1 y la etapa de diseño del OE3.
 
-- **Actividades:** modelado CAD del chasis para impresión 3D en PLA y diseño de la tracción diferencial, con dos ruedas motrices y una rueda loca de apoyo; diseño del esquema electrónico (microcontrolador ESP32, driver de motores, sensores de línea, ultrasónicos e inercial, y alimentación separada en un dominio de potencia y otro de control) y del diagrama de bloques; diseño de la arquitectura de comunicación robot–aplicación–servidor sobre MQTT [5], con la definición de la jerarquía de tópicos, de los mensajes de órdenes, estado y alertas, y del nivel de QoS de cada flujo según su criticidad: QoS 0 para el estado periódico del robot, QoS 1 para las órdenes de entrega y QoS 2 para las alertas de seguridad, de acuerdo con lo expuesto en la sección II.2.7.5; y definición del uso de la sesión persistente, de los mensajes retenidos y del mensaje de última voluntad (LWT) para detectar la desconexión del robot.
+- **Actividades:** modelado CAD del chasis para impresión 3D en PLA y diseño de la tracción diferencial, con dos ruedas motrices y una rueda loca de apoyo; diseño del esquema electrónico (microcontrolador ESP32, driver de motores, sensores de línea, ultrasónicos e inercial, y alimentación separada en un dominio de potencia y otro de control) y del diagrama de bloques; diseño de la arquitectura de comunicación robot–aplicación–servidor sobre MQTT [6], con la definición de la jerarquía de tópicos, de los mensajes de órdenes, estado y alertas, y del nivel de QoS de cada flujo según su criticidad: QoS 0 para el estado periódico del robot, QoS 1 para las órdenes de entrega y QoS 2 para las alertas de seguridad, de acuerdo con lo expuesto en la sección II.2.7.5; y definición del uso de la sesión persistente, de los mensajes retenidos y del mensaje de última voluntad (LWT) para detectar la desconexión del robot.
 - **Objetivos específicos cubiertos:** OE1 y OE3 (diseño).
 - **Productos verificables:** el diseño de la arquitectura de comunicación inalámbrica del sistema (robot–aplicación–servidor) basada en MQTT, con la definición de los tópicos, los niveles de QoS y los flujos de mensajes para órdenes, estado y alertas; y los planos del chasis.
 - **Entregable de la fase:** planos del chasis, diagrama electrónico y diagrama de bloques del sistema.
@@ -133,7 +133,7 @@ La segunda fase transforma los requerimientos en un diseño del sistema y atiend
 
 La tercera fase materializa la plataforma y su programa de control, y atiende el OE4 y la etapa de construcción del OE3.
 
-- **Actividades:** impresión 3D del chasis y montaje de motores, encoders, sensores, driver y batería; programación del control de motores mediante PWM y del seguimiento de línea con un controlador PID [6], cuyas ganancias se ajustarán de forma experimental empezando por la acción proporcional y añadiendo luego la derivativa y, de ser necesaria, la integral; adquisición e integración de los cuatro sensores ópticos de línea, de los dos sensores ultrasónicos frontal y trasero, y de la unidad inercial MPU-6050 por bus I²C [7]; implementación del cliente MQTT del robot, con los tópicos y niveles de QoS definidos en la fase II; e implementación de las reglas de seguridad del firmware: parada ante un obstáculo frontal a menos de 20 cm, detención si en modo manual transcurren 5 s sin órdenes y corte por batería baja a 9,9 V.
+- **Actividades:** impresión 3D del chasis y montaje de motores, encoders, sensores, driver y batería; programación del control de motores mediante PWM y del seguimiento de línea con un controlador PID [7], cuyas ganancias se ajustarán de forma experimental empezando por la acción proporcional y añadiendo luego la derivativa y, de ser necesaria, la integral; adquisición e integración de los cuatro sensores ópticos de línea, de los dos sensores ultrasónicos frontal y trasero, y de la unidad inercial MPU-6050 por bus I²C [8]; implementación del cliente MQTT del robot, con los tópicos y niveles de QoS definidos en la fase II; e implementación de las reglas de seguridad del firmware: parada ante un obstáculo frontal a menos de 20 cm, detención si en modo manual transcurren 5 s sin órdenes y corte por batería baja a 9,9 V.
 - **Objetivos específicos cubiertos:** OE3 (construcción) y OE4.
 - **Productos verificables:** la plataforma mecánica del robot diseñada y construida, con chasis impreso en 3D y tracción diferencial, junto con los planos del chasis; y el firmware funcional de control del robot (seguimiento de línea con PID, adquisición de los sensores de línea, ultrasónicos e inercial, y comunicación MQTT), con pruebas unitarias de lectura, control y transmisión.
 - **Entregable de la fase:** firmware funcional con pruebas unitarias de lectura, control y transmisión.
@@ -145,10 +145,10 @@ La cuarta fase implementa el núcleo del proyecto, la transición gradual desde 
 1. **Etapa 0, línea como guía y registro:** el robot recorre la ruta siguiendo la línea mientras registra, con marca de tiempo, las lecturas de los sensores de línea, las velocidades de los motores, los pulsos de los encoders, las lecturas de la IMU y las distancias ultrasónicas.
 2. **Etapa 1, aprendizaje de la ruta:** a partir de esos registros se identifican los puntos de interés y se construye un mapa relativo de la ruta basado en odometría y en los patrones de los sensores de cada segmento.
 3. **Etapa 2, segmentación y retirada gradual:** para cada segmento se calibra un controlador que usa odometría, IMU y ultrasonidos para mantener la trayectoria sin la línea; en modo híbrido, si la desviación supera un umbral, el robot vuelve al modo línea (*fallback*).
-4. **Etapa 3, fusión de sensores y corrección periódica:** se combinan encoders e IMU mediante un filtro complementario o un filtro de Kalman simplificado [8], y se añaden los puntos de re-localización absoluta con las balizas BLE para acotar la deriva acumulada.
+4. **Etapa 3, fusión de sensores y corrección periódica:** se combinan encoders e IMU mediante un filtro complementario o un filtro de Kalman simplificado [9], y se añaden los puntos de re-localización absoluta con las balizas BLE para acotar la deriva acumulada.
 5. **Etapa 4, autonomía en rutas conocidas:** cuando el error de posición se mantenga dentro del criterio de aceptación, el robot recorrerá los segmentos sin línea, y la línea permanecerá como recurso de recuperación y seguridad.
 
-- **Actividades complementarias:** caracterización de los errores sistemáticos de la odometría mediante recorridos de prueba en trayectorias cerradas, según el procedimiento de Borenstein y Feng [9], y medición del error de posición en los puntos de referencia de cada segmento.
+- **Actividades complementarias:** caracterización de los errores sistemáticos de la odometría mediante recorridos de prueba en trayectorias cerradas, según el procedimiento de Borenstein y Feng [10], y medición del error de posición en los puntos de referencia de cada segmento.
 - **Objetivos específicos cubiertos:** OE5.
 - **Producto verificable:** el esquema de navegación progresiva implementado (seguimiento de línea, odometría, fusión de sensores inerciales y puntos de re-localización absoluta), validado por segmentos con mediciones de error de posición.
 - **Entregable de la fase:** navegación validada por segmentos con mediciones de error de posición.
@@ -166,7 +166,7 @@ La quinta fase desarrolla la interfaz con el usuario y el registro de las entreg
 
 La sexta fase une los subsistemas y completa el módulo de seguridad, y atiende el OE7.
 
-- **Actividades:** ensamblaje del prototipo completo e integración hardware–firmware–aplicación; calibración del acelerómetro de la MPU-6050 en reposo y en movimiento normal [7]; definición de los umbrales de detección de manipulación a partir de la aceleración y la inclinación medidas mientras el robot no está en misión, según lo expuesto en la sección II.2.10.1, eligiendo el punto de operación sobre la curva ROC que equilibre la tasa de detección y la tasa de falsas alarmas [10]; generación de la alerta con la última ubicación conocida y su publicación con QoS 2; y configuración de un broker privado con autenticación de usuario y contraseña y cifrado TLS para las pruebas finales (RNF-05).
+- **Actividades:** ensamblaje del prototipo completo e integración hardware–firmware–aplicación; calibración del acelerómetro de la MPU-6050 en reposo y en movimiento normal [8]; definición de los umbrales de detección de manipulación a partir de la aceleración y la inclinación medidas mientras el robot no está en misión, según lo expuesto en la sección II.2.10.1, eligiendo el punto de operación sobre la curva ROC que equilibre la tasa de detección y la tasa de falsas alarmas [11]; generación de la alerta con la última ubicación conocida y su publicación con QoS 2; y configuración de un broker privado con autenticación de usuario y contraseña y cifrado TLS para las pruebas finales (RNF-05).
 - **Objetivos específicos cubiertos:** OE7.
 - **Producto verificable:** el módulo de alertas de seguridad anti-manipulación basado en el acelerómetro, con sus umbrales de detección definidos y la evaluación de su tasa de detección y su tasa de falsas alarmas.
 - **Entregable de la fase:** prototipo integrado con el sistema de alertas operativo.
@@ -219,21 +219,21 @@ Arias [3] define la técnica de recolección de datos como el procedimiento o la
 
 *Fuente: elaboración propia a partir de [3].*
 
-El modelo y la resolución del multímetro y del cronómetro que se emplearán en los ensayos se registrarán en la plantilla de cada sesión **[PENDIENTE DE VALIDACIÓN CON TUTOR]**.
+Como instrumentos de referencia se prevé un multímetro digital con una resolución de 0,01 V en la escala de 20 V de corriente continua, un cronómetro con una resolución de 0,01 s y una cámara de video de al menos 30 cuadros por segundo para los tiempos cortos; el modelo y la resolución de cada instrumento empleado se registrarán en la plantilla de cada sesión.
 
 ### III.4.2 Operacionalización de los criterios de validación
 
-Los siete criterios de validación de la propuesta se operacionalizan como métricas cuantitativas, en correspondencia con las métricas de desempeño definidas en la sección II.2.12. Para cada una se establecen una unidad, un instrumento, un procedimiento de ensayo y un criterio de aceptación que se fijará antes de medir. Los criterios que ya cuentan con un valor en el documento de requerimientos de la Fase I se indican con el código del requerimiento; los demás quedan señalados para su definición con el tutor.
+Los siete criterios de validación de la propuesta se operacionalizan como métricas cuantitativas, en correspondencia con las métricas de desempeño definidas en la sección II.2.12. Para cada una se establecen una unidad, un instrumento, un procedimiento de ensayo y un criterio de aceptación que se fijará antes de medir. Los criterios que ya cuentan con un valor en el documento de requerimientos de la Fase I se indican con el código del requerimiento; los demás se establecen como criterios preliminares de aceptación, sujetos a ajuste fino durante la calibración experimental en maqueta.
 
-| Criterio | Métrica y unidad | Instrumento | Procedimiento de ensayo | Criterio de aceptación |
+| Criterio | Métrica y unidad | Instrumento | Procedimiento de ensayo | Criterio de aceptación preliminar |
 | --- | --- | --- | --- | --- |
-| 1. Precisión de navegación | Error de posición ep: medio, máximo y RMSE (cm) | Cinta métrica, puntos de referencia y registro de la pose estimada | Recorrer la ruta en modo híbrido o autónomo y medir en cada punto de referencia la distancia entre la posición estimada y la real; al menos 20 recorridos | **[PENDIENTE DE VALIDACIÓN CON TUTOR]** (RF-04) |
-| 2. Tasa de éxito por segmento | Segmentos completados sin volver al modo línea / segmentos intentados (%) | Registro de eventos de *fallback* del robot | Intentar cada segmento sin línea y contar los que se completan sin *fallback*; al menos 20 intentos por segmento | **[PENDIENTE DE VALIDACIÓN CON TUTOR]** |
-| 3. Tiempo de entrega | Duración del ciclo solicitud–entrega (s) | Marcas de tiempo de la aplicación y cronómetro | Ejecutar el ciclo completo en modo línea puro y en modo híbrido o autónomo; al menos 20 ciclos por modo | **[PENDIENTE DE VALIDACIÓN CON TUTOR]**; se reportará la diferencia entre ambos modos |
-| 4. Robustez de las alertas | Tasa de detección TD y tasa de falsas alarmas TFA (%); tiempo hasta la notificación (s) | Matriz de confusión, registro de alertas y cronómetro | Provocar manipulaciones controladas (levantamiento, empuje y giro) con el robot fuera de misión y realizar recorridos normales sin manipulación; al menos 20 eventos de cada tipo | Cada alerta llega una sola vez a la aplicación (RF-08) y la notificación tarda ≤ 5 s (RF-09); TD y TFA mínimas **[PENDIENTE DE VALIDACIÓN CON TUTOR]** |
-| 5. Consumo energético | Autonomía taut (min) y corriente media (A) | Multímetro, lectura de tensión de la batería y cronómetro | Operar el robot en ciclos de entrega continuos desde carga completa (12,6 V) hasta el corte de protección (9,9 V) | Autonomía mínima **[PENDIENTE DE VALIDACIÓN CON TUTOR]** (RNF-02) |
-| 6. Recuperación ante fallo | Tiempo hasta alcanzar un modo seguro (s) y porcentaje de recuperaciones exitosas | Registro de estados del robot, video y cronómetro | Inducir pérdida de línea, desviación sobre el umbral, obstáculo frontal y pérdida de conexión; al menos 20 eventos de cada tipo | Parada ante obstáculo a menos de 20 cm (RF-05) y aviso de desconexión en menos de 30 s (RF-03); tiempo máximo hasta el modo seguro **[PENDIENTE DE VALIDACIÓN CON TUTOR]** |
-| 7. Latencia de comunicación | RTT de los mensajes MQTT: mediana y percentil 95 (ms) y tasa de entrega (%), por nivel de QoS | Cliente MQTT de pruebas con marcas de tiempo en un mismo dispositivo y registro CSV | Enviar series de mensajes de eco con QoS 0, 1 y 2 en la red del laboratorio; tamaño de cada serie **[PENDIENTE DE VALIDACIÓN CON TUTOR]** | 0 pedidos perdidos en 50 con QoS 1 (RF-01, RNF-04); umbrales de RTT por nivel **[PENDIENTE DE VALIDACIÓN CON TUTOR]** |
+| 1. Precisión de navegación | Error de posición ep: medio, máximo y RMSE (cm) | Cinta métrica, puntos de referencia y registro de la pose estimada | Recorrer la ruta en modo híbrido o autónomo y medir en cada punto de referencia la distancia entre la posición estimada y la real; al menos 20 recorridos | Error medio ≤ 5 cm y error máximo ≤ 10 cm en los puntos de referencia (RF-04) |
+| 2. Tasa de éxito por segmento | Segmentos completados sin volver al modo línea / segmentos intentados (%) | Registro de eventos de *fallback* del robot | Intentar cada segmento sin línea y contar los que se completan sin *fallback*; al menos 20 intentos por segmento | ≥ 80 % de segmentos completados sin *fallback* |
+| 3. Tiempo de entrega | Duración del ciclo solicitud–entrega (s) | Marcas de tiempo de la aplicación y cronómetro | Ejecutar el ciclo completo en modo línea puro y en modo híbrido o autónomo; al menos 20 ciclos por modo | Ciclo completo ≤ 3 min en la ruta de ensayo; el modo híbrido o autónomo no supera en más de 10 % el tiempo del modo línea |
+| 4. Robustez de las alertas | Tasa de detección TD y tasa de falsas alarmas TFA (%); tiempo hasta la notificación (s) | Matriz de confusión, registro de alertas y cronómetro | Provocar manipulaciones controladas (levantamiento, empuje y giro) con el robot fuera de misión y realizar recorridos normales sin manipulación; al menos 20 eventos de cada tipo | Cada alerta llega una sola vez a la aplicación (RF-08) y la notificación tarda ≤ 5 s (RF-09); TD ≥ 95 % y TFA ≤ 5 % |
+| 5. Consumo energético | Autonomía taut (min) y corriente media (A) | Multímetro, lectura de tensión de la batería y cronómetro | Operar el robot en ciclos de entrega continuos desde carga completa (12,6 V) hasta el corte de protección (9,9 V) | Autonomía ≥ 120 min de operación continua (RNF-02) |
+| 6. Recuperación ante fallo | Tiempo hasta alcanzar un modo seguro (s) y porcentaje de recuperaciones exitosas | Registro de estados del robot, video y cronómetro | Inducir pérdida de línea, desviación sobre el umbral, obstáculo frontal y pérdida de conexión; al menos 20 eventos de cada tipo | Parada ante obstáculo a menos de 20 cm (RF-05) y aviso de desconexión en menos de 30 s (RF-03); modo seguro en ≤ 2 s ante pérdida de línea o desviación, con 100 % de recuperaciones exitosas |
+| 7. Latencia de comunicación | RTT de los mensajes MQTT: mediana y percentil 95 (ms) y tasa de entrega (%), por nivel de QoS | Cliente MQTT de pruebas con marcas de tiempo en un mismo dispositivo y registro CSV | Enviar series de mensajes de eco con QoS 0, 1 y 2 en la red del laboratorio; series de 200 mensajes por nivel, repetidas en 3 sesiones | 0 pedidos perdidos en 50 con QoS 1 (RF-01, RNF-04); mediana del RTT ≤ 200 ms con QoS 0, ≤ 300 ms con QoS 1 y ≤ 500 ms con QoS 2, y percentil 95 ≤ 1 s |
 
 **Tabla 6.** Operacionalización de los criterios de validación.
 
@@ -249,15 +249,15 @@ Para que los ensayos sean comparables entre sí, cada sesión de pruebas seguir�
 4. **Registro de resultados:** anotar cada repetición en la plantilla del ensayo y conservar los archivos de registro de mensajes y los videos como evidencia.
 5. **Cierre:** anotar las incidencias y descartar solo las repeticiones invalidadas por una causa externa documentada, como un corte de energía del laboratorio o la caída de la red institucional.
 
-La latencia se medirá como tiempo de ida y vuelta (RTT) en un mismo dispositivo, lo que evita la necesidad de sincronizar los relojes del robot y de la aplicación, según lo expuesto en la sección II.2.12. Cada serie de mensajes se discriminará por nivel de QoS, ya que el número de paquetes que intercambia cada nivel condiciona el retardo y la probabilidad de pérdida [11].
+La latencia se medirá como tiempo de ida y vuelta (RTT) en un mismo dispositivo, lo que evita la necesidad de sincronizar los relojes del robot y de la aplicación, según lo expuesto en la sección II.2.12. Cada serie de mensajes se discriminará por nivel de QoS, ya que el número de paquetes que intercambia cada nivel condiciona el retardo y la probabilidad de pérdida [12].
 
 ## III.5 Análisis de datos y validación
 
 Los datos de cada ensayo se procesarán con estadística descriptiva y se compararán con el criterio de aceptación correspondiente de la Tabla 6, de la siguiente manera:
 
-- **Magnitudes continuas** (error de posición, tiempos, latencia y autonomía): se calcularán la media, la desviación estándar muestral, el mínimo, el máximo y, cuando corresponda, la mediana y el percentil 95. Para el error de posición se reportarán además el error máximo y la raíz del error cuadrático medio (RMSE), que penaliza más los errores grandes [12]. La incertidumbre de las mediciones directas se estimará a partir de la resolución de cada instrumento [13].
-- **Proporciones** (tasa de éxito por segmento, tasa de entrega de mensajes, TD, TFA y recuperaciones exitosas): se calcularán como porcentaje y se acompañarán de su intervalo de confianza al 95 % por el método exacto de Clopper y Pearson [14]. Este tratamiento es necesario porque un resultado sin fallos en una muestra pequeña no demuestra una tasa de fallo nula: con 20 repeticiones sin fallos solo puede afirmarse, con 95 % de confianza, una tasa de fallo de hasta aproximadamente 14 %; con 50, de hasta aproximadamente 6 %. El método estadístico y el nivel de confianza se confirmarán con el tutor **[PENDIENTE DE VALIDACIÓN CON TUTOR]**.
-- **Alertas:** los eventos se clasificarán en una matriz de confusión (verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos), de la que se obtendrán la TD y la TFA, según la sección II.2.10.2 [10].
+- **Magnitudes continuas** (error de posición, tiempos, latencia y autonomía): se calcularán la media, la desviación estándar muestral, el mínimo, el máximo y, cuando corresponda, la mediana y el percentil 95. Para el error de posición se reportarán además el error máximo y la raíz del error cuadrático medio (RMSE), que penaliza más los errores grandes [13]. La incertidumbre de las mediciones directas se estimará a partir de la resolución de cada instrumento [14].
+- **Proporciones** (tasa de éxito por segmento, tasa de entrega de mensajes, TD, TFA y recuperaciones exitosas): se calcularán como porcentaje y se acompañarán de su intervalo de confianza al 95 % por el método exacto de Clopper y Pearson [15]. Este tratamiento es necesario porque un resultado sin fallos en una muestra pequeña no demuestra una tasa de fallo nula: con 20 repeticiones sin fallos solo puede afirmarse, con 95 % de confianza, una tasa de fallo de hasta aproximadamente 14 %; con 50, de hasta aproximadamente 6 %. Se adopta un nivel de confianza del 95 %, habitual en la evaluación experimental en ingeniería.
+- **Alertas:** los eventos se clasificarán en una matriz de confusión (verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos), de la que se obtendrán la TD y la TFA, según la sección II.2.10.2 [11].
 - **Comparaciones:** el tiempo de entrega y el error de posición se compararán entre el modo línea puro y el modo híbrido o autónomo, y la latencia y la tasa de entrega se compararán entre los niveles de QoS 0, 1 y 2. Cada comparación se presentará con la diferencia absoluta y relativa entre las medias y con la dispersión de cada grupo.
 
 Un criterio se considerará cumplido cuando el estadístico de interés satisfaga el umbral de la Tabla 6; en el caso de las proporciones, se reportará además el límite del intervalo de confianza para mostrar el grado de certeza del resultado. Los resultados se presentarán en tablas y gráficos generados a partir de los archivos de registro de cada sesión. La Tabla 7 resume el tratamiento previsto para cada criterio.
@@ -295,15 +295,15 @@ El cronograma se estima en 32 semanas, dentro del rango reglamentario de la Escu
 
 *Fuente: elaboración propia a partir de la propuesta del Trabajo de Grado.*
 
-La fase III abarca el período de receso de fin de año, y la semana de evaluaciones parciales de enero se empleará como semana adicional de trabajo de esa fase. Las fechas de la Tabla 8 se ajustarán a la fecha oficial de aprobación de la propuesta por el Consejo de Escuela **[PENDIENTE DE VALIDACIÓN CON TUTOR]**.
+La fase III abarca el período de receso de fin de año, y la semana de evaluaciones parciales de enero se empleará como semana adicional de trabajo de esa fase. De ser necesario, las fechas de la Tabla 8 se ajustarán a la fecha oficial de aprobación de la propuesta por el Consejo de Escuela, sin alterar la duración de cada fase.
 
 ## III.7 Validez, confiabilidad y consideraciones éticas
 
-**Validez.** Los criterios de aceptación se fijarán antes de realizar las mediciones, a partir de los criterios de validación de la propuesta y del documento de requerimientos, lo que evita ajustar los umbrales a los resultados obtenidos. Las métricas se definen de forma operativa con base en el Capítulo II, y los valores de referencia de la posición se obtendrán con instrumentos independientes del robot.
+**Validez.** Los criterios de aceptación se fijarán antes de realizar las mediciones, a partir de los criterios de validación de la propuesta y del documento de requerimientos, lo que evita ajustar los umbrales a los resultados obtenidos. Las métricas se definen de forma operativa con base en el Capítulo II, y los valores de referencia de la posición se obtendrán con instrumentos externos al robot.
 
 **Confiabilidad.** Cada ensayo se repetirá como mínimo 20 veces bajo un protocolo común, se registrarán las condiciones de cada sesión y se conservarán los datos crudos de cada repetición. El código del firmware y de la aplicación se mantiene bajo control de versiones, de modo que cada sesión de pruebas pueda asociarse con la versión exacta del programa evaluado.
 
-**Consideraciones éticas.** La entrevista y la observación con el personal del laboratorio tienen fines exclusivamente académicos, y en el documento no se publican nombres ni datos personales de los participantes. El procedimiento de consentimiento informado y el permiso para tomar fotografías en el laboratorio se documentarán como anexo **[PENDIENTE DE VALIDACIÓN CON TUTOR]**. Las credenciales de la red inalámbrica y del broker se mantienen fuera del código fuente y de los documentos del Trabajo de Grado.
+**Consideraciones éticas.** La entrevista y la observación con el personal del laboratorio tienen fines exclusivamente académicos, y en el documento no se publican nombres ni datos personales de los participantes. Antes de cada actividad de campo se solicitará el consentimiento informado de los participantes y la autorización para tomar fotografías en el laboratorio, y ambos documentos se incorporarán como anexo del Trabajo de Grado. Las credenciales de la red inalámbrica y del broker se mantienen fuera del código fuente y de los documentos del Trabajo de Grado.
 
 # Bibliografía
 
@@ -315,22 +315,24 @@ La fase III abarca el período de receso de fin de año, y la semana de evaluaci
 
 [4] R. Ramirez, C.-Y. Huang, C.-A. Liao, P.-T. Lin, H.-W. Lin y S.-H. Liang, “A practice of BLE RSSI measurement for indoor positioning,” *Sensors*, vol. 21, n.º 15, art. 5181, 2021, doi: 10.3390/s21155181.
 
-[5] A. Banks, E. Briggs, K. Borgendale y R. Gupta, Eds., *MQTT Version 5.0*, OASIS Standard, 7 mar. 2019. [En línea]. Disponible: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html
+[5] Espressif Systems, *ESP32 Series Datasheet*. Accedido: 9 nov. 2026. [En línea]. Disponible: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
 
-[6] K. J. Åström y R. M. Murray, *Feedback Systems: An Introduction for Scientists and Engineers*. Princeton, NJ, EE. UU.: Princeton University Press, 2008.
+[6] A. Banks, E. Briggs, K. Borgendale y R. Gupta, Eds., *MQTT Version 5.0*, OASIS Standard, 7 mar. 2019. [En línea]. Disponible: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html
 
-[7] TDK InvenSense, *MPU-6000 and MPU-6050 Product Specification*, Rev. 3.4, 2013. Accedido: 9 nov. 2026. [En línea]. Disponible: https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050/
+[7] K. J. Åström y R. M. Murray, *Feedback Systems: An Introduction for Scientists and Engineers*. Princeton, NJ, EE. UU.: Princeton University Press, 2008.
 
-[8] V. Ušinskis, M. Nowicki, A. Dzedzickis y V. Bučinskas, “Sensor-fusion based navigation for autonomous mobile robot,” *Sensors*, vol. 25, n.º 4, art. 1248, 2025, doi: 10.3390/s25041248.
+[8] TDK InvenSense, *MPU-6000 and MPU-6050 Product Specification*, Rev. 3.4, 2013. Accedido: 9 nov. 2026. [En línea]. Disponible: https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050/
 
-[9] J. Borenstein y L. Feng, “Measurement and correction of systematic odometry errors in mobile robots,” *IEEE Trans. Robot. Autom.*, vol. 12, n.º 6, pp. 869-880, dic. 1996, doi: 10.1109/70.544770.
+[9] V. Ušinskis, M. Nowicki, A. Dzedzickis y V. Bučinskas, “Sensor-fusion based navigation for autonomous mobile robot,” *Sensors*, vol. 25, n.º 4, art. 1248, 2025, doi: 10.3390/s25041248.
 
-[10] T. Fawcett, “An introduction to ROC analysis,” *Pattern Recognit. Lett.*, vol. 27, n.º 8, pp. 861-874, 2006, doi: 10.1016/j.patrec.2005.10.010.
+[10] J. Borenstein y L. Feng, “Measurement and correction of systematic odometry errors in mobile robots,” *IEEE Trans. Robot. Autom.*, vol. 12, n.º 6, pp. 869-880, dic. 1996, doi: 10.1109/70.544770.
 
-[11] S. Lee, H. Kim, D.-K. Hong y H. Ju, “Correlation analysis of MQTT loss and delay according to QoS level,” en *Proc. Int. Conf. Inf. Netw. (ICOIN)*, 2013, pp. 714-717, doi: 10.1109/ICOIN.2013.6496715.
+[11] T. Fawcett, “An introduction to ROC analysis,” *Pattern Recognit. Lett.*, vol. 27, n.º 8, pp. 861-874, 2006, doi: 10.1016/j.patrec.2005.10.010.
 
-[12] R. Siegwart, I. R. Nourbakhsh y D. Scaramuzza, *Introduction to Autonomous Mobile Robots*, 2.ª ed. Cambridge, MA, EE. UU.: MIT Press, 2011.
+[12] S. Lee, H. Kim, D.-K. Hong y H. Ju, “Correlation analysis of MQTT loss and delay according to QoS level,” en *Proc. Int. Conf. Inf. Netw. (ICOIN)*, 2013, pp. 714-717, doi: 10.1109/ICOIN.2013.6496715.
 
-[13] Joint Committee for Guides in Metrology, *Evaluation of Measurement Data: Guide to the Expression of Uncertainty in Measurement*, JCGM 100:2008, Sèvres, Francia: BIPM, 2008.
+[13] R. Siegwart, I. R. Nourbakhsh y D. Scaramuzza, *Introduction to Autonomous Mobile Robots*, 2.ª ed. Cambridge, MA, EE. UU.: MIT Press, 2011.
 
-[14] C. J. Clopper y E. S. Pearson, “The use of confidence or fiducial limits illustrated in the case of the binomial,” *Biometrika*, vol. 26, n.º 4, pp. 404-413, dic. 1934, doi: 10.2307/2331986.
+[14] Joint Committee for Guides in Metrology, *Evaluation of Measurement Data: Guide to the Expression of Uncertainty in Measurement*, JCGM 100:2008, Sèvres, Francia: BIPM, 2008.
+
+[15] C. J. Clopper y E. S. Pearson, “The use of confidence or fiducial limits illustrated in the case of the binomial,” *Biometrika*, vol. 26, n.º 4, pp. 404-413, dic. 1934, doi: 10.2307/2331986.
