@@ -7,8 +7,9 @@
   "archivo_original": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx",
   "archivo_pdf": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.pdf",
   "archivo_markdown": "tesis/capitulo_3.md",
-  "paginas": "Portada + 2 de índices (i–ii) + 19 de contenido",
+  "paginas": "Portada + 2 de índices (i–ii) + 20 de contenido",
   "tablas": 8,
   "referencias": 14,
-  "notas": "Versión final redactada bajo Normas UCAB con el formato del Capítulo II (Times New Roman 12, interlineado 1,5, carta, márgenes de 2,5 cm, encabezado con el título y pie con número de página) y citas IEEE. Trazabilidad 1 a 1 con los 9 OE de la Propuesta, los 9 productos de T1, las 7 fases (32 semanas) y los 7 criterios de validación. Markdown sincronizado con el .docx."
+  "notas": "Borrador final listo para revisión humana (Iliana lo valida en Word: márgenes, cortes de tablas y numeración). Formato del Capítulo II (Times New Roman 12, interlineado 1,5, carta, márgenes de 2,5 cm, encabezado con el título, pie con número de página) y citas IEEE. Trazabilidad 1 a 1 con los 9 OE, los 9 productos de T1, las 7 fases (32 semanas) y los 7 criterios. Las actividades no ejecutadas se redactan en futuro; los valores sin respaldo verificable llevan la marca [PENDIENTE DE VALIDACIÓN CON TUTOR] (17 en el Word).",
+  "marcas_pendientes": 17
 }

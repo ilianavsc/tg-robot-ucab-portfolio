@@ -1,8 +1,9 @@
 # Entrega · Capítulo III
 
-- **Estado:** `en_revision` (versión final redactada el 27/11/2026, lista para revisión del tutor y entrega)
+- **Estado:** `en_revision` · **borrador final listo para revisión humana** (27/11/2026). Iliana lo abre en Word para validar márgenes, cortes de tablas y numeración antes de la entrega oficial.
+- **Marcas pendientes:** 17 apariciones de `[PENDIENTE DE VALIDACIÓN CON TUTOR]` en el Word (longitud de la ruta, criterios de aceptación sin requerimiento previo, red Wi-Fi, carga máxima, instrumentos, método estadístico, fechas oficiales y consentimiento informado).
 - **Documento Word (`.docx`, Normas UCAB):** [`Capitulo III TG FERRER, SEMPRUN.docx`](./Capitulo%20III%20TG%20FERRER,%20SEMPRUN.docx)
-- **PDF de verificación:** [`Capitulo III TG FERRER, SEMPRUN.pdf`](./Capitulo%20III%20TG%20FERRER,%20SEMPRUN.pdf)
+- **PDF de verificación (exportado con LibreOffice):** [`Capitulo III TG FERRER, SEMPRUN.pdf`](./Capitulo%20III%20TG%20FERRER,%20SEMPRUN.pdf)
 - **Versión Markdown (sincronizada con el Word):** [`../../capitulo_3.md`](../../capitulo_3.md)
 
 ## Contenido
