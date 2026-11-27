@@ -1,0 +1,11 @@
+{
+  "entrega": "propuesta",
+  "codigo": "PROP",
+  "titulo": "Propuesta de Trabajo de Grado",
+  "estado": "entregada",
+  "fecha_entrega": "2026-08",
+  "archivo_original": "tesis/entregas/propuesta/Propuesta TG - Semprun y Ferrer (version publica).pdf",
+  "archivo_markdown": "tesis/propuesta_tg.md",
+  "privacidad": "Versión pública: se ocultaron cédulas de identidad, teléfonos y correos electrónicos (página 2). El original con datos personales no se publica en el repositorio.",
+  "notas": "Propuesta entregada en Seminario de Grado (agosto 2026): planteamiento, 9 objetivos específicos, marco referencial (9 apartados), metodología en 7 fases (32 semanas), 7 criterios de validación, alcance y limitaciones, 12 referencias IEEE y Anexo A."
+}

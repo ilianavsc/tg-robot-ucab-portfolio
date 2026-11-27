@@ -456,14 +456,33 @@ window.TG = {
      md: ruta del capítulo en Markdown (se abre en el visor modal) o null si aún no está en el repositorio
      descargas: enlaces de descarga directa [texto, ruta .pdf/.docx] (sin abrir el modal Markdown)
      extra: enlaces secundarios [texto, ruta .md]
-     provisional: true = el título aún no está confirmado con la guía de la Escuela / el tutor */
+     provisional: true = el título aún no está confirmado con la guía de la Escuela / el tutor
+     pdfOficial / textoDescarga: archivo oficial que se enlaza SOLO como botón discreto en la cabecera del visor */
+
+  /* Sección 1 · Entregas de Seminario de Grado (orden cronológico).
+     Para agregar T4 y T5 basta con añadir un objeto más al final con la misma forma;
+     la página tesis.html no necesita cambios. */
+  tesisSeminario: [
+    { num: "PROP", etiqueta: "Entrega", titulo: "Propuesta de Trabajo de Grado", estado: "entregado", notaEstado: "Agosto 2026", md: "tesis/propuesta_tg.md", tituloModal: "PROP · Propuesta de Trabajo de Grado",
+      pdfOficial: "tesis/entregas/propuesta/Propuesta%20TG%20-%20Semprun%20y%20Ferrer%20(version%20publica).pdf", textoDescarga: "⬇ PDF (versión pública)",
+      resumen: "Problema, objetivo general y 9 específicos, marco referencial (9 apartados y 5 etapas de navegación progresiva), 7 fases en 32 semanas, criterios de validación, alcance, 12 referencias y Anexo A." },
+    { num: "T1", etiqueta: "Tarea", titulo: "Reporte de Productos (Objetivos)", estado: "entregado", notaEstado: "23 sep. 2026", md: "tesis/t1_reporte_productos.md", tituloModal: "T1 · Reporte de Productos (Objetivos)",
+      pdfOficial: "tesis/entregas/t1-reporte-productos/Reporte%20de%20Productos%20-%20Semprun%20y%20Ferrer.pdf", textoDescarga: "⬇ PDF oficial",
+      resumen: "Tabla de correspondencia entre los 9 objetivos específicos de la Propuesta y los 9 productos entregables que demuestran su cumplimiento." },
+    { num: "T2", etiqueta: "Tarea", titulo: "Mapa Mental del Proyecto", estado: "entregado", notaEstado: "Seminario de Grado", md: "tesis/t2_mapa_mental.md", tituloModal: "T2 · Mapa Mental del Proyecto",
+      pdfOficial: "tesis/entregas/t2-mapa-mental/Mapa%20mental%20-%20Semprun%20y%20Ferrer.webp", textoDescarga: "⬇ Imagen original",
+      resumen: "Nodo central «Robot Móvil UCAB» con 4 ramas: contexto del proyecto, requisitos teóricos, requisitos prácticos y requisitos metodológicos." },
+    { num: "T3", etiqueta: "Tarea", titulo: "Marco teórico: estructura y desarrollo de un tema", estado: "entregado", notaEstado: "Octubre 2026 · Revisado en Seminario de Grado", md: "tesis/marco_teorico.md", tituloModal: "T3 · Marco teórico: estructura y desarrollo de un tema",
+      pdfOficial: "tesis/entregas/t3-marco-teorico/MARCOTTT%20Semprun-Ferrer.pdf", textoDescarga: "⬇ PDF oficial",
+      resumen: "Entrega previa al Capítulo II: muestra cómo se organiza el marco teórico y desarrolla un tema completo, el protocolo MQTT (QoS, tópicos, sesión, LWT). Citas en IEEE." }
+  ],
+
+  /* Sección 2 · Capítulos del Trabajo de Grado */
   tesis: [
-    { num: "MT", etiqueta: "Doc", titulo: "Marco teórico: estructura y desarrollo de un tema", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado", md: "tesis/marco_teorico.md", tituloModal: "Marco teórico: estructura y desarrollo de un tema",
-      resumen: "Entrega previa al Capítulo II: muestra cómo se organiza el marco teórico y desarrolla un tema completo, el protocolo MQTT (QoS, tópicos, sesión, LWT). Citas en IEEE." },
     { num: "I", titulo: "Planteamiento del proyecto", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado", md: "tesis/capitulo_1.md",
       resumen: "Planteamiento del problema, objetivos, justificación, alcance y limitaciones. Versión web del Word (última modificación: 28/10/2026); citas en IEEE." },
     { num: "II", titulo: "Marco teórico", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado", md: "tesis/capitulo_2.md",
-      pdfOficial: "tesis/entregas/capitulo-2/Capitulo%20II%20TG%20FERRER,%20SEMPRUN.pdf",
+      pdfOficial: "tesis/entregas/capitulo-2/Capitulo%20II%20TG%20FERRER,%20SEMPRUN.pdf", textoDescarga: "⬇ PDF oficial (Normas UCAB)",
       resumen: "Antecedentes, bases teóricas (robótica móvil, sensores, control, localización, ESP32, Wi-Fi y MQTT), bases normativas y términos básicos. Versión final entregada bajo Normas UCAB (46 referencias)." },
     { num: "III", titulo: "Marco metodológico", provisional: false, estado: "listo para revisión", notaEstado: "Revisión conjunta: Iliana y Andrea", md: "tesis/capitulo_3.md",
       resumen: "Nivel de investigación (Proyecto Especial), diseño de prototipo, técnicas e instrumentos, plan de análisis y las 7 fases del trabajo. Sincronizado con P01–P06, P10, MQTT v2.0.0 y rigor SIL/HIL." },

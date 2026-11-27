@@ -1,0 +1,10 @@
+{
+  "entrega": "t3-marco-teorico",
+  "codigo": "T3",
+  "titulo": "Marco Teórico: estructura y desarrollo de un tema",
+  "estado": "entregada",
+  "fecha_entrega": "2026-10",
+  "archivo_original": "tesis/entregas/t3-marco-teorico/MARCOTTT Semprun-Ferrer.pdf",
+  "archivo_markdown": "tesis/marco_teorico.md",
+  "notas": "Estructura del Capítulo II y desarrollo completo de un tema (MQTT). Revisado en Seminario de Grado. Misma entrega registrada históricamente como marco-preliminar."
+}

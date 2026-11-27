@@ -22,7 +22,8 @@
 .cap .acciones .btn{padding:9px 14px;font-size:14.5px}
 .cap .sin{font-family:var(--mono);font-size:13px;color:var(--suave)}
 .cap .estado-nota{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--suave);margin:-4px 0 0;letter-spacing:.01em}
-.seccion-apoyo{margin-top:36px}
+.seccion-apoyo,.seccion-capitulos{margin-top:36px}
+.seccion-tesis .bajada{margin-bottom:16px}
 </style>
 </head>
 <body data-pagina="tesis" data-base="">
@@ -30,14 +31,21 @@
 <main>
 <p class="ceja">Tesis</p>
 <h1>El documento del <em>Trabajo de Grado</em></h1>
-<p class="bajada">Los capítulos del tomo, uno por uno. Pulsa <strong>Leer capítulo</strong> para abrir el capítulo (o el documento) sin salir de la página.</p>
+<p class="bajada">Primero las entregas del Seminario de Grado y luego los capítulos del tomo, en orden cronológico. Pulsa <strong>Leer documento</strong> o <strong>Leer capítulo</strong> para abrirlo sin salir de la página.</p>
 
 <div class="frase-explicativa">
-  <strong>Cómo se actualiza:</strong> cada capítulo se escribe en Markdown dentro de <code>tesis/</code> y esta lista sale de <code>TG.tesis</code> en <code>datos/proyecto.js</code>. Los capítulos I y II y el Marco teórico vienen de los documentos de Word y todo el tomo usa citas <strong>IEEE</strong> (numéricas); los capítulos IV a VI tienen títulos <strong>provisionales</strong> hasta confirmar la estructura con el tutor.
+  <strong>Cómo se actualiza:</strong> cada documento se escribe en Markdown dentro de <code>tesis/</code>; las entregas del Seminario salen de <code>TG.tesisSeminario</code> y los capítulos de <code>TG.tesis</code> en <code>datos/proyecto.js</code>. El archivo oficial de cada entrega (PDF o imagen) se guarda en <code>tesis/entregas/</code> y se descarga desde la cabecera del visor. Los capítulos I y II y el Marco teórico (T3) vienen de los documentos de Word y todo el tomo usa citas <strong>IEEE</strong> (numéricas); los capítulos IV a VI tienen títulos <strong>provisionales</strong> hasta confirmar la estructura con el tutor.
 </div>
 
-<section aria-labelledby="t-capitulos">
-  <h2 id="t-capitulos">Capítulos</h2>
+<section class="seccion-tesis" aria-labelledby="t-seminario">
+  <h2 id="t-seminario">Sección 1 · Entregas de Seminario de Grado</h2>
+  <p class="bajada linea-2">Propuesta y tareas del Seminario (T1 a T3) que dieron origen al tomo.</p>
+  <div class="capitulos" id="seminario"></div>
+</section>
+
+<section class="seccion-tesis seccion-capitulos" aria-labelledby="t-capitulos">
+  <h2 id="t-capitulos">Sección 2 · Capítulos del Trabajo de Grado</h2>
+  <p class="bajada linea-2">El tomo capítulo por capítulo, con su estado de revisión.</p>
   <div class="capitulos" id="capitulos"></div>
 </section>
 
@@ -63,13 +71,13 @@
   };
   function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
-  document.getElementById("capitulos").innerHTML = TG.tesis.map(function(c){
+  function tarjeta(c, textoBoton){
     var e = ESTADOS[c.estado] || { chip: "pendiente", texto: c.estado };
     var tituloModal = c.tituloModal || ("Capítulo " + c.num + " · " + c.titulo);
     var acciones = "";
     if (c.md) {
       acciones += '<a class="btn btn-principal" href="' + esc(c.md) + '" data-md="' + esc(c.md) + '" data-titulo="' + esc(tituloModal) + '"' +
-        (c.pdfOficial ? ' data-pdf="' + esc(c.pdfOficial) + '"' : "") + '>Leer capítulo</a>';
+        (c.pdfOficial ? ' data-pdf="' + esc(c.pdfOficial) + '" data-pdf-texto="' + esc(c.textoDescarga || "⬇ Archivo oficial") + '"' : "") + '>' + textoBoton + '</a>';
     } else {
       acciones += '<span class="sin">Aún no está en el repositorio</span>';
     }
@@ -83,13 +91,17 @@
       (c.notaEstado ? '<p class="estado-nota">' + esc(c.notaEstado) + '</p>' : "") +
       '<p class="resumen">' + esc(c.resumen) + '</p>' +
       '<div class="acciones">' + acciones + '</div></article>';
-  }).join("");
+  }
 
-  /* Enlace discreto al PDF oficial únicamente dentro de la cabecera del visor al abrir "Leer capítulo" */
+  document.getElementById("seminario").innerHTML = (TG.tesisSeminario || []).map(function(c){ return tarjeta(c, "Leer documento"); }).join("");
+  document.getElementById("capitulos").innerHTML = TG.tesis.map(function(c){ return tarjeta(c, "Leer capítulo"); }).join("");
+
+  /* Enlace discreto al archivo oficial (PDF o imagen) únicamente dentro de la cabecera del visor */
   document.addEventListener("click", function(ev){
     var a = ev.target && ev.target.closest ? ev.target.closest("a[data-md]") : null;
     if (!a) return;
     var pdf = a.getAttribute("data-pdf");
+    var pdfTexto = a.getAttribute("data-pdf-texto") || "⬇ Archivo oficial";
     setTimeout(function(){
       var rutaEl = document.getElementById("modal-md-ruta");
       if (!rutaEl || !rutaEl.parentNode) return;
@@ -104,7 +116,7 @@
         link.target = "_blank";
         link.rel = "noopener";
         link.setAttribute("download", "");
-        link.textContent = "⬇ PDF oficial (Normas UCAB)";
+        link.textContent = pdfTexto;
         rutaEl.parentNode.insertBefore(link, rutaEl.nextSibling);
       }
     }, 0);
