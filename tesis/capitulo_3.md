@@ -1,5 +1,3 @@
-> Versión entregable del documento «Capítulo III. Marco metodológico» (Normas UCAB · citas IEEE) para el Seminario de Grado, sincronizada con el Word oficial `entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx`. Los índices con número de página se omitieron.
-
 ![Figura](media/capitulo_2/image1.png)
 
 UNIVERSIDAD CATÓLICA ANDRÉS BELLO
@@ -28,7 +26,7 @@ Caracas, noviembre de 2026
 
 En este capítulo se describe el procedimiento previsto para alcanzar el objetivo general del Trabajo de Grado: desarrollar un prototipo funcional de robot móvil autónomo de bajo costo, integrado con una aplicación de solicitudes y un sistema de comunicación IoT, para el transporte y la trazabilidad de componentes electrónicos en el laboratorio de la Escuela de Ingeniería en Telecomunicaciones de la UCAB, incorporando un mecanismo de alertas de seguridad ante manipulación no autorizada.
 
-El capítulo da continuidad a la propuesta del Trabajo de Grado, al reporte de productos, al Capítulo I y al Capítulo II. De la propuesta y del Capítulo I se retoman los nueve objetivos específicos, las siete fases de trabajo con una duración total de 32 semanas, los siete criterios de validación y los alcances y limitaciones del estudio; del reporte de productos, el producto verificable asociado a cada objetivo; y del Capítulo II, las bases teóricas y las métricas de desempeño con las que se evaluará el prototipo. Las actividades ya concluidas se redactan en pasado y las que corresponden a fases futuras se presentan como plan de ejecución. Los valores numéricos de los parámetros de ensayo y de los criterios de aceptación se presentan como valores preliminares, establecidos a partir de los requerimientos del sistema, de las hojas de datos de los componentes y de la literatura revisada en el Capítulo II, y quedan sujetos a ajuste fino durante la calibración experimental en maqueta.
+El capítulo se organiza de la siguiente manera. La sección III.1 define el tipo y el diseño de la investigación; la III.2 delimita la unidad de estudio y el entorno de validación; la III.3 describe el procedimiento metodológico, organizado en siete fases con una duración total de 32 semanas; la III.4 presenta las técnicas e instrumentos de recolección de datos y el protocolo de pruebas; la III.5 explica el análisis de datos previsto; la III.6 expone el cronograma de ejecución, y la III.7 cierra con la validez, la confiabilidad y las consideraciones éticas del estudio. Los nueve objetivos específicos, las siete fases y los siete criterios de validación se retoman del Capítulo I, mientras que las bases teóricas y las métricas de desempeño con las que se evaluará el prototipo provienen del Capítulo II.
 
 ## III.1 Tipo y diseño de la investigación
 
@@ -68,7 +66,7 @@ La unidad de estudio es el sistema completo de transporte y trazabilidad, confor
 
 ### III.2.2 Entorno de validación
 
-El contexto de aplicación es el laboratorio de la Escuela de Ingeniería en Telecomunicaciones de la UCAB, en particular el trayecto entre el almacén de componentes y los puestos de trabajo. Para evaluar el prototipo bajo condiciones repetibles y medibles, se construirá una maqueta controlada que reproduzca ese trayecto. Esta maqueta responde al alcance declarado en la propuesta y en el Capítulo I (sección I.4.2), que limita la validación a un único prototipo operando en una maqueta o entorno controlado.
+El contexto de aplicación es el laboratorio de la Escuela de Ingeniería en Telecomunicaciones de la UCAB, en particular el trayecto entre el almacén de componentes y los puestos de trabajo. Para evaluar el prototipo bajo condiciones repetibles y medibles, se construirá una maqueta controlada que reproduzca ese trayecto. Esta maqueta responde al alcance declarado en el Capítulo I (sección I.4.2), que limita la validación a un único prototipo operando en una maqueta o entorno controlado.
 
 La maqueta consistirá en una ruta guiada por una cinta negra de alto contraste sobre un piso claro, con un origen que representa el almacén de componentes, un punto de control intermedio y un destino que representa el puesto de trabajo. La ruta se dividirá en segmentos delimitados por puntos de interés (cruces, giros y paradas), y en cada segmento se marcarán puntos de referencia con posición conocida, medidos con cinta métrica respecto a un origen fijo, que servirán como valor de referencia para calcular el error de posición. En los extremos de la ruta se instalarán dos balizas BLE fijas basadas en ESP32, que actuarán como puntos de re-localización absoluta por proximidad a partir del RSSI [4]. La Tabla 2 recoge los parámetros nominales de diseño y las condiciones de ensayo previstas.
 
@@ -93,7 +91,7 @@ Los valores nominales de la Tabla 2 se contrastarán con mediciones en el hardwa
 
 ## III.3 Procedimiento metodológico
 
-El procedimiento se organiza en siete fases, con una duración total de 32 semanas, tal como se estableció en la propuesta del Trabajo de Grado. Cada fase atiende uno o varios objetivos específicos (OE) y culmina en un entregable verificable. Antes de describir cada fase, la Tabla 3 presenta la correspondencia uno a uno entre los nueve objetivos específicos, los nueve productos declarados en el reporte de productos y la fase en la que se obtiene cada uno.
+El procedimiento se organiza en siete fases, con una duración total de 32 semanas. Cada fase atiende uno o varios objetivos específicos (OE) y culmina en un entregable verificable. Antes de describir cada fase, la Tabla 3 presenta la correspondencia uno a uno entre los nueve objetivos específicos, los productos entregables y la fase en la que se obtiene cada uno.
 
 | OE | Objetivo específico | Producto entregable | Fase |
 | --- | --- | --- | --- |
@@ -109,7 +107,7 @@ El procedimiento se organiza en siete fases, con una duración total de 32 seman
 
 **Tabla 3.** Correspondencia entre los objetivos específicos, los productos entregables y las fases.
 
-*Fuente: elaboración propia a partir de la propuesta del Trabajo de Grado, el reporte de productos y la Tabla 1 del Capítulo I.*
+*Fuente: elaboración propia a partir de la Tabla 1 del Capítulo I.*
 
 ### III.3.1 Fase I: Investigación y diseño conceptual (4 semanas)
 
@@ -140,7 +138,7 @@ La tercera fase materializa la plataforma y su programa de control, y atiende el
 
 ### III.3.4 Fase IV: Navegación progresiva (5 semanas)
 
-La cuarta fase implementa el núcleo del proyecto, la transición gradual desde el seguimiento de línea hacia la navegación basada en sensores en rutas conocidas, y atiende el OE5. Se seguirán las cinco etapas técnicas descritas en la propuesta:
+La cuarta fase implementa el núcleo del proyecto, la transición gradual desde el seguimiento de línea hacia la navegación basada en sensores en rutas conocidas, y atiende el OE5. Se seguirán cinco etapas técnicas:
 
 1. **Etapa 0, línea como guía y registro:** el robot recorre la ruta siguiendo la línea mientras registra, con marca de tiempo, las lecturas de los sensores de línea, las velocidades de los motores, los pulsos de los encoders, las lecturas de la IMU y las distancias ultrasónicas.
 2. **Etapa 1, aprendizaje de la ruta:** a partir de esos registros se identifican los puntos de interés y se construye un mapa relativo de la ruta basado en odometría y en los patrones de los sensores de cada segmento.
@@ -197,7 +195,7 @@ La Tabla 4 resume, para cada fase, su duración, los objetivos específicos que 
 
 **Tabla 4.** Resumen de trazabilidad de las fases del procedimiento metodológico.
 
-*Fuente: elaboración propia a partir de la propuesta del Trabajo de Grado y del reporte de productos.*
+*Fuente: elaboración propia.*
 
 ## III.4 Técnicas e instrumentos de recolección de datos
 
@@ -223,7 +221,7 @@ Como instrumentos de referencia se prevé un multímetro digital con una resoluc
 
 ### III.4.2 Operacionalización de los criterios de validación
 
-Los siete criterios de validación de la propuesta se operacionalizan como métricas cuantitativas, en correspondencia con las métricas de desempeño definidas en la sección II.2.12. Para cada una se establecen una unidad, un instrumento, un procedimiento de ensayo y un criterio de aceptación que se fijará antes de medir. Los criterios que ya cuentan con un valor en el documento de requerimientos de la Fase I se indican con el código del requerimiento; los demás se establecen como criterios preliminares de aceptación, sujetos a ajuste fino durante la calibración experimental en maqueta.
+Los siete criterios de validación se operacionalizan como métricas cuantitativas, en correspondencia con las métricas de desempeño definidas en la sección II.2.12. Para cada una se establecen una unidad, un instrumento, un procedimiento de ensayo y un criterio de aceptación que se fijará antes de medir. Los criterios que ya cuentan con un valor en el documento de requerimientos de la Fase I se indican con el código del requerimiento; los demás se establecen como criterios preliminares de aceptación, sujetos a ajuste fino durante la calibración experimental en maqueta.
 
 | Criterio | Métrica y unidad | Instrumento | Procedimiento de ensayo | Criterio de aceptación preliminar |
 | --- | --- | --- | --- | --- |
@@ -237,7 +235,7 @@ Los siete criterios de validación de la propuesta se operacionalizan como métr
 
 **Tabla 6.** Operacionalización de los criterios de validación.
 
-*Fuente: elaboración propia a partir de los criterios de validación de la propuesta, del documento de requerimientos de la Fase I y de la Tabla 9 del Capítulo II.*
+*Fuente: elaboración propia a partir del documento de requerimientos de la Fase I y de la Tabla 9 del Capítulo II.*
 
 ### III.4.3 Protocolo de pruebas
 
@@ -293,13 +291,13 @@ El cronograma se estima en 32 semanas, dentro del rango reglamentario de la Escu
 
 **Tabla 8.** Cronograma de ejecución por fases.
 
-*Fuente: elaboración propia a partir de la propuesta del Trabajo de Grado.*
+*Fuente: elaboración propia.*
 
-La fase III abarca el período de receso de fin de año, y la semana de evaluaciones parciales de enero se empleará como semana adicional de trabajo de esa fase. De ser necesario, las fechas de la Tabla 8 se ajustarán a la fecha oficial de aprobación de la propuesta por el Consejo de Escuela, sin alterar la duración de cada fase.
+La fase III abarca el período de receso de fin de año, y la semana de evaluaciones parciales de enero se empleará como semana adicional de trabajo de esa fase. De ser necesario, las fechas de la Tabla 8 se ajustarán al calendario oficial de la Escuela, sin alterar la duración de cada fase.
 
 ## III.7 Validez, confiabilidad y consideraciones éticas
 
-**Validez.** Los criterios de aceptación se fijarán antes de realizar las mediciones, a partir de los criterios de validación de la propuesta y del documento de requerimientos, lo que evita ajustar los umbrales a los resultados obtenidos. Las métricas se definen de forma operativa con base en el Capítulo II, y los valores de referencia de la posición se obtendrán con instrumentos externos al robot.
+**Validez.** Los criterios de aceptación se fijarán antes de realizar las mediciones, a partir del documento de requerimientos, lo que evita ajustar los umbrales a los resultados obtenidos. Las métricas se definen de forma operativa con base en el Capítulo II, y los valores de referencia de la posición se obtendrán con instrumentos externos al robot.
 
 **Confiabilidad.** Cada ensayo se repetirá como mínimo 20 veces bajo un protocolo común, se registrarán las condiciones de cada sesión y se conservarán los datos crudos de cada repetición. El código del firmware y de la aplicación se mantiene bajo control de versiones, de modo que cada sesión de pruebas pueda asociarse con la versión exacta del programa evaluado.
 
