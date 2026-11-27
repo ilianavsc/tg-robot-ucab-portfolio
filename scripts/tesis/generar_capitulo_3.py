@@ -180,6 +180,14 @@ def cambiar_texto(el, viejo, nuevo):
 cambiar_texto(hijos[3], "Capítulo I. Planteamiento del proyecto", "Capítulo III. Marco metodológico")
 cambiar_texto(hijos[13], "octubre de 2026", "noviembre de 2026")
 
+# Marcadores: cada título y cada leyenda de tabla llevan uno; los índices enlazan a ellos
+def marca_titulo(k): return "_Toc3%04d" % (k + 1)
+def marca_tabla(n): return "_Toc3T%02d" % int(n)
+_id = [5000]
+def marcador(nombre):
+    _id[0] += 1
+    return '<w:bookmarkStart w:id="%d" w:name="%s"/><w:bookmarkEnd w:id="%d"/>' % (_id[0], nombre, _id[0])
+
 # Índice general: campo TOC con su resultado en caché (actualizable en Word con F9)
 sdt = hijos[15]; cont = sdt.find(WQ + "sdtContent")
 for p in list(cont): cont.remove(p)
@@ -190,7 +198,8 @@ for k, (nivel, t) in enumerate(titulos):
                '<w:spacing w:lineRule="auto" w:line="300" w:before="0" w:after="80"/><w:ind%s w:end="567"/>' % sangria)
     ini = ('<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>' if k == 0 else "")
     fin = '<w:r><w:fldChar w:fldCharType="end"/></w:r>' if k == len(titulos) - 1 else ""
-    cont.append(P(ppr_xml, ini + '<w:r><w:t xml:space="preserve">%s</w:t><w:tab/><w:t>%s</w:t></w:r>' % (q(t), PAGES.get(t, "0")) + fin))
+    enlace = '<w:hyperlink w:anchor="%s" w:history="1"><w:r><w:t xml:space="preserve">%s</w:t><w:tab/><w:t>%s</w:t></w:r></w:hyperlink>' % (marca_titulo(k), q(t), PAGES.get(t, "0"))
+    cont.append(P(ppr_xml, ini + enlace + fin))
 
 # Índice de tablas: campo TOC \c "Tabla"
 PPR_IT = '<w:pStyle w:val="Normal"/><w:tabs><w:tab w:val="clear" w:pos="720"/><w:tab w:val="right" w:pos="9026" w:leader="dot"/></w:tabs><w:spacing w:lineRule="auto" w:line="300" w:before="0" w:after="80"/><w:ind w:end="567"/>'
@@ -199,15 +208,15 @@ pos = list(body).index(hijos[19]) + 1
 for k, (n, titulo) in enumerate(leyendas):
     ini = ('<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\h \\z \\c "Tabla" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>' if k == 0 else "")
     fin = '<w:r><w:fldChar w:fldCharType="end"/></w:r>' if k == len(leyendas) - 1 else ""
-    body.insert(pos, P(PPR_IT, ini + '<w:r><w:t xml:space="preserve">Tabla %s. %s</w:t><w:tab/><w:t>%s</w:t></w:r>' % (n, q(titulo), PAGES.get("Tabla %s." % n, "0")) + fin)); pos += 1
+    body.insert(pos, P(PPR_IT, ini + '<w:hyperlink w:anchor="%s" w:history="1"><w:r><w:t xml:space="preserve">Tabla %s. %s</w:t><w:tab/><w:t>%s</w:t></w:r></w:hyperlink>' % (marca_tabla(n), n, q(titulo), PAGES.get("Tabla %s." % n, "0")) + fin)); pos += 1
 
 # Cuerpo
 sect_final = body[-1]
 def agregar(el): sect_final.addprevious(el)
-ntabla = 0
+ntabla = 0; ntit = 0
 for tipo, val in B:
-    if tipo == "h1": agregar(P(PPR["h1"] % "", runs(val)))
-    elif tipo in ("h2", "h3"): agregar(P(PPR[tipo], runs(val)))
+    if tipo == "h1": agregar(P(PPR["h1"] % "", marcador(marca_titulo(ntit)) + runs(val))); ntit += 1
+    elif tipo in ("h2", "h3"): agregar(P(PPR[tipo], marcador(marca_titulo(ntit)) + runs(val))); ntit += 1
     elif tipo == "p": agregar(P(PPR["p"], runs(val)))
     elif tipo == "viñeta": agregar(P(PPR["viñeta"], runs(val)))
     elif tipo == "num": agregar(P(PPR["num"], '<w:r><w:t>%s.</w:t><w:tab/></w:r>' % val[0] + runs(val[1])))
@@ -215,13 +224,14 @@ for tipo, val in B:
     elif tipo == "leyenda":
         assert int(val[0]) == ntabla
         b11 = '<w:b/><w:bCs/><w:sz w:val="22"/><w:szCs w:val="22"/>'
-        agregar(P(PPR["leyenda"],
+        agregar(P(PPR["leyenda"], marcador(marca_tabla(val[0])) +
             '<w:r><w:rPr>%s</w:rPr><w:t xml:space="preserve">Tabla </w:t></w:r>' % b11 +
             campo("SEQ Tabla \\* ARABIC", '<w:r><w:rPr>%s</w:rPr><w:t>%s</w:t></w:r>' % (b11, val[0])) +
             '<w:r><w:rPr>%s</w:rPr><w:t xml:space="preserve">. </w:t></w:r>' % b11 +
             runs(val[1], '<w:sz w:val="22"/><w:szCs w:val="22"/>')))
     elif tipo == "fuente": agregar(P(PPR["fuente"], runs(val, '<w:i/><w:iCs/><w:sz w:val="20"/><w:szCs w:val="20"/>')))
-agregar(P(PPR["h1"] % '<w:pageBreakBefore w:val="true"/>', runs("Bibliografía")))
+assert ntit == len(titulos) - 1
+agregar(P(PPR["h1"] % '<w:pageBreakBefore w:val="true"/>', marcador(marca_titulo(ntit)) + runs("Bibliografía")))
 for n, t in biblio: agregar(P(PPR["ref"], '<w:r><w:t>[%d]</w:t><w:tab/></w:r>' % n + runs(t)))
 
 # Quitar imágenes de la plantilla que ya no se usan

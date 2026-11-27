@@ -1,7 +1,8 @@
 # Entrega · Capítulo III
 
 - **Estado:** `en_revision` · **versión entregable** para el Seminario de Grado (27/11/2026), sin marcas de pendiente. La revisión del tutor queda para el Primer Avance.
-- **Documento Word (`.docx`, Normas UCAB):** [`Capitulo III TG FERRER, SEMPRUN.docx`](./Capitulo%20III%20TG%20FERRER,%20SEMPRUN.docx)
+- **Word para entregar (`.doc`, Word 97-2003):** [`Capitulo III TG FERRER, SEMPRUN.doc`](./Capitulo%20III%20TG%20FERRER,%20SEMPRUN.doc)
+- **Documento Word (`.docx`):** [`Capitulo III TG FERRER, SEMPRUN.docx`](./Capitulo%20III%20TG%20FERRER,%20SEMPRUN.docx)
 - **PDF de verificación (exportado con LibreOffice):** [`Capitulo III TG FERRER, SEMPRUN.pdf`](./Capitulo%20III%20TG%20FERRER,%20SEMPRUN.pdf)
 - **Versión Markdown (sincronizada con el Word):** [`../../capitulo_3.md`](../../capitulo_3.md)
 
@@ -11,7 +12,7 @@ III.1 Modalidad, tipo y diseño de la investigación (proyecto especial, aplicad
 
 ## Formato
 
-Generado con `scripts/tesis/generar_capitulo_3.py` sobre el Word del Capítulo I, que sigue la guía «Formato del tomo del trabajo de grado» (`referencias/seminario/`): Times New Roman 12 pt, interlineado 1,5, carta con márgenes de 2,5 cm, título del capítulo centrado a 16 pt y subtítulos a 14 pt en negrita, encabezado con el título del trabajo y línea inferior, pie con número de página y línea superior (romano en los índices y arábigo en el cuerpo), tablas con encabezado sombreado, leyenda «Tabla N.» al pie con su fuente, índices actualizables en Word y bibliografía IEEE con sangría francesa.
+Generado con `scripts/tesis/generar_capitulo_3.py` sobre el Word del Capítulo I, que sigue la guía «Formato del tomo del trabajo de grado» (`referencias/seminario/`): Times New Roman 12 pt, interlineado 1,5, carta con márgenes de 2,5 cm, título del capítulo centrado a 16 pt y subtítulos a 14 pt en negrita, encabezado con el título del trabajo y línea inferior, pie con número de página y línea superior (romano en los índices y arábigo en el cuerpo), tablas con encabezado sombreado, leyenda «Tabla N.» al pie con su fuente, índices actualizables en Word con accesos directos (hipervínculos) a cada título y tabla y bibliografía IEEE con sangría francesa.
 
 ## Criterios preliminares
 

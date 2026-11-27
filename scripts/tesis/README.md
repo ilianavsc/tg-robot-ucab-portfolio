@@ -13,3 +13,9 @@ echo '{}' > /tmp/paginas.json; for i in 1 2 3; do python3 -I scripts/tesis/gener
 ```
 
 En Word, el índice general y el índice de tablas son campos actualizables (clic derecho → Actualizar campos).
+
+Para la entrega en Word 97-2003 (`.doc`), con el índice enlazado a cada título y tabla:
+
+```bash
+soffice --headless --convert-to 'doc:MS Word 97' --outdir tesis/entregas/capitulo-3 "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx"
+```

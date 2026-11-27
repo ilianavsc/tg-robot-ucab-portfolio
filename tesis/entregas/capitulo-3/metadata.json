@@ -4,12 +4,13 @@
   "estado": "en_revision",
   "fecha_entrega": "Pendiente de confirmación de Escuela/tutor",
   "fecha_version": "2026-11-27",
-  "archivo_original": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx",
+  "archivo_original": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.doc",
   "archivo_pdf": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.pdf",
   "archivo_markdown": "tesis/capitulo_3.md",
   "paginas": "Portada + 2 de índices (i–ii) + 21 de contenido",
   "tablas": 8,
   "referencias": 17,
-  "notas": "Versión entregable revisada contra el enunciado del Capítulo III y la guía «Formato del tomo del trabajo de grado» (referencias/seminario/). Plantilla del Word del Capítulo I: Times New Roman 12, interlineado 1,5, carta, márgenes de 2,5 cm, título del capítulo a 16 pt y subtítulos a 14 pt, encabezado y pie con línea, leyendas e índices actualizables y citas IEEE. Modalidad de proyecto especial; investigación aplicada organizada en fases, tareas e hitos; redacción en presente o pretérito. Trazabilidad 1 a 1 con los 9 OE y sus productos, 7 fases (32 semanas) y 7 criterios.",
-  "version": "entregable"
+  "notas": "Versión entregable revisada contra el enunciado del Capítulo III y la guía «Formato del tomo del trabajo de grado» (referencias/seminario/). Plantilla del Word del Capítulo I: Times New Roman 12, interlineado 1,5, carta, márgenes de 2,5 cm, título del capítulo a 16 pt y subtítulos a 14 pt, encabezado y pie con línea, leyendas e índices actualizables y citas IEEE. Modalidad de proyecto especial; investigación aplicada organizada en fases, tareas e hitos; redacción en presente o pretérito. Trazabilidad 1 a 1 con los 9 OE y sus productos, 7 fases (32 semanas) y 7 criterios. Entrega en Word 97-2003 (.doc) con índice general e índice de tablas enlazados a cada título y tabla (33 hipervínculos internos), verificado frente al Word oficial del Capítulo II.",
+  "version": "entregable",
+  "archivo_docx": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx"
 }
