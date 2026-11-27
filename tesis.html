@@ -52,26 +52,19 @@
 <script src="assets/sitio.js"></script>
 <script>
 (function(){
-  /* estado del capítulo -> variante de chip y texto */
+  /* estado del capítulo -> variante de chip y texto (sincronizado directamente con TG.tesis en datos/proyecto.js) */
   var ESTADOS = {
-    "borrador":      { chip: "en-curso", texto: "Borrador" },
-    "enviado":       { chip: "hecho",    texto: "Enviado" },
-    "por redactar":  { chip: "pendiente", texto: "Por redactar" },
-    "por integrar":  { chip: "pendiente", texto: "Por integrar" }
-  };
-  /* Bloque 2: estados académicos actualizados (sobreescriben TG.tesis sin tocar datos/proyecto.js).
-     Clave = c.num del capítulo en TG.tesis. Cap. I, II y Marco Teórico pasan a Entregado
-     (revisados en Seminario de Grado); Cap. III queda Listo para revisión. */
-  var ESTADOS_ACADEMICOS = {
-    "I":   { chip: "hecho",  texto: "Entregado",          nota: "Revisado en Seminario de Grado" },
-    "II":  { chip: "hecho",  texto: "Entregado",          nota: "Revisado en Seminario de Grado" },
-    "MT":  { chip: "hecho",  texto: "Entregado",          nota: "Revisado en Seminario de Grado" },
-    "III": { chip: "aviso",  texto: "Listo para revisión", nota: "Revisión conjunta: Iliana y Andrea" }
+    "entregado":           { chip: "hecho",     texto: "Entregado" },
+    "listo para revisión": { chip: "aviso",     texto: "Listo para revisión" },
+    "borrador":            { chip: "en-curso",  texto: "Borrador" },
+    "enviado":             { chip: "hecho",     texto: "Enviado" },
+    "por redactar":        { chip: "pendiente", texto: "Por redactar" },
+    "por integrar":        { chip: "pendiente", texto: "Por integrar" }
   };
   function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
   document.getElementById("capitulos").innerHTML = TG.tesis.map(function(c){
-    var e = ESTADOS_ACADEMICOS[c.num] || ESTADOS[c.estado] || { chip: "pendiente", texto: c.estado };
+    var e = ESTADOS[c.estado] || { chip: "pendiente", texto: c.estado };
     var tituloModal = c.tituloModal || ("Capítulo " + c.num + " · " + c.titulo);
     var acciones = "";
     if (c.md) {
@@ -79,6 +72,9 @@
     } else {
       acciones += '<span class="sin">Aún no está en el repositorio</span>';
     }
+    (c.descargas || []).forEach(function(d){
+      acciones += '<a class="btn btn-secundario" href="' + esc(d[1]) + '" download target="_blank" rel="noopener">' + esc(d[0]) + '</a>';
+    });
     (c.extra || []).forEach(function(x){
       acciones += '<a class="btn btn-secundario" href="' + esc(x[1]) + '" data-md="' + esc(x[1]) + '" data-titulo="' + esc(x[0]) + '">' + esc(x[0]) + '</a>';
     });
@@ -86,7 +82,7 @@
       '<div class="cab"><span class="num"><small>' + esc(c.etiqueta || "Cap") + '</small>' + esc(c.num) + '</span><span class="chip ' + e.chip + '">' + esc(e.texto) + '</span></div>' +
       '<h3>' + esc(c.titulo) + '</h3>' +
       (c.provisional ? '<p class="prov">título provisional</p>' : "") +
-      (e.nota ? '<p class="estado-nota">' + esc(e.nota) + '</p>' : "") +
+      (c.notaEstado ? '<p class="estado-nota">' + esc(c.notaEstado) + '</p>' : "") +
       '<p class="resumen">' + esc(c.resumen) + '</p>' +
       '<div class="acciones">' + acciones + '</div></article>';
   }).join("");
