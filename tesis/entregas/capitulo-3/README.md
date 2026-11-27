@@ -7,11 +7,11 @@
 
 ## Contenido
 
-III.1 Tipo y diseño de la investigación · III.2 Unidad de estudio y entorno de validación · III.3 Procedimiento metodológico (7 fases, 32 semanas) · III.4 Técnicas e instrumentos y protocolo de pruebas · III.5 Análisis de datos y validación · III.6 Cronograma de ejecución · III.7 Validez, confiabilidad y consideraciones éticas · Bibliografía (15 referencias IEEE).
+III.1 Modalidad, tipo y diseño de la investigación (proyecto especial, aplicada y proyectiva) · III.2 Unidad de estudio y entorno de validación · III.3 Procedimiento metodológico (7 fases, 32 semanas, con tareas, productos e hitos) · III.4 Técnicas e instrumentos y protocolo de pruebas · III.5 Análisis de datos y validación · III.6 Cronograma de ejecución · III.7 Validez, confiabilidad y consideraciones éticas · Bibliografía (17 referencias IEEE).
 
 ## Formato
 
-Generado sobre la plantilla del `.docx` del Capítulo II: Times New Roman 12 pt, interlineado 1,5, papel carta con márgenes de 2,5 cm, sangría de primera línea de 1,25 cm, títulos en negrita, tablas con encabezado sombreado y repetido entre páginas, leyenda «Tabla N.» con fuente, encabezado con el título del trabajo, pie con número de página (romano en los índices y arábigo en el cuerpo) y bibliografía con sangría francesa.
+Generado con `scripts/tesis/generar_capitulo_3.py` sobre el Word del Capítulo I, que sigue la guía «Formato del tomo del trabajo de grado» (`referencias/seminario/`): Times New Roman 12 pt, interlineado 1,5, carta con márgenes de 2,5 cm, título del capítulo centrado a 16 pt y subtítulos a 14 pt en negrita, encabezado con el título del trabajo y línea inferior, pie con número de página y línea superior (romano en los índices y arábigo en el cuerpo), tablas con encabezado sombreado, leyenda «Tabla N.» al pie con su fuente, índices actualizables en Word y bibliografía IEEE con sangría francesa.
 
 ## Criterios preliminares
 

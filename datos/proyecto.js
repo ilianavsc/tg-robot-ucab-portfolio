@@ -492,7 +492,7 @@ window.TG = {
       resumen: "Antecedentes, bases teóricas (robótica móvil, sensores, control, localización, ESP32, Wi-Fi y MQTT), bases normativas y términos básicos. Versión final entregada bajo Normas UCAB (46 referencias)." },
     { num: "III", titulo: "Marco metodológico", provisional: false, estado: "listo para revisión", notaEstado: "Versión entregable · Seminario de Grado (27/11/2026)", md: "tesis/capitulo_3.md",
       pdfOficial: "tesis/entregas/capitulo-3/Capitulo%20III%20TG%20FERRER,%20SEMPRUN.docx", textoDescarga: "⬇ Descargar Word (.docx)",
-      resumen: "Investigación proyectiva y aplicada, unidad de estudio y maqueta de ensayo, 7 fases (32 semanas) con trazabilidad OE–producto, 7 criterios de validación operacionalizados y plan de análisis. Normas UCAB, 15 referencias IEEE." },
+      resumen: "Proyecto especial de investigación aplicada, unidad de estudio y maqueta de ensayo, 7 fases (32 semanas) con tareas e hitos, 7 criterios de validación operacionalizados y plan de análisis. Normas UCAB, 17 referencias IEEE." },
     { num: "IV", titulo: "Desarrollo del prototipo", provisional: true, estado: "por redactar", md: null,
       resumen: "Diseño y construcción del robot, el firmware, la aplicación y el protocolo, con la selección de hardware (Objetivo 2)." },
     { num: "V", titulo: "Resultados y análisis", provisional: true, estado: "por redactar", md: null,

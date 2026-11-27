@@ -3,7 +3,7 @@
   "titulo": "Capítulo I · El Problema",
   "estado": "entregada",
   "fecha_entrega": "Pendiente de confirmación de Escuela/tutor",
-  "archivo_original": null,
+  "archivo_original": "tesis/entregas/capitulo-1/Capitulo I TG - Semprun y Ferrer.doc",
   "archivo_markdown": "tesis/capitulo_1.md",
-  "notas": "Versión Markdown disponible en tesis/capitulo_1.md. Revisado en Seminario de Grado. Depositar aquí el DOCX/PDF oficial entregado."
+  "notas": "Word oficial entregado (.doc, 28/10/2026) y versión Markdown en tesis/capitulo_1.md. Revisado en Seminario de Grado. Sirve de plantilla de formato del tomo (títulos 16/14 pt, encabezado y pie con línea)."
 }
