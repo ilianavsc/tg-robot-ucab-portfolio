@@ -457,7 +457,7 @@ window.TG = {
      descargas: enlaces de descarga directa [texto, ruta .pdf/.docx] (sin abrir el modal Markdown)
      extra: enlaces secundarios [texto, ruta .md]
      provisional: true = el título aún no está confirmado con la guía de la Escuela / el tutor
-     pdfOficial / textoDescarga: archivo oficial que se enlaza SOLO como botón discreto en la cabecera del visor */
+     pdfOficial / textoDescarga: archivo oficial (PDF, imagen o Word .docx) que se enlaza SOLO como botón discreto en la cabecera del visor */
 
   /* Sección 1 · Entregas de Seminario de Grado (orden cronológico).
      Para agregar nuevas entregas basta con añadir un objeto más al final con la misma forma;
@@ -488,10 +488,10 @@ window.TG = {
     { num: "I", titulo: "Planteamiento del proyecto", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado", md: "tesis/capitulo_1.md",
       resumen: "Planteamiento del problema, objetivos, justificación, alcance y limitaciones. Versión web del Word (última modificación: 28/10/2026); citas en IEEE." },
     { num: "II", titulo: "Marco teórico", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado", md: "tesis/capitulo_2.md",
-      pdfOficial: "tesis/entregas/capitulo-2/Capitulo%20II%20TG%20FERRER,%20SEMPRUN.pdf", textoDescarga: "⬇ PDF oficial (Normas UCAB)",
+      pdfOficial: "tesis/entregas/capitulo-2/Capitulo%20II%20TG%20FERRER,%20SEMPRUN.docx", textoDescarga: "⬇ Descargar Word (.docx)",
       resumen: "Antecedentes, bases teóricas (robótica móvil, sensores, control, localización, ESP32, Wi-Fi y MQTT), bases normativas y términos básicos. Versión final entregada bajo Normas UCAB (46 referencias)." },
     { num: "III", titulo: "Marco metodológico", provisional: false, estado: "listo para revisión", notaEstado: "Versión entregable · Seminario de Grado (27/11/2026)", md: "tesis/capitulo_3.md",
-      pdfOficial: "tesis/entregas/capitulo-3/Capitulo%20III%20TG%20FERRER,%20SEMPRUN.pdf", textoDescarga: "⬇ PDF oficial (Normas UCAB)",
+      pdfOficial: "tesis/entregas/capitulo-3/Capitulo%20III%20TG%20FERRER,%20SEMPRUN.docx", textoDescarga: "⬇ Descargar Word (.docx)",
       resumen: "Investigación proyectiva y aplicada, unidad de estudio y maqueta de ensayo, 7 fases (32 semanas) con trazabilidad OE–producto, 7 criterios de validación operacionalizados y plan de análisis. Normas UCAB, 15 referencias IEEE." },
     { num: "IV", titulo: "Desarrollo del prototipo", provisional: true, estado: "por redactar", md: null,
       resumen: "Diseño y construcción del robot, el firmware, la aplicación y el protocolo, con la selección de hardware (Objetivo 2)." },
