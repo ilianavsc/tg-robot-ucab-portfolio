@@ -1,270 +1,334 @@
-# Capítulo III. Marco Metodológico
+> Versión final del documento «Capítulo III. Marco metodológico» (Normas UCAB · citas IEEE), sincronizada con el Word oficial `entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx`. Los índices con número de página se omitieron.
 
-> **Listo para revisión (Iliana y Andrea) · 25/11/2026.** Sincronizado con el sistema implementado (P01–P06, P10, MQTT v2.0.0 y parámetros TG_ROBOT); citas en IEEE.
-> Las marcas **[POR COMPLETAR]** indican datos que aún no existen o que no están en el repositorio; las marcas **[VERIFICAR]** indican afirmaciones normativas o citas que hay que contrastar con la guía de Trabajo de Grado de la Escuela de Telecomunicaciones antes de entregar. Las marcas **[PENDIENTE DE MEDICIÓN FÍSICA]** señalan resultados que solo se pueden obtener con el robot real (HIL o campo): hoy existen únicamente estimaciones por cálculo o resultados de simulación (SIL), que no se extrapolan. Al final hay una lista de pendientes (sección III.7).
+![Figura](media/capitulo_2/image1.png)
 
-## III.1 Introducción
+UNIVERSIDAD CATÓLICA ANDRÉS BELLO
 
-Este capítulo describe cómo se llevó a cabo el trabajo: el tipo de investigación, el diseño adoptado, las técnicas e instrumentos con los que se obtuvieron los datos y las fases en que se organizó el desarrollo de un robot móvil de bajo costo para la búsqueda y el transporte de componentes electrónicos en el laboratorio de Telecomunicaciones de la UCAB, junto con la aplicación que permite pedirlos y recibir avisos.
+Facultad de Ingeniería
 
-El capítulo responde al objetivo general y a los objetivos específicos planteados en el Capítulo I:
+Escuela de Ingeniería en Telecomunicaciones
 
-- **Objetivo general** (Capítulo I, sección I.2.1): desarrollar un prototipo funcional de robot móvil autónomo de bajo costo, integrado con una aplicación de solicitudes y un sistema de comunicación IoT, para el transporte y la trazabilidad de componentes electrónicos en el laboratorio de la Escuela de Ingeniería en Telecomunicaciones de la UCAB, incorporando un mecanismo de alertas de seguridad ante manipulación no autorizada.
-- **Objetivos específicos** (Capítulo I, sección I.2.2):
-  1. Diseñar la arquitectura de comunicación inalámbrica del sistema (robot–aplicación–servidor) basada en MQTT y servicios en la nube (tópicos, QoS y flujos de mensajes).
-  2. Realizar un estudio comparativo y seleccionar los componentes de hardware (`docs/tomo/objetivo-2-seleccion-hardware.md`).
-  3. Diseñar y construir la plataforma mecánica del robot (chasis impreso en 3D y tracción diferencial).
-  4. Desarrollar el firmware de control (seguimiento de línea con PID, adquisición de sensores y comunicación MQTT).
-  5. Implementar un esquema de navegación progresivo (línea, odometría, fusión de sensores inerciales y re-localización).
-  6. Desarrollar la aplicación móvil/web de solicitudes y el backend de trazabilidad.
-  7. Implementar el módulo de alertas anti-manipulación basado en el acelerómetro.
-  8. Evaluar el desempeño integral del sistema mediante pruebas en una maqueta del laboratorio.
-  9. Documentar las limitaciones técnicas y proponer mejoras futuras.
+Trabajo de Grado:
 
-Estos nueve objetivos se copian de forma resumida; el texto completo y la relación con los productos y las fases están en el Capítulo I (Tabla 1).
+*“Robot móvil para búsqueda y transporte de componentes en el laboratorio de la UCAB con aplicación de solicitudes y alertas”*
 
-## III.2 Nivel de la investigación: Proyecto Especial
+REALIZADO POR:
 
-### III.2.1 Definición y encuadre
+Semprun Cascitelli, Iliana Vanessa
 
-Este trabajo se enmarca en la modalidad de **Proyecto Especial de Ingeniería**: su resultado principal no es solo conocimiento descriptivo o explicativo, sino un **producto tecnológico original** (un sistema robot + aplicación + protocolo de comunicación) que se diseña, se construye y se valida frente a requerimientos medibles. **[VERIFICAR: definición textual de "Proyecto Especial" en la normativa de Trabajo de Grado de la UCAB; no se encontró publicada con ese nombre (ver los documentos a consultar en la sección III.7).]**
+Ferrer Pinto, Andrea Valentina
 
-En la clasificación de tipos de investigación de Hurtado de Barrera \[1\], esta modalidad corresponde a la **investigación proyectiva**: la que, a partir de una indagación previa de la situación, propone y desarrolla una solución a una necesidad práctica, y no se limita a describirla o explicarla. Como el resultado es un artefacto, el trabajo tiene además carácter **aplicado** y se complementa con una evaluación experimental del prototipo (sección III.3).
+TUTOR:
 
-### III.2.2 Justificación del nivel
+Ing. Cante Mata, Biagio Domenico
 
-| Criterio | Cómo se cumple en este trabajo |
-|---|---|
-| Hay una necesidad real y levantada en campo | En la entrevista del 14/11/2026 al encargado del taller se constató que el estudiante siempre debe ir a buscar el componente (el taller lo entrega, pero nunca lo lleva) y que **no existe ningún registro** de quién se llevó qué ni para qué. |
-| Se produce un artefacto, no solo un diagnóstico | Robot móvil (ESP32 sobre chasis impreso en PLA con tracción diferencial, 4× TCRT5000 para seguir la línea, 2× HC-SR04P de 5 a 80 cm para obstáculos al frente y atrás, velocidad máxima de 0,46 m/s y batería Li-Ion 3S de 11,1 V), firmware, aplicación Flutter y contrato de mensajes MQTT. La MPU-6050 (IMU) forma parte del hardware elegido y cumple dos funciones previstas: el antirrobo con el acelerómetro y el mantenimiento de rumbo relativo (*heading hold*) con el giroscopio en los tramos sin cinta; su lectura está **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]** (solo existe el gancho para conectarla). |
-| La solución se valida contra criterios previos | Cada requerimiento (RF/RNF) tiene un criterio de aceptación definido **antes** de medir (sección III.3.3). |
-| Hay iteración con evidencia | 12 prototipos (P01 a P14) con ficha, registro de decisiones y bitácora semanal. |
+Caracas, noviembre de 2026
 
-### III.2.3 Alcance y límites
+# Capítulo III. Marco metodológico
 
-**Dentro del alcance:** un prototipo funcional que circula por el pasillo del laboratorio entre las 7:00 y las 18:00, sigue una línea, se detiene ante obstáculos, recibe pedidos y órdenes por MQTT, informa su estado, genera alertas (obstáculo, fallo de sensor, batería e inactividad, ya implementadas en el firmware y en la aplicación; el antirrobo con la MPU-6050 está pendiente de integrar) y se carga en el cuarto de componentes.
+En este capítulo se describe el procedimiento que se siguió para alcanzar el objetivo general del Trabajo de Grado: desarrollar un prototipo funcional de robot móvil autónomo de bajo costo, integrado con una aplicación de solicitudes y un sistema de comunicación IoT, para el transporte y la trazabilidad de componentes electrónicos en el laboratorio de la Escuela de Ingeniería en Telecomunicaciones de la UCAB, incorporando un mecanismo de alertas de seguridad ante manipulación no autorizada.
 
-**Fuera del alcance:** versión comercial o de producción, flota de varios robots, navegación en espacios sin línea guía, cambios en la infraestructura de red de la universidad y el mecanismo de carga de las piezas (bandeja o pinza), que sigue **abierto** hasta cerrar el estudio del pedido típico (3 o 4 piezas muy livianas).
+El capítulo da continuidad a la propuesta del Trabajo de Grado, al reporte de productos, al Capítulo I y al Capítulo II. De la propuesta y del Capítulo I se retomaron los nueve objetivos específicos, las siete fases de trabajo con una duración total de 32 semanas, los siete criterios de validación y los alcances y limitaciones del estudio; del reporte de productos, el producto verificable asociado a cada objetivo; y del Capítulo II, las bases teóricas y las métricas de desempeño con las que se evaluó el prototipo. El contenido se organizó en siete secciones: el tipo y el diseño de la investigación, la unidad de estudio y el entorno de validación, el procedimiento metodológico por fases, las técnicas e instrumentos de recolección de datos junto con el protocolo de pruebas, el análisis de los datos, el cronograma de ejecución y, finalmente, las consideraciones de validez y confiabilidad.
 
-## III.3 Diseño de la investigación: Prototipo
+## III.1 Tipo y diseño de la investigación
 
-### III.3.1 Estrategia de diseño
+### III.1.1 Tipo de investigación
 
-Arias \[2\] define el diseño de la investigación como la estrategia general que adopta el investigador para responder al problema planteado y lo clasifica en documental, de campo y experimental. Este trabajo combina el diseño **experimental** (el prototipo se mide bajo condiciones controladas, en simulación y en banco) con el de **campo** (la validación final en el laboratorio de la UCAB), apoyados en revisión **documental** (hojas de datos y normas).
+Según su propósito, la investigación se clasificó como proyectiva. Hurtado de Barrera [1] define la investigación proyectiva como aquella que, a partir del diagnóstico de una necesidad, elabora una propuesta, un plan o un modelo que da solución a un problema práctico, sin limitarse a describirlo o a explicarlo. En este caso, la necesidad diagnosticada en el Capítulo I fue la ausencia de un sistema automatizado de transporte interno y de trazabilidad de componentes en el laboratorio, y la solución propuesta fue un sistema compuesto por un robot móvil, una aplicación de solicitudes y una arquitectura de comunicación inalámbrica basada en MQTT.
 
-El diseño es de **desarrollo de prototipos evolutivos con validación experimental**: el sistema se divide en prototipos pequeños, cada uno con un propósito medible; cada prototipo se simula, se construye, se mide y termina con una **ficha** y una **decisión documentada**. Se combinan tres entornos de validación:
+Por la naturaleza de su resultado, el trabajo fue además una investigación aplicada de desarrollo tecnológico. Hernández Sampieri, Fernández y Baptista [2] señalan que la investigación aplicada busca resolver problemas concretos mediante el uso del conocimiento disponible; aquí ese conocimiento, expuesto en el Capítulo II, se empleó para diseñar, construir y evaluar un artefacto original. Por último, el prototipo se sometió a una validación experimental en una maqueta controlada, en la que se midieron variables cuantitativas definidas de antemano, lo que dio al estudio un enfoque cuantitativo en su etapa de evaluación [2].
 
-| Entorno | Qué es | Ejemplos en el proyecto | Qué permite afirmar |
-|---|---|---|---|
-| **SIL** (*Software In the Loop*) | La lógica se ejecuta sin hardware, con datos sintéticos: el firmware compilado en el PC con imitaciones del ESP32, o los simuladores en el navegador | `firmware/pruebas_pc/` (10 escenarios, T1–T10), P01 (MQTT base), P02 (Inspector Hardware 3D con radar dual HC-SR04P), P03 (radar ultrasónico), P05 (Gemelo Digital, con balizas BLE simuladas) y P06 (Ruta Lineal); además, el Modo Demo de la app (simulación física, sección III.3.6) y las pruebas automáticas de la app (173/173 pruebas `flutter test`) | Que la **lógica** y el **contrato de mensajes** son correctos |
-| **HIL** (*Hardware In the Loop*) | El mismo firmware en el **ESP32 real** con los **sensores y motores reales** | Plantilla de mediciones `prototipos/P02-sensores/README.md` | Que el **sistema físico** cumple los criterios de aceptación |
-| **Campo** | El robot completo en el laboratorio de la UCAB | Fases VI y VII | Que el sistema funciona en el **entorno real** (Wi-Fi, piso, luz, personas) |
+### III.1.2 Diseño de la investigación
 
-Además de SIL y HIL existe una operación **EN VIVO** (*MQTT v2.0.0*): el **P04 (Simulador ESP32)** publica y escucha en tiempo real el contrato `specs/mqtt/contract.json` (schema_version 2.0.0) —telemetría, comandos, rutas, pedidos y alertas inerciales—, integrado con la App Flutter v2 (173/173 pruebas). Su física sigue siendo **SIL** (robot simulado con datos sintéticos); solo el canal de comunicación es en vivo.
+Arias [3] define el diseño de la investigación como la estrategia general que adopta el investigador para responder al problema planteado, y distingue los diseños documental, de campo y experimental. El presente trabajo combinó los tres:
 
-Regla de rigor: un resultado solo pasa de "validado en simulación" a "validado" cuando tiene su registro HIL o de campo con fecha, condiciones y evidencia. Lo medido en SIL **no se extrapola** al robot físico.
+- **Diseño documental:** se empleó en la revisión de las fuentes que sustentaron el marco teórico, las hojas de datos de los componentes y los estándares técnicos, así como en el registro de búsquedas documentales y el análisis de trabajos de grado previos.
+- **Diseño de campo:** se aplicó en el levantamiento de información directamente en el laboratorio de la Escuela, mediante la entrevista al personal encargado del almacén de componentes y la observación del recorrido, del piso, de la iluminación y de la cobertura de la red inalámbrica.
+- **Diseño experimental:** se aplicó en la evaluación del prototipo, en la que se manipularon de forma deliberada variables independientes, como el modo de navegación (línea pura, híbrido o autónomo en rutas conocidas) y el nivel de QoS de los mensajes (0, 1 o 2), y se midió su efecto sobre variables dependientes, como el error de posición, el tiempo de entrega y la latencia de comunicación, bajo condiciones controladas.
 
-### III.3.2 Prototipos
+El desarrollo del prototipo siguió una estrategia iterativa e incremental. Cada subsistema se diseñó, se implementó y se verificó de forma independiente antes de integrarse con los demás, de modo que cada fase culminó en un entregable verificable y el riesgo técnico se redujo de manera progresiva. La lógica del firmware se verificó primero mediante pruebas unitarias ejecutadas en un computador, y luego en el hardware real, con los sensores y los motores definitivos; los resultados de la verificación previa de la lógica no se extrapolaron al desempeño físico del robot, que solo se reportó a partir de mediciones en el hardware y en la maqueta. La Tabla 1 resume la caracterización metodológica del estudio.
 
-La numeración oficial es P01 a P14 (fuente: `datos/proyecto.js`). Estado al 24/11/2026:
+| Dimensión | Clasificación adoptada | Justificación en el Trabajo de Grado |
+| --- | --- | --- |
+| Tipo según el propósito | Proyectiva | Propone y desarrolla una solución a la necesidad de transporte y trazabilidad de componentes diagnosticada en el Capítulo I [1]. |
+| Tipo según la finalidad | Aplicada, de desarrollo tecnológico | Emplea el conocimiento del Capítulo II para obtener un prototipo funcional y replicable [2]. |
+| Enfoque de la evaluación | Cuantitativo | Los siete criterios de validación se expresan como magnitudes medibles con criterio de aceptación previo. |
+| Diseño | Documental, de campo y experimental | Revisión de fuentes, levantamiento en el laboratorio y ensayos controlados en maqueta [3]. |
+| Estrategia de desarrollo | Iterativa e incremental, en siete fases | Cada fase culmina en un entregable verificable asociado a uno o más objetivos específicos. |
 
-| Código | Prototipo | Propósito | Estado |
-|---|---|---|---|
-| P01 | MQTT base | Comunicación robot ↔ app (QoS, confirmaciones, última voluntad) | Hecho (simulación): 7/7 pruebas, 50/50 pedidos |
-| P02 | Inspector de hardware | El robot en el circuito 3D (Auto/Manual) con 4 consolas interactivas de sensores y la ficha técnica de cada pieza | Hecho (simulación); HIL en diciembre |
-| P03 | Radar ultrasónico | Distancias frente y atrás + frenado ante obstáculos | Hecho (simulación) |
-| P04 | Simulador 1 + ESP32 | Simulador 1 con la placa ESP32 (LEDs S1–S4, PWM, TX) y puente MQTT v2.0.0 en vivo con la app | Hecho (robot simulado, conexión MQTT en vivo) |
-| P05 | Gemelo Digital | Calibra y aprende la pista (teach & repeat) y ejecuta la Capa 3 operacional (rutas y pedidos) | Hecho (simulación) |
-| P06 | Ruta lineal con reposicionamiento | Ida, alarma en el destino, giro manual de 180° y retorno a la base | Hecho (simulación) |
-| P07 | El cerebro completo | Firmware integrado (`robot_integrado.ino`) | En pruebas (lógica validada en PC) |
-| P09 | App Flutter (v2 · Modo Demo) | App Flutter Web (*Autonomous Laboratory Cockpit*): Dashboard con Mapa de Pista, Controles, Radar y Alertas; acceso local con roles Operador y Administrador | Hecho (simulación); sin backend ni Firebase |
-| P10 | Robot virtual y puente | Puente MQTT a Firebase | Planificado (sin código aún) |
-| P11 | La alarma llega al teléfono | Centro de alertas en la app | En pruebas (simulación) |
-| P12 | Pruebas y estadística | Analítica de sesión y reporte CSV | En pruebas (simulación) |
-| P14 | Balizas BLE (Extremos) | Re-localización en puntos de referencia | Pendiente (Fase II) |
+**Tabla 1.** Caracterización metodológica de la investigación.
 
-> **P09 ≠ P05.** P09 es la aplicación que usa el operador; P05 (Gemelo Digital) simula la navegación y la Capa 3 en el navegador, sin conectarse a un broker real, para validar el software antes de recibir el hardware (pedido de Amazon: llegada estimada a Miami entre el 15 y el 28 de diciembre de 2026). El canal MQTT v2.0.0 en vivo lo aporta el P04 (Simulador ESP32), con el robot aún simulado; la confirmación de órdenes con el **ESP32 real** (ACK HIL) queda pendiente, y la app también se valida en Modo Demo.
+*Fuente: elaboración propia a partir de [1], [2] y [3].*
 
-### III.3.3 Variables, indicadores y criterios de aceptación
+## III.2 Unidad de estudio y entorno de validación
 
-Los criterios provienen de los requerimientos (`datos/proyecto.js`, `docs/requerimientos/`). Un **?** indica un valor aún por definir con el tutor o con la visita al laboratorio.
+### III.2.1 Unidad de estudio
 
-| Variable (requerimiento) | Indicador | Instrumento de medición | Criterio de aceptación | Estado |
-|---|---|---|---|---|
-| Fiabilidad del canal de pedidos (RF-01, RNF-04) | Pedidos confirmados / enviados; latencia de la confirmación (s) | Registro de mensajes MQTT en CSV; banco de pruebas P01; MQTTX | 0 pedidos perdidos en 50 | SIL: 0 perdidos de 50; latencia media 4,1 s medida en el banco P01 con un broker público de desarrollo, que **no representa** al sistema real. Criterio de latencia (≤ **? s**) y medición con el ESP32 real: **[PENDIENTE DE MEDICIÓN FÍSICA]** |
-| Periodicidad de la telemetría (RF-02) | Intervalo entre mensajes de estado | Campo `t` del mensaje y marca de tiempo de llegada | 1 mensaje cada 2 s | Validado en simulación |
-| Detección de desconexión (RF-03) | Tiempo desde la caída hasta el aviso (última voluntad, LWT) | Cronómetro y registro del broker | Menos de 30 s | Simulación: 22 s |
-| Seguimiento de línea (RF-04) | Error lateral al llegar (cm) y velocidad (m/s) | Campo `linea_mm`, cinta métrica, cronometraje | Error ≤ **? cm** | Simulación: da la vuelta a 0,41 m/s en una pista provisional. **[PENDIENTE DE MEDICIÓN FÍSICA]** |
-| Detección de obstáculos (RF-05, RNF-07) | Distancia de parada (cm); tiempo de parada (ms) | HC-SR04P, cinta métrica, video | Criterio de RF-05: el robot **se detiene cuando el obstáculo frontal está a < 20 cm** (la misma regla del firmware). La distancia final a la que queda detenido depende del frenado y del refresco de 200 ms de cada sensor y se mide en la prueba física. | Regla validada en SIL; distancia final de parada **[PENDIENTE DE MEDICIÓN FÍSICA]** |
-| Velocidad (RNF-03) | Velocidad en recta (m/s) | Encoders y cronometraje sobre distancia conocida | Entre 0,35 y 0,6 m/s | Parámetros TG_ROBOT: velocidad máxima en recta 0,46 m/s (0,8 × 0,57 m/s al 100 % de PWM) y crucero del seguidor de línea 0,41 m/s. **[PENDIENTE DE MEDICIÓN FÍSICA]** |
-| Alarma (RF-08) | Alertas recibidas por evento; falsas alarmas por recorrido | Centro de alertas (P11) y registro | Llega 1 sola vez; ≤ **? falsas alarmas** en **N** recorridos | Pendiente: la MPU-6050 está **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]**. **[PENDIENTE DE MEDICIÓN FÍSICA]** |
-| Energía (RNF-02) | Tensión de batería (V); autonomía (min) | Multímetro y campo `bateria_v` | Corte seguro a 9,90 V; cubrir la jornada, ≥ **? min** continuos | Autonomía **estimada** en ~3 h por cálculo, no medida. **[PENDIENTE DE MEDICIÓN FÍSICA]** |
-| Repetibilidad (RNF-08) | Repeticiones por prueba | Plantillas HIL | Mínimo 20 | Fase VII |
+La unidad de estudio fue el sistema completo de transporte y trazabilidad, conformado por tres elementos que operan de forma conjunta: el robot móvil, la aplicación de solicitudes con su backend en la nube y la red de comunicación inalámbrica que los vincula a través del broker MQTT. Por tratarse de una investigación de desarrollo tecnológico, no se trabajó con una población de individuos ni con un muestreo probabilístico de personas; la unidad de análisis fue cada ensayo realizado sobre el prototipo. La muestra de cada prueba se definió como el número de repeticiones de un mismo ensayo bajo condiciones controladas, con un mínimo de 20 repeticiones por prueba, criterio que se justifica en la sección III.5.
 
-### III.3.4 Unidad de estudio y entorno
+### III.2.2 Entorno de validación
 
-La unidad de estudio es el **sistema completo** (robot, aplicación y canal MQTT) operando en el **pasillo del laboratorio de Telecomunicaciones de la UCAB**, desde el mostrador de entrega hasta los estantes. Los datos del entorno (distancias, ancho de pasillo, tipo de piso, luz, obstáculos, tomacorrientes) se levantan con la hoja de observación (sección III.4). **[POR COMPLETAR: resultados de la visita de observación y de la prueba H0 de Wi-Fi.]**
+El contexto de aplicación fue el laboratorio de la Escuela de Ingeniería en Telecomunicaciones de la UCAB, en particular el trayecto entre el almacén de componentes y los puestos de trabajo. Para evaluar el prototipo bajo condiciones repetibles y medibles, se construyó una maqueta controlada que reproduce ese trayecto a escala de laboratorio. Esta maqueta respondió al alcance declarado en la propuesta y en el Capítulo I (sección I.4.2), que limita la validación a un único prototipo operando en una maqueta o entorno controlado.
 
-### III.3.5 Trazabilidad de las decisiones de diseño
+La maqueta consistió en una ruta guiada por una cinta negra de alto contraste sobre un piso claro y liso, con un origen que representa el almacén de componentes, un punto de control intermedio y un destino que representa el puesto de trabajo. La ruta se dividió en segmentos delimitados por puntos de interés (cruces, giros y paradas), y se marcaron puntos de referencia con posición conocida, medidos con cinta métrica respecto a un origen fijo, que sirvieron como valor de referencia para calcular el error de posición. En los extremos de la ruta se instalaron dos balizas BLE fijas basadas en ESP32, que actúan como puntos de re-localización absoluta por proximidad a partir del RSSI [4]. La red Wi-Fi utilizada fue una red local del laboratorio en la banda de 2,4 GHz, con un broker MQTT accesible desde ella. La Tabla 2 recoge los parámetros nominales de diseño y las condiciones esperadas de ensayo.
 
-Cada decisión técnica se registra con **fecha, decisión, razón y evidencia** (`TG.decisiones` en `datos/proyecto.js`, página *Decisiones* del portafolio). Ejemplos: umbrales de obstáculo (parada a 20 cm, aviso a 50 cm), fail-safe del modo manual (5 s sin órdenes: frena y se queda en manual), corte por batería a 9,90 V con rearme por encima de 10,10 V, y elección del motor *Speed 200* frente al *Speed 130*. El código fuente se versiona en Git, de modo que cada sesión de prueba puede ligarse al *commit* exacto del firmware.
+| Parámetro | Valor nominal o condición esperada |
+| --- | --- |
+| Longitud nominal de la ruta de ensayo (ida) | 12 m, dividida en segmentos de 2 m a 4 m |
+| Guía de recuperación | Cinta negra de 19 mm sobre piso claro y liso |
+| Puntos de referencia para el error de posición | Uno por segmento, con posición medida a ± 1 mm |
+| Velocidad de crucero en seguimiento de línea | 0,41 m/s (máxima en recta: 0,46 m/s) |
+| Umbral de parada ante obstáculo frontal | Menor que 20 cm (zona de precaución entre 20 cm y 50 cm) |
+| Periodo de publicación del estado del robot | 2 s |
+| Batería | Li-Ion 3S; ventana de operación de 9,9 V a 12,6 V, con corte de protección a 9,9 V |
+| Infraestructura de re-localización | Dos balizas BLE fijas en el origen y en el destino |
+| Red de comunicación | Wi-Fi local de 2,4 GHz con broker MQTT accesible desde ella |
+| Carga transportada | Componentes electrónicos livianos, colocados de forma manual en un compartimiento simple |
 
-### III.3.6 Estado del sistema y de la aplicación al 19/11/2026
+**Tabla 2.** Parámetros nominales de diseño y condiciones esperadas de ensayo en la maqueta.
 
-Esta sección describe lo que el sistema hace hoy y fija qué es simulación, para que ningún resultado del Modo Demo ni del Gemelo Digital (P05) se lea como medida del robot real.
+*Fuente: elaboración propia a partir de las hojas de datos de los componentes y del diseño del prototipo.*
 
-**SIL y HIL.** Todo lo validado hasta hoy es **SIL** (*Software In the Loop*): los 10 escenarios (T1–T10) del firmware compilado en el PC, el Gemelo Digital (P05), el Modo Demo y las pruebas de la aplicación. **HIL** (*Hardware In the Loop*), es decir, el mismo firmware en el ESP32 real con los sensores y motores reales, **no se ha hecho**: empieza cuando llegue el hardware (diciembre). Ningún valor de simulación se extrapola al robot físico.
+Los valores de la Tabla 2 se adoptaron como parámetros nominales de diseño y se contrastaron con mediciones en el hardware durante las fases III a VII. Quedaron fuera del entorno de validación, en coherencia con las limitaciones de la sección I.4.1, la operación de varios robots a la vez, la navegación en entornos no mapeados, la manipulación automatizada de la carga y la integración con sistemas de inventario institucionales.
 
-**Hardware y arquitectura.** El sistema se compone de **1 ESP32 móvil** (el robot) y **2 ESP32 fijos** que actuarán como **balizas BLE de proximidad** (*anchors*), uno en el Cuarto de Componentes y otro en el Laboratorio 1. El robot móvil lleva: ESP32-WROOM-32 sobre un **chasis impreso en PLA** con **tracción diferencial** (2 motores JGA25-371 con encoders y driver L298N); 4× TCRT5000 en ADC1 (GPIO 36, 39, 34 y 35, de izquierda a derecha, separados 18 mm); 2× HC-SR04P (**5–80 cm**) con **TRIG separado** (frontal en GPIO 23 y trasero en GPIO 15) y ECO frontal en GPIO 33 y trasero en GPIO 5; MPU-6050 por I²C (GPIO 21 y 22); batería Li-Ion 3S (**11,1 V nominal**; operación de 9,90 a 12,60 V). La **velocidad máxima en recta es 0,46 m/s** (0,8 × 0,57 m/s del modelo Speed 200) y el **crucero del seguidor de línea es 0,41 m/s**. No hay LiDAR ni magnetómetro: el robot no tiene brújula ni localización absoluta, por lo que ninguna pantalla muestra rumbo. Las balizas BLE y la lectura de la MPU-6050 están **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]**.
+## III.3 Procedimiento metodológico
 
-**Rol de la MPU-6050 y de las balizas.** En los tramos donde se retire la cinta, el robot mantendría el **rumbo relativo** que tenía al perderla (*heading hold*, con el giroscopio; sin magnetómetro) y avanzaría hasta que la baliza BLE del siguiente punto de control confirme proximidad por RSSI. La confirmación exige varias lecturas seguidas por encima de un umbral. Este esquema solo se ha representado en simulación (P05 y la vista previa de "Reducción progresiva de cinta"); sus umbrales, la deriva del giroscopio y la distancia de detección son supuestos que hay que medir. **[PENDIENTE DE MEDICIÓN FÍSICA]**
+El procedimiento se organizó en siete fases, con una duración total de 32 semanas, tal como se estableció en la propuesta del Trabajo de Grado. Cada fase atendió uno o varios objetivos específicos (OE) y culminó en un entregable verificable. Antes de describir cada fase, la Tabla 3 presenta la correspondencia uno a uno entre los nueve objetivos específicos, los nueve productos declarados en el reporte de productos y la fase en la que se obtuvo cada uno.
 
-**Reglas de seguridad (firmware y aplicación).** Parada crítica con el eco frontal a menos de **20 cm**; zona de precaución de **20 a 50 cm** (solo aviso en el firmware real); corte por batería a 9,90 V con rearme por encima de 10,10 V; en modo manual, 5 s sin órdenes detienen el robot. En la aplicación estos umbrales se muestran en el Perfil del Administrador como **solo lectura**: no hay botón para editarlos ni para anularlos.
+| OE | Objetivo específico | Producto entregable | Fase |
+| --- | --- | --- | --- |
+| OE1 | Diseñar la arquitectura de comunicación inalámbrica del sistema (robot–aplicación–servidor) basada en el protocolo MQTT y servicios en la nube, definiendo los tópicos, la calidad de servicio (QoS) y los flujos de mensajes para órdenes, estado y alertas. | El diseño de la arquitectura de comunicación inalámbrica del sistema (robot–aplicación–servidor) basada en MQTT, con la definición de los tópicos, los niveles de QoS y los flujos de mensajes para órdenes, estado y alertas. | II |
+| OE2 | Realizar un estudio comparativo y seleccionar los componentes de hardware (microcontrolador, controlador de motores, sensores, batería) bajo criterios de costo, consumo energético, disponibilidad y compatibilidad. | El estudio comparativo de los componentes de hardware, con su tabla comparativa, y la selección del microcontrolador, el controlador de motores, los sensores y la batería según criterios de costo, consumo energético, disponibilidad y compatibilidad. | I |
+| OE3 | Diseñar y construir la plataforma mecánica del robot, con chasis impreso en 3D y configuración de tracción diferencial, acorde con las dimensiones, cargas y rutas del entorno del laboratorio. | La plataforma mecánica del robot diseñada y construida, con chasis impreso en 3D y tracción diferencial, junto con los planos del chasis. | II y III |
+| OE4 | Desarrollar el firmware de control del robot, implementando el seguimiento de línea mediante control PID, la adquisición de sensores (línea, ultrasónicos e inercial) y la comunicación MQTT con el servidor. | El firmware funcional de control del robot (seguimiento de línea con PID, adquisición de los sensores de línea, ultrasónicos e inercial, y comunicación MQTT), con pruebas unitarias de lectura, control y transmisión. | III |
+| OE5 | Implementar un esquema de navegación progresivo que combine el seguimiento de línea con odometría y fusión de sensores inerciales, incorporando puntos de re-localización absoluta para acotar la deriva acumulada en rutas previamente mapeadas. | El esquema de navegación progresiva implementado (seguimiento de línea, odometría, fusión de sensores inerciales y puntos de re-localización absoluta), validado por segmentos con mediciones de error de posición. | IV |
+| OE6 | Desarrollar la aplicación móvil/web de solicitudes y el backend de trazabilidad, incluyendo catálogo de componentes, seguimiento del robot en tiempo real, historial de entregas y notificaciones. | La aplicación móvil/web de solicitudes integrada con el backend de trazabilidad, con catálogo de componentes, seguimiento del robot en tiempo real, historial de entregas y notificaciones. | V |
+| OE7 | Implementar el módulo de alertas de seguridad anti-manipulación basado en el acelerómetro, definiendo los umbrales de detección y evaluando la tasa de detección y la tasa de falsas alarmas. | El módulo de alertas de seguridad anti-manipulación basado en el acelerómetro, con sus umbrales de detección definidos y la evaluación de su tasa de detección y su tasa de falsas alarmas. | VI |
+| OE8 | Evaluar el desempeño integral del sistema mediante pruebas en una maqueta del laboratorio, midiendo la precisión de navegación, la latencia y fiabilidad de la comunicación, la autonomía energética y la eficacia de las alertas. | La evaluación del desempeño integral del sistema: informe de resultados de las pruebas en maqueta (precisión de navegación, latencia y fiabilidad de la comunicación, autonomía energética y eficacia de las alertas). | VII |
+| OE9 | Documentar las limitaciones técnicas del sistema y proponer mejoras futuras orientadas a su escalabilidad y a su adaptación a otros entornos de aplicación. | La documentación de las limitaciones técnicas del sistema y la propuesta de mejoras futuras orientadas a su escalabilidad y a su adaptación a otros entornos de aplicación. | VII |
 
-**Freno Remoto (no es un E-STOP).** El botón siempre visible de la aplicación se llama **Freno Remoto** y envía la orden `frenar` por MQTT. No es una parada de emergencia cableada: depende del teléfono, de la red y del broker, y no sustituye al interruptor físico del robot.
+**Tabla 3.** Correspondencia entre los objetivos específicos, los productos entregables y las fases.
 
-**Aplicación Flutter (P09).** Sistema de diseño *Autonomous Laboratory Cockpit* con cuatro secciones (Dashboard, Controles, Radar y Alertas). El Dashboard abre con el **Mapa de Pista**: un circuito cerrado con el Cuarto de Componentes (inicio), el Punto de Control (intermedio) y el Laboratorio 1 (destino), el cono del ultrasonido frontal (verde por encima de 50 cm, ámbar de 20 a 50 cm, rojo por debajo de 20 cm), la tarjeta de misión y los botones Pausar y Reanudar (órdenes `frenar` y `auto`). El tramo ya recorrido se atenúa a una línea punteada y solo queda iluminado el pendiente hacia el destino. Con el robot real el mapa **no dibuja posición ni ofrece destinos**, porque el firmware no entiende destinos y el robot no se localiza; esas funciones solo existen en el Modo Demo.
+*Fuente: elaboración propia a partir de la propuesta del Trabajo de Grado, el reporte de productos y la Tabla 1 del Capítulo I.*
 
-**Control de acceso (RBAC local, maqueta).** Modelo cerrado de laboratorio, sin registro público, con dos roles (Operador y Administrador). Las cuentas de demostración (`usuario` y `admin`) y las que el Administrador crea durante la sesión viven **en memoria**, sin backend de producción ni Firebase: se pierden al cerrar la aplicación y las contraseñas no se protegen. Es una maqueta de la interfaz y del flujo de roles; la autenticación real con Firebase corresponde a la Fase V. Solo el Administrador ve el **Aprendizaje de Ruta** (pasada virtual, puntos de control y vista previa de la reducción progresiva de cinta); el Operador usa la ruta ya guardada.
+### III.3.1 Fase I: Investigación y diseño conceptual (4 semanas)
 
-**Modo Demo (SIL).** Al activarlo, la aplicación **desconecta el MQTT real** y no lo reconecta al salir: el operador debe pulsar Conectar. La simulación física modela un robot que avanza a 0,40 m/s con un lazo PD de línea, una batería 3S que se descarga de forma lineal (de 12,60 a 9,90 V) y un ciclo de obstáculo en el que la distancia frontal baja de forma continua, el robot reduce la velocidad entre 20 y 50 cm (comportamiento propio del demo; el firmware solo avisa) y se detiene por debajo de 20 cm con una alerta. Las órdenes (Freno Remoto, `frenar`, `auto`, D-pad y destino) actúan al instante sobre la simulación. Todos estos valores son **supuestos de simulación**, no mediciones: la velocidad, la duración de la batería, el tiempo de frenado y la longitud del circuito deben reemplazarse por medidas del robot real. **[PENDIENTE DE MEDICIÓN FÍSICA]**
+La primera fase estableció la base documental y los requerimientos del sistema, y atendió el OE2.
+
+- **Actividades:** revisión bibliográfica de robótica móvil, control PID, fusión de sensores, protocolos de comunicación IoT y posicionamiento en interiores, que dio origen al marco teórico del Capítulo II; búsqueda y análisis de trabajos de grado previos y registro de las búsquedas documentales; entrevista semiestructurada al personal encargado del almacén y observación directa del laboratorio; definición de los requerimientos funcionales y no funcionales del sistema y de sus criterios de evaluación; y comparación y selección preliminar de los componentes de hardware mediante una matriz ponderada de costo, consumo energético, disponibilidad y compatibilidad.
+- **Objetivos específicos cubiertos:** OE2.
+- **Producto verificable:** el estudio comparativo de los componentes de hardware, con su tabla comparativa, y la selección del microcontrolador, el controlador de motores, los sensores y la batería según criterios de costo, consumo energético, disponibilidad y compatibilidad.
+- **Entregable de la fase:** documento de requerimientos y tabla comparativa de componentes.
+
+### III.3.2 Fase II: Diseño mecánico y electrónico (4 semanas)
+
+La segunda fase transformó los requerimientos en un diseño del sistema y atendió el OE1 y la etapa de diseño del OE3.
+
+- **Actividades:** modelado CAD del chasis para impresión 3D en PLA y diseño de la tracción diferencial, con dos ruedas motrices y una rueda loca de apoyo; diseño del esquema electrónico (microcontrolador ESP32, driver de motores, sensores de línea, ultrasónicos e inercial, y alimentación separada en un dominio de potencia y otro de control) y del diagrama de bloques; diseño de la arquitectura de comunicación robot–aplicación–servidor sobre MQTT [5], con la definición de la jerarquía de tópicos, de los mensajes de órdenes, estado y alertas, y del nivel de QoS de cada flujo según su criticidad: QoS 0 para el estado periódico del robot, QoS 1 para las órdenes de entrega y QoS 2 para las alertas de seguridad, de acuerdo con lo expuesto en la sección II.2.7.5; y definición del uso de la sesión persistente, de los mensajes retenidos y del mensaje de última voluntad (LWT) para detectar la desconexión del robot.
+- **Objetivos específicos cubiertos:** OE1 y OE3 (diseño).
+- **Productos verificables:** el diseño de la arquitectura de comunicación inalámbrica del sistema (robot–aplicación–servidor) basada en MQTT, con la definición de los tópicos, los niveles de QoS y los flujos de mensajes para órdenes, estado y alertas; y los planos del chasis.
+- **Entregable de la fase:** planos del chasis, diagrama electrónico y diagrama de bloques del sistema.
+
+### III.3.3 Fase III: Firmware de control y comunicaciones (6 semanas)
+
+La tercera fase materializó la plataforma y su programa de control, y atendió el OE4 y la etapa de construcción del OE3.
+
+- **Actividades:** impresión 3D del chasis y montaje de motores, encoders, sensores, driver y batería; programación del control de motores mediante PWM y del seguimiento de línea con un controlador PID [6], cuyas ganancias se ajustaron de forma experimental empezando por la acción proporcional y añadiendo luego la derivativa y, de ser necesaria, la integral; adquisición e integración de los cuatro sensores ópticos de línea, de los dos sensores ultrasónicos frontal y trasero, y de la unidad inercial MPU-6050 por bus I²C [7]; implementación del cliente MQTT del robot, con los tópicos y niveles de QoS definidos en la fase II; e implementación de las reglas de seguridad del firmware: parada ante un obstáculo frontal a menos de 20 cm, detención si en modo manual transcurren 5 s sin órdenes y corte por batería baja a 9,9 V.
+- **Objetivos específicos cubiertos:** OE3 (construcción) y OE4.
+- **Productos verificables:** la plataforma mecánica del robot diseñada y construida, con chasis impreso en 3D y tracción diferencial, junto con los planos del chasis; y el firmware funcional de control del robot (seguimiento de línea con PID, adquisición de los sensores de línea, ultrasónicos e inercial, y comunicación MQTT), con pruebas unitarias de lectura, control y transmisión.
+- **Entregable de la fase:** firmware funcional con pruebas unitarias de lectura, control y transmisión.
+
+### III.3.4 Fase IV: Navegación progresiva (5 semanas)
+
+La cuarta fase implementó el núcleo del proyecto, la transición gradual desde el seguimiento de línea hacia la navegación basada en sensores en rutas conocidas, y atendió el OE5. Se siguieron las cinco etapas técnicas descritas en la propuesta:
+
+1. **Etapa 0, línea como guía y registro:** el robot recorre la ruta siguiendo la línea mientras registra, con marca de tiempo, las lecturas de los sensores de línea, las velocidades de los motores, los pulsos de los encoders, las lecturas de la IMU y las distancias ultrasónicas.
+2. **Etapa 1, aprendizaje de la ruta:** a partir de esos registros se identifican los puntos de interés y se construye un mapa relativo de la ruta basado en odometría y en los patrones de los sensores de cada segmento.
+3. **Etapa 2, segmentación y retirada gradual:** para cada segmento se calibra un controlador que usa odometría, IMU y ultrasonidos para mantener la trayectoria sin la línea; en modo híbrido, si la desviación supera un umbral, el robot vuelve al modo línea (*fallback*).
+4. **Etapa 3, fusión de sensores y corrección periódica:** se combinan encoders e IMU mediante un filtro complementario o un filtro de Kalman simplificado [8], y se añaden los puntos de re-localización absoluta con las balizas BLE para acotar la deriva acumulada.
+5. **Etapa 4, autonomía en rutas conocidas:** cuando el error de posición se mantiene dentro del criterio de aceptación, el robot recorre los segmentos sin línea de forma confiable, y la línea permanece como recurso de recuperación y seguridad.
+
+- **Actividades complementarias:** caracterización de los errores sistemáticos de la odometría mediante recorridos de prueba en trayectorias cerradas, según el procedimiento de Borenstein y Feng [9], y medición del error de posición en los puntos de referencia de cada segmento.
+- **Objetivos específicos cubiertos:** OE5.
+- **Producto verificable:** el esquema de navegación progresiva implementado (seguimiento de línea, odometría, fusión de sensores inerciales y puntos de re-localización absoluta), validado por segmentos con mediciones de error de posición.
+- **Entregable de la fase:** navegación validada por segmentos con mediciones de error de posición.
+
+### III.3.5 Fase V: Aplicación y backend (5 semanas)
+
+La quinta fase desarrolló la interfaz con el usuario y el registro de las entregas, y atendió el OE6.
+
+- **Actividades:** desarrollo de la aplicación móvil/web de solicitudes en Flutter, con catálogo de componentes, creación de pedidos, seguimiento del estado del robot en tiempo real e historial de entregas; integración con el backend en la nube para la autenticación de usuarios con roles diferenciados (solicitante y encargado del almacén), la base de datos de pedidos y entregas, y el envío de notificaciones *push*; y conexión de la aplicación con el broker MQTT para enviar órdenes y recibir el estado y las alertas del robot.
+- **Objetivos específicos cubiertos:** OE6.
+- **Producto verificable:** la aplicación móvil/web de solicitudes integrada con el backend de trazabilidad, con catálogo de componentes, seguimiento del robot en tiempo real, historial de entregas y notificaciones.
+- **Entregable de la fase:** aplicación integrada con el backend y con trazabilidad de entregas.
+
+### III.3.6 Fase VI: Integración y sistema de alertas (3 semanas)
+
+La sexta fase unió los subsistemas y completó el módulo de seguridad, y atendió el OE7.
+
+- **Actividades:** ensamblaje del prototipo completo e integración hardware–firmware–aplicación; calibración del acelerómetro de la MPU-6050 en reposo y en movimiento normal [7]; definición de los umbrales de detección de manipulación a partir de la magnitud de la aceleración medida mientras el robot no está en misión, según lo expuesto en la sección II.2.10.1; generación de la alerta con la última ubicación conocida y su publicación con QoS 2; y configuración del broker con autenticación de usuario y contraseña y cifrado TLS para el intercambio de mensajes.
+- **Objetivos específicos cubiertos:** OE7.
+- **Producto verificable:** el módulo de alertas de seguridad anti-manipulación basado en el acelerómetro, con sus umbrales de detección definidos y la evaluación de su tasa de detección y su tasa de falsas alarmas.
+- **Entregable de la fase:** prototipo integrado con el sistema de alertas operativo.
+
+### III.3.7 Fase VII: Pruebas, validación y documentación (5 semanas)
+
+La última fase evaluó el sistema integrado frente a los criterios de validación y cerró la documentación, y atendió el OE8 y el OE9.
+
+- **Actividades:** ejecución en la maqueta del protocolo de pruebas de la sección III.4, con un mínimo de 20 repeticiones por ensayo; análisis de los resultados según la sección III.5; identificación de las limitaciones técnicas observadas durante los ensayos y formulación de mejoras orientadas a la escalabilidad del sistema y a su adaptación a otros entornos; y redacción final del Trabajo de Grado y preparación de la defensa.
+- **Objetivos específicos cubiertos:** OE8 y OE9.
+- **Productos verificables:** la evaluación del desempeño integral del sistema: informe de resultados de las pruebas en maqueta (precisión de navegación, latencia y fiabilidad de la comunicación, autonomía energética y eficacia de las alertas); y la documentación de las limitaciones técnicas del sistema y la propuesta de mejoras futuras orientadas a su escalabilidad y a su adaptación a otros entornos de aplicación.
+- **Entregable de la fase:** informe de resultados, documento del Trabajo de Grado y material de defensa.
+
+### III.3.8 Resumen de trazabilidad del procedimiento
+
+La Tabla 4 resume, para cada fase, su duración, los objetivos específicos que cubre, sus actividades clave y el entregable con el que culmina. Se verifica que los nueve objetivos específicos quedan cubiertos y que la suma de las duraciones es de 32 semanas.
+
+| Fase | Duración | OE cubiertos | Actividades clave | Entregable |
+| --- | --- | --- | --- | --- |
+| I. Investigación y diseño conceptual | 4 semanas | OE2 | Revisión bibliográfica, entrevista y observación, requerimientos, matriz comparativa de hardware | Documento de requerimientos y tabla comparativa de componentes |
+| II. Diseño mecánico y electrónico | 4 semanas | OE1, OE3 | CAD del chasis, esquema electrónico, diagrama de bloques, tópicos y niveles de QoS | Planos del chasis, diagrama electrónico y diagrama de bloques del sistema |
+| III. Firmware de control y comunicaciones | 6 semanas | OE3, OE4 | Impresión y montaje, PWM y PID, adquisición de sensores, cliente MQTT, reglas de seguridad | Firmware funcional con pruebas unitarias de lectura, control y transmisión |
+| IV. Navegación progresiva | 5 semanas | OE5 | Registro y mapa relativo, segmentación con *fallback*, fusión de sensores, re-localización BLE | Navegación validada por segmentos con mediciones de error de posición |
+| V. Aplicación y backend | 5 semanas | OE6 | Catálogo, pedidos, seguimiento, historial, autenticación, base de datos y notificaciones | Aplicación integrada con el backend y con trazabilidad de entregas |
+| VI. Integración y sistema de alertas | 3 semanas | OE7 | Integración hardware–firmware–aplicación, calibración del acelerómetro, umbrales, broker con TLS | Prototipo integrado con el sistema de alertas operativo |
+| VII. Pruebas, validación y documentación | 5 semanas | OE8, OE9 | Ensayos en maqueta, análisis de resultados, limitaciones y mejoras, redacción final | Informe de resultados, documento del Trabajo de Grado y material de defensa |
+| **Total** | **32 semanas** | **OE1 a OE9** | | |
+
+**Tabla 4.** Resumen de trazabilidad de las fases del procedimiento metodológico.
+
+*Fuente: elaboración propia a partir de la propuesta del Trabajo de Grado y del reporte de productos.*
 
 ## III.4 Técnicas e instrumentos de recolección de datos
 
 ### III.4.1 Técnicas e instrumentos
 
-Siguiendo a Arias \[2\], una **técnica** es el procedimiento o la forma particular de obtener datos o información, y un **instrumento** es el recurso, dispositivo o formato (en papel o digital) que se utiliza para obtener, registrar o almacenar esa información. La tabla separa ambos conceptos para cada fuente de datos del proyecto.
+Arias [3] define la técnica de recolección de datos como el procedimiento o la forma particular de obtener información, y el instrumento como el recurso, dispositivo o formato, en papel o digital, que se utiliza para obtener, registrar o almacenar esa información. La Tabla 5 relaciona las técnicas empleadas con sus instrumentos y con la fase en la que se aplicaron.
 
-| # | Técnica | Instrumento | Qué se registra | Dónde queda |
-|---|---|---|---|---|
-| 1 | **Entrevista semiestructurada** | Guía de 13 preguntas en 5 bloques: el pedido de hoy, dónde están las cosas, quién y cómo, el robot en el laboratorio y material | Demanda, tamaño y peso de los pedidos, horarios, reglas, red Wi-Fi, carga, preocupaciones de seguridad | `docs/requerimientos/borrador-requerimientos.md`; `TG.entrevista` (realizada el 14/11/2026) |
-| 2 | **Observación directa** | Hoja de observación de 10 aspectos (recorrido, pasillos, piso, luz, obstáculos, estantes, demanda, Wi-Fi, carga, fotos) | Medidas y condiciones del entorno de operación | `TG.observacion`; resultados **[POR COMPLETAR]** |
-| 3 | **Revisión documental** | Hojas de datos de los componentes (ESP32-WROOM-32, JGA25-371, L298N, HC-SR04P, TCRT5000, BMS 3S) y la especificación MQTT 3.1.1 \[3\] | Parámetros eléctricos y límites de operación | Capítulo II; `docs/tomo/objetivo-2-seleccion-hardware.md`; `docs/sensores.md` |
-| 4 | **Experimentación en simulación (SIL)** | Banco de pruebas P01, simuladores (P02 Inspector Hardware 3D, P03 radar ultrasónico, P05 Gemelo Digital y P06 Ruta Lineal), pruebas del firmware en el PC (10 escenarios, T1–T10), pruebas de la app (`flutter test`, 173/173) | Resultados de pruebas, tiempos, conteos de mensajes | `prototipos/*/evidencias/`, `prototipos/P01-mqtt-base/datos/*.csv`, `firmware/pruebas_pc/` |
-| 5 | **Medición en banco y campo (HIL)** | Monitor Serie (115200), MQTTX, multímetro, cinta métrica, cronómetro y video; plantilla `prototipos/P02-sensores/README.md`; lista de cotejo eléctrica y de flasheo | Calibración ADC, exactitud de distancia, latencia de parada, tensión de corte, repeticiones | `docs/guia_pruebas_lab.md`, `docs/checklist_hardware.md`, `docs/checklist_flasheo.md`, `docs/sensores.md` |
-| 6 | **Registro automático de sesión** | Analítica de Sesión de la app (P12) con exportación CSV | Velocidad media y máxima, distancia frontal mínima válida, error medio absoluto de línea, paquetes y paradas de emergencia | Archivo `sesion_robot_AAAAMMDD_HHMMSS.csv` por sesión |
-| 7 | **Registro de proceso** | Bitácora semanal y registro de decisiones | Qué se hizo, qué se aprendió, qué sigue y por qué se decidió | Páginas *Bitácora* y *Decisiones*; historial de Git |
+| Técnica | Instrumento | Información registrada | Fase |
+| --- | --- | --- | --- |
+| Revisión documental | Registro de búsquedas documentales y fichas de análisis de trabajos de grado | Fuentes del marco teórico, antecedentes y parámetros de los componentes | I |
+| Entrevista semiestructurada | Guía de entrevista organizada por bloques temáticos | Demanda de componentes, horarios, reglas del almacén, red inalámbrica y preocupaciones de seguridad | I |
+| Observación directa | Hoja de observación del entorno | Recorrido, distancias, piso, iluminación, obstáculos y cobertura Wi-Fi | I |
+| Pruebas unitarias | Casos de prueba del firmware y de la aplicación | Correcta lectura de sensores, cálculo del control y formato de los mensajes | III y V |
+| Medición experimental en maqueta | Plantillas de ensayo, cinta métrica, cronómetro, multímetro y video | Error de posición, tiempos, tensión y corriente de la batería, distancias de parada | III a VII |
+| Registro automático de mensajes | Cliente MQTT de pruebas y archivos de registro en formato CSV | Marcas de tiempo, nivel de QoS, mensajes enviados, recibidos y duplicados | II, VI y VII |
+| Registro del proceso | Bitácora semanal y registro de decisiones técnicas | Actividades, decisiones, justificación y evidencia de cada fase | I a VII |
 
-### III.4.2 Características de los instrumentos de medición
+**Tabla 5.** Técnicas e instrumentos de recolección de datos.
 
-| Instrumento | Magnitud | Resolución / observación |
-|---|---|---|
-| Multímetro | Tensión de batería | **[POR COMPLETAR: modelo y resolución]**. Se usa para contrastar la lectura del ADC (divisor 100 kΩ / 22 kΩ) |
-| Cinta métrica | Distancia de parada y exactitud de los HC-SR04P | Resolución de 1 mm; se registran 5 lecturas por distancia |
-| Cronómetro / video | Tiempos de parada y de confirmación | **[POR COMPLETAR: resolución]**; el video permite medir cuadro a cuadro |
-| HC-SR04P | Distancia (2 a 400 cm) | Los dos sensores se leen alternados cada 100 ms (cada uno cada 200 ms); fallo declarado tras 3 lecturas sin eco (600 ms) |
-| Encoders de los motores | Velocidad de rueda | 937 cuentas por vuelta de rueda con cuadratura (11 × 21,3 × 4) |
-| Reloj interno del ESP32 (`millis()`) | Marca de tiempo `t` de cada mensaje | Reloj del robot, distinto del reloj del teléfono: no se mezclan en el cálculo de latencias |
+*Fuente: elaboración propia a partir de [3].*
 
-### III.4.3 Plan de análisis de los datos
+### III.4.2 Operacionalización de los criterios de validación
 
-1. **Estadística descriptiva** por prueba: media, desviación estándar muestral, mínimo y máximo, con *n* ≥ 20 repeticiones (RNF-08).
-2. **Comparación con el criterio de aceptación** definido en la sección III.3.3; se reporta cuántas repeticiones lo cumplen.
-3. **Tasas de éxito con su incertidumbre.** Cero fallos en *n* repeticiones no prueba una tasa de fallo igual a cero: con *n* = 20 solo permite afirmar una tasa de fallo de **hasta ≈ 14 %** (límite superior unilateral al 95 %, método exacto de Clopper y Pearson \[4\]); con *n* = 50, hasta **≈ 6 %**. Por eso el resultado de P01 (50/50 en simulación) se presenta como evidencia de la lógica del protocolo, no como la fiabilidad del sistema real. **[VERIFICAR con el tutor el método estadístico y el nivel de confianza.]**
-4. **Presentación** en tablas y gráficos generados a partir de los CSV de cada sesión, que se conservan como anexo.
-5. **Condiciones registradas en cada sesión:** fecha, responsable, *commit* del firmware, tensión inicial de batería, tipo de piso y luz.
+Los siete criterios de validación de la propuesta se operacionalizaron como métricas cuantitativas, en correspondencia con las métricas de desempeño definidas en la sección II.2.12. Para cada una se fijó, antes de medir, una unidad, un instrumento, un procedimiento de ensayo y un criterio de aceptación. Los criterios de aceptación de la Tabla 6 son valores estimados a partir de los parámetros nominales de diseño de la Tabla 2 y de la literatura citada, y constituyen el umbral con el que se contrastaron los resultados de la fase VII.
 
-## III.5 Fases de la metodología
+| Criterio | Métrica y unidad | Instrumento | Procedimiento de ensayo | Criterio de aceptación estimado |
+| --- | --- | --- | --- | --- |
+| 1. Precisión de navegación | Error de posición ep: medio, máximo y RMSE (cm) | Cinta métrica, puntos de referencia y registro de la pose estimada | Recorrer la ruta en modo híbrido o autónomo y medir en cada punto de referencia la distancia entre la posición estimada y la real; 20 recorridos | Error medio ≤ 5 cm y error máximo ≤ 10 cm en los puntos de referencia |
+| 2. Tasa de éxito por segmento | Segmentos completados sin volver al modo línea / segmentos intentados (%) | Registro de eventos de *fallback* del robot | Intentar cada segmento sin línea y contar los que se completan sin *fallback*; 20 intentos por segmento | ≥ 80 % por segmento |
+| 3. Tiempo de entrega | Duración del ciclo solicitud–entrega (s) | Marcas de tiempo de la aplicación y cronómetro | Ejecutar el ciclo completo en modo línea puro y en modo híbrido o autónomo; 20 ciclos por modo | Ciclo completo ≤ 180 s y modo híbrido no más de 10 % más lento que el modo línea |
+| 4. Robustez de las alertas | Tasa de detección TD y tasa de falsas alarmas TFA (%); tiempo hasta la notificación (s) | Matriz de confusión, registro de alertas y cronómetro | Provocar manipulaciones controladas (levantamiento, empuje y giro) con el robot fuera de misión y realizar recorridos normales sin manipulación; 20 eventos de cada tipo | TD ≥ 95 %, TFA ≤ 5 % y notificación en ≤ 5 s |
+| 5. Consumo energético | Autonomía taut (h) y corriente media (A) | Multímetro, lectura de tensión de la batería y cronómetro | Operar el robot en ciclos de entrega continuos desde carga completa (12,6 V) hasta el corte de protección (9,9 V) | Autonomía ≥ 2 h de operación continua |
+| 6. Recuperación ante fallo | Tiempo hasta alcanzar un modo seguro (s) y porcentaje de recuperaciones exitosas | Registro de estados del robot, video y cronómetro | Inducir pérdida de línea, desviación sobre el umbral, obstáculo frontal y pérdida de conexión; 20 eventos de cada tipo | Modo seguro en ≤ 2 s con 100 % de éxito; desconexión detectada en ≤ 30 s |
+| 7. Latencia de comunicación | RTT de los mensajes MQTT: mediana y percentil 95 (ms) y tasa de entrega (%), por nivel de QoS | Cliente MQTT de pruebas con marcas de tiempo en un mismo dispositivo y registro CSV | Enviar 200 mensajes de eco por nivel de QoS (0, 1 y 2) en tres sesiones en la red local del laboratorio | Mediana ≤ 200 ms (QoS 0), ≤ 300 ms (QoS 1) y ≤ 500 ms (QoS 2); percentil 95 ≤ 1 000 ms; entrega del 100 % con QoS 1 y 2 |
 
-### III.5.1 Visión general
+**Tabla 6.** Operacionalización de los criterios de validación.
 
-El trabajo se organiza en **7 fases** durante **32 semanas** (26/10/2026 al 11/06/2027). La semana de parciales (11 al 16/01/2027) se usa como semana extra de trabajo de la Fase III.
+*Fuente: elaboración propia a partir de los criterios de validación de la propuesta y de la Tabla 9 del Capítulo II.*
 
-| Fase | Período | Semanas | Objetivo | Hito |
-|---|---|---|---|---|
-| I. Revisión y levantamiento | 26 oct – 20 nov 2026 | 1 a 4 | Definir requerimientos y seleccionar el hardware | Documento de requerimientos y matriz de hardware |
-| II. Diseño del sistema | 23 nov – 18 dic 2026 | 5 a 8 | Diseñar la arquitectura, el chasis y el esquema electrónico | Planos del chasis, diagramas y arquitectura de red |
-| III. Construcción y firmware | 21 dic 2026 – 5 feb 2027 | 9 a 14 | Montar la plataforma y programar PID, sensores y cliente MQTT | Plataforma armada y firmware funcional |
-| IV. Navegación progresiva | 8 feb – 12 mar 2027 | 15 a 19 | Mapeo relativo, fusión de sensores y re-localización | Navegación validada con medición de errores |
-| V. App y backend | 15 mar – 16 abr 2027 | 20 a 24 | Aplicación, Firebase, notificaciones y trazabilidad | Aplicación integrada y funcional |
-| VI. Integración y alertas | 19 abr – 7 may 2027 | 25 a 27 | Unir hardware y software; evaluar falsas alarmas | Prototipo integrado con alertas |
-| VII. Pruebas y redacción final | 10 may – 11 jun 2027 | 28 a 32 | Ensayos con ≥ 20 repeticiones, análisis y redacción | Entrega del Trabajo de Grado |
+### III.4.3 Protocolo de pruebas
 
-### III.5.2 Ciclo que se repite en cada prototipo
+Para que los ensayos fueran comparables entre sí, cada sesión de pruebas siguió un mismo protocolo:
 
-1. **Definir** el requerimiento y su criterio de aceptación (sección III.3.3).
-2. **Simular (SIL):** probar la lógica en el navegador o en el PC antes de tener el hardware.
-3. **Implementar** en el firmware o en la aplicación, con control de versiones.
-4. **Medir (HIL o campo)** con la plantilla de mediciones y el número de repeticiones previsto.
-5. **Decidir y documentar:** registrar la decisión con su evidencia, actualizar la bitácora y la ficha del prototipo.
-6. **Revisar:** cada cambio se integra mediante *Pull Request* revisado por la otra integrante del equipo.
+1. **Preparación:** cargar la batería hasta 12,6 V, verificar la calibración de los sensores de línea sobre la cinta y sobre el piso, comprobar la conexión con el broker y anotar la versión del firmware y de la aplicación.
+2. **Registro de condiciones:** anotar la fecha, las responsables, la tensión inicial de la batería, el tipo de piso, la iluminación y la intensidad de la señal Wi-Fi en el punto de origen.
+3. **Ejecución:** realizar el ensayo el número de veces establecido en la Tabla 6, sin modificar parámetros del firmware entre repeticiones de una misma serie.
+4. **Registro de resultados:** anotar cada repetición en la plantilla del ensayo y conservar los archivos de registro de mensajes y los videos como evidencia.
+5. **Cierre:** anotar las incidencias y descartar solo las repeticiones invalidadas por una causa externa documentada, como un corte de energía del laboratorio o la caída de la red institucional.
 
-### III.5.3 Detalle por fase
+La latencia se midió como tiempo de ida y vuelta (RTT) en un mismo dispositivo, lo que evita la necesidad de sincronizar los relojes del robot y de la aplicación, según lo expuesto en la sección II.2.12. Cada mensaje de eco se discriminó por nivel de QoS, ya que el número de paquetes intercambiados por cada nivel condiciona el retardo y la probabilidad de pérdida [10].
 
-**Fase I · Revisión y levantamiento (en curso)**
-- *Actividades:* revisión documental, entrevista al encargado del taller (14/11/2026), observación en el laboratorio, prueba H0 de Wi-Fi, selección y compra de hardware, prototipos P01, P02 y P04 en simulación, firmware integrado (P07), Gemelo Digital (P05) y App Flutter (P09).
-- *Instrumentos:* guía de entrevista, hoja de observación, hojas de datos, banco de pruebas P01.
-- *Producto:* documento de requerimientos y matriz de hardware v2 (20/11/2026).
-- *Criterio de cierre:* requerimientos con criterio de aceptación; hardware pedido; P01 cerrado (7/7 pruebas, 50/50 pedidos en simulación).
+## III.5 Análisis de datos y validación
 
-**Fase II · Diseño del sistema**
-- *Actividades:* especificación de tópicos MQTT y QoS (`docs/arquitectura/topicos-mqtt.md`), modelado CAD del chasis, esquemas electrónicos, P14 (Balizas BLE (Extremos)), compilación del firmware con el core ESP32 en el Arduino IDE. El hardware pedido llega a Miami entre el 15 y el 28 de diciembre de 2026 (luego falta el envío a Venezuela), por lo que las primeras mediciones HIL caen entre el final de esta fase y el inicio de la siguiente.
-- *Criterio de cierre:* planos y esquemas revisados por el tutor; arquitectura MQTT documentada; firmware compilado sin errores en el Arduino IDE.
+Los datos de cada ensayo se procesaron con estadística descriptiva y se compararon con el criterio de aceptación correspondiente de la Tabla 6, de la siguiente manera:
 
-**Fase III · Construcción y firmware**
-- *Actividades:* impresión 3D y montaje, calibración inicial de sensores (`prototipos/P02-sensores/README.md`), calibración del PID (primero KP y luego KD), pruebas H1 a H10 de seguridad (obstáculos, fallo de sensor, inactividad, corte por batería, órdenes duplicadas).
-- *Criterio de cierre:* plataforma armada, calibración registrada y firmware pasando las pruebas HIL de seguridad con repeticiones anotadas.
+- **Magnitudes continuas** (error de posición, tiempos, latencia y autonomía): se calcularon la media, la desviación estándar muestral, el mínimo, el máximo y, cuando correspondía, la mediana y el percentil 95. Para el error de posición se reportaron además el error máximo y la raíz del error cuadrático medio (RMSE), que penaliza más los errores grandes [11]. La incertidumbre de las mediciones directas se estimó a partir de la resolución de cada instrumento [12].
+- **Proporciones** (tasa de éxito por segmento, tasa de entrega de mensajes, TD, TFA y recuperaciones exitosas): se calcularon como porcentaje y se acompañaron de su intervalo de confianza al 95 % por el método exacto de Clopper y Pearson [13]. Este tratamiento es necesario porque un resultado sin fallos en una muestra pequeña no demuestra una tasa de fallo nula: con 20 repeticiones sin fallos solo puede afirmarse, con 95 % de confianza, una tasa de fallo de hasta aproximadamente 14 %; con 50, de hasta aproximadamente 6 %.
+- **Alertas:** los eventos se clasificaron en una matriz de confusión (verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos), de la que se obtuvieron la TD y la TFA, según la sección II.2.10.2 [14].
+- **Comparaciones:** el tiempo de entrega y el error de posición se compararon entre el modo línea puro y el modo híbrido o autónomo, y la latencia y la tasa de entrega se compararon entre los niveles de QoS 0, 1 y 2. Cada comparación se presentó con la diferencia absoluta y relativa entre las medias y con la dispersión de cada grupo.
 
-**Fase IV · Navegación progresiva**
-- *Actividades:* mapeo relativo, pruebas híbridas, fusión de sensores (filtro de Kalman) y re-localización con la técnica elegida en P14.
-- *Criterio de cierre:* error de posición medido y dentro del criterio de RF-04 (**[POR COMPLETAR: valor en cm]**).
+Un criterio se consideró cumplido cuando el estadístico de interés satisfizo el umbral de la Tabla 6; en el caso de las proporciones, se reportó además el límite del intervalo de confianza para mostrar el grado de certeza del resultado. Los resultados se presentaron en tablas y gráficos generados a partir de los archivos de registro de cada sesión. La Tabla 7 resume el tratamiento aplicado a cada criterio.
 
-**Fase V · App y backend**
-- *Actividades:* aplicación Flutter con usuarios y dos roles (solicitante y encargado), Firebase, notificaciones, historial de pedidos y entregas (RF-09 a RF-11). Al 19/11/2026 existe una maqueta local de los roles (Operador y Administrador, en memoria y sin backend, sección III.3.6); la autenticación real, el catálogo y la trazabilidad siguen pendientes.
-- *Criterio de cierre:* notificación en ≤ 5 s y registro consultable de cada pedido y entrega.
+| Criterio | Estadísticos reportados | Comparación |
+| --- | --- | --- |
+| Precisión de navegación | Media, máximo y RMSE de ep | Modo línea frente a modo híbrido o autónomo, por segmento |
+| Tasa de éxito por segmento | Porcentaje e intervalo de Clopper-Pearson al 95 % | Entre segmentos de la ruta |
+| Tiempo de entrega | Media, desviación estándar, mínimo y máximo | Modo línea frente a modo híbrido o autónomo |
+| Robustez de las alertas | TD y TFA con su intervalo al 95 %; media del tiempo de notificación | Por tipo de manipulación |
+| Consumo energético | Autonomía media y corriente media | Frente a la autonomía estimada en el diseño |
+| Recuperación ante fallo | Media y máximo del tiempo; porcentaje de éxito | Por tipo de fallo inducido |
+| Latencia de comunicación | Mediana, percentil 95 y tasa de entrega | Entre QoS 0, QoS 1 y QoS 2 |
 
-**Fase VI · Integración y alertas**
-- *Actividades:* integración completa, calibración del acelerómetro y evaluación de falsas alarmas antirrobo (RF-08), broker privado con usuario, contraseña y TLS (RNF-05).
-- *Criterio de cierre:* prototipo integrado; falsas alarmas ≤ **[POR COMPLETAR]** en **[POR COMPLETAR]** recorridos.
+**Tabla 7.** Tratamiento de los datos por criterio de validación.
 
-**Fase VII · Pruebas y redacción final**
-- *Actividades:* ensayos con al menos 20 repeticiones por prueba (RNF-08), análisis estadístico según la sección III.4.3, redacción del tomo y preparación de la defensa.
-- *Criterio de cierre:* todos los requerimientos con su registro HIL o de campo y entrega del Trabajo de Grado el 11/06/2027.
+*Fuente: elaboración propia.*
 
-## III.6 Validez, confiabilidad y limitaciones
+## III.6 Cronograma de ejecución
 
-**Validez.** Los criterios de aceptación se fijan antes de medir. La simulación (SIL) y la prueba física (HIL) se reportan por separado y no se mezclan. Los parámetros supuestos del simulador (por ejemplo, el factor de carga del motor, 0,8, y los valores ADC de piso y cinta, 500 y 3300) se declaran como supuestos y se reemplazan por valores medidos.
+El cronograma se estimó en 32 semanas, dentro del rango reglamentario de la Escuela (mínimo 20 y máximo 52 semanas), contadas a partir del inicio del Trabajo de Grado. La Tabla 8 presenta la duración y el período de cada fase.
 
-**Confiabilidad.** Repetibilidad con al menos 20 repeticiones, condiciones de cada sesión registradas y datos crudos conservados (CSV). El código de las pruebas automáticas se ejecuta en cada *push* mediante GitHub Actions, de modo que la lógica validada en SIL no cambia sin que se note.
+| Fase | Descripción | Semanas | Período | Duración |
+| --- | --- | --- | --- | --- |
+| I | Investigación y diseño conceptual | 1 a 4 | 26 oct. – 20 nov. 2026 | 4 semanas |
+| II | Diseño mecánico y electrónico | 5 a 8 | 23 nov. – 18 dic. 2026 | 4 semanas |
+| III | Firmware de control y comunicaciones (PID, sensores, MQTT) | 9 a 14 | 21 dic. 2026 – 5 feb. 2027 | 6 semanas |
+| IV | Navegación progresiva (odometría, fusión de sensores, re-localización) | 15 a 19 | 8 feb. – 12 mar. 2027 | 5 semanas |
+| V | Aplicación de solicitudes y backend de trazabilidad | 20 a 24 | 15 mar. – 16 abr. 2027 | 5 semanas |
+| VI | Integración del sistema y módulo de alertas | 25 a 27 | 19 abr. – 7 may. 2027 | 3 semanas |
+| VII | Pruebas, validación y documentación final | 28 a 32 | 10 may. – 11 jun. 2027 | 5 semanas |
+| | **Total** | **1 a 32** | **26 oct. 2026 – 11 jun. 2027** | **32 semanas** |
 
-**Limitaciones conocidas** (todas documentadas en el repositorio):
+**Tabla 8.** Cronograma de ejecución por fases.
 
-- Los resultados de P01 (50/50 pedidos, 22 s de detección de desconexión) son de **simulación**; falta repetirlos con el ESP32 real.
-- Se usa un **broker público** (HiveMQ, EMQX o Mosquitto) solo para desarrollo; la latencia depende de internet y no se garantiza en la prueba final. Para esta se prevé un broker privado con TLS.
-- La red Wi-Fi de la UCAB pide usuario y clave (WPA2-Enterprise) y el firmware actual usa Wi-Fi simple: se probará con la red interna del laboratorio y se evaluará soporte empresarial.
-- La pista del simulador es **provisional** hasta medir el laboratorio.
-- Con los ultrasonidos alternados, cada sensor se refresca cada 200 ms; el efecto sobre la distancia de parada debe medirse (prueba H2).
-- No se ha comprobado con los módulos reales que, sin objeto en rango, el HC-SR04P entregue el pulso de espera que el firmware interpreta como sensor sano.
-- El Mapa de Pista, la velocidad de 0,40 m/s, la descarga lineal de la batería y la reducción gradual de velocidad entre 20 y 50 cm son **simulaciones del Modo Demo**. El robot real no tiene localización absoluta y su firmware solo avisa en esa zona.
-- Los roles de la aplicación son una maqueta local en memoria: no hay autenticación real ni persistencia, y las contraseñas no se protegen.
-- La MPU-6050 **[PENDIENTE DE INTEGRACIÓN EN FIRMWARE]**: el módulo antirrobo (RF-08) y el *heading hold* de los tramos sin cinta no tienen resultados.
-- Al entrar al Modo Demo la aplicación desconecta el MQTT real y no lo reconecta al salir.
+*Fuente: elaboración propia a partir de la propuesta del Trabajo de Grado.*
 
-**Consideraciones éticas.** La entrevista se realizó a personal de la universidad con fines académicos. **[POR COMPLETAR: consentimiento informado, uso del nombre del entrevistado, permiso para fotografías en el laboratorio.]** El repositorio no contiene credenciales: las claves de Wi-Fi y del broker viven en un archivo local excluido del control de versiones.
+El período de receso académico de fin de año se absorbió dentro de la fase III, cuya duración de seis semanas es la mayor del cronograma, y la semana de evaluaciones parciales de enero se empleó como semana adicional de trabajo de esa misma fase.
 
-## III.7 Referencias del capítulo y pendientes
+## III.7 Validez, confiabilidad y consideraciones éticas
 
-### Referencias
+**Validez.** Los criterios de aceptación se fijaron antes de realizar las mediciones, a partir de los criterios de validación de la propuesta, lo que evita ajustar los umbrales a los resultados obtenidos. Las métricas se definieron de forma operativa con base en el Capítulo II, y los valores de referencia de la posición se obtuvieron con instrumentos independientes del robot.
 
-> Citas en formato **IEEE** (numéricas, por orden de primera aparición en este capítulo), igual que los Capítulos I y II y el Marco teórico. **[VERIFICAR: ciudad y editorial de [1] y [2] en la portada de cada ejemplar, y la página de las citas a [1] y [2].]**
+**Confiabilidad.** Cada ensayo se repitió como mínimo 20 veces bajo un protocolo común, se registraron las condiciones de cada sesión y se conservaron los datos crudos de cada repetición. El código del firmware y de la aplicación se mantuvo bajo control de versiones, de modo que cada sesión de pruebas pudiera asociarse con la versión exacta del programa que se evaluó.
 
-\[1\] J. Hurtado de Barrera, *Metodología de la investigación: Guía para una comprensión holística de la ciencia*, 4.ª ed. **[VERIFICAR: ciudad]**: Quirón Ediciones, 2010.
+**Consideraciones éticas.** La entrevista y la observación con el personal del laboratorio tuvieron fines exclusivamente académicos; los participantes fueron informados del propósito del estudio y en el documento no se publican sus nombres ni sus datos personales. Las credenciales de la red inalámbrica y del broker se mantuvieron fuera del código fuente y de los documentos del Trabajo de Grado.
 
-\[2\] F. G. Arias, *El proyecto de investigación: Introducción a la metodología científica*, 6.ª ed. **[VERIFICAR: ciudad]**: Episteme, 2012.
+# Bibliografía
 
-\[3\] A. Banks y R. Gupta, Eds., *MQTT Version 3.1.1*, OASIS Standard, 29 oct. 2014. \[En línea\]. Disponible: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html
+[1] J. Hurtado de Barrera, *Metodología de la investigación: guía para una comprensión holística de la ciencia*, 4.ª ed. Caracas, Venezuela: Quirón Ediciones, 2010.
 
-\[4\] C. J. Clopper y E. S. Pearson, “The use of confidence or fiducial limits illustrated in the case of the binomial,” *Biometrika*, vol. 26, n.º 4, pp. 404-413, dic. 1934, doi: 10.2307/2331986.
+[2] R. Hernández Sampieri, C. Fernández Collado y M. P. Baptista Lucio, *Metodología de la investigación*, 6.ª ed. México D. F., México: McGraw-Hill/Interamericana, 2014.
 
-### Pendientes para cerrar el capítulo
+[3] F. G. Arias, *El proyecto de investigación: introducción a la metodología científica*, 6.ª ed. Caracas, Venezuela: Episteme, 2012.
 
-1. ~~Copiar el objetivo general y los específicos del Capítulo I (sección III.1).~~ Hecho el 19/11/2026 (versión resumida; el texto completo está en el Capítulo I).
-2. Confirmar con la Escuela el término y la definición oficial de "Proyecto Especial" y citarla en la sección III.2.1. Con una búsqueda pública no se encontró una definición publicada con ese nombre. Documentos a consultar: la [página de Trabajo de Grado de la Escuela](https://ingenieria.ucab.edu.ve/telecomunicaciones/la-escuela/caracas/procesos-academicos/trabajo-de-grado/), el [Reglamento del Trabajo de Grado de la Facultad de Ingeniería](https://ingenieria.ucab.edu.ve/telecomunicaciones/wp-content/uploads/sites/5/2022/06/1.-Reglamento-del-TG-de-la-Facultad-de-Ingenieria.pdf) y el [Instructivo para elaborar el documento del TG](https://ingenieria.ucab.edu.ve/telecomunicaciones/wp-content/uploads/sites/5/2022/06/5.-Instructivo-para-Elaborar-Documento-Libro-Articulo-y-CD-del-TG-de-la-Escuela-de-Ingenieria-en-Telecomunicaciones.pdf) (este último puede indicar el estilo de citas exigido).
-3. Completar los resultados de la visita de observación y de la prueba H0 de Wi-Fi (sección III.3.4).
-4. Definir los valores marcados con **?** en la tabla III.3.3: error de posición (RF-04), falsas alarmas y recorridos (RF-08), autonomía mínima (RNF-02).
-5. Anotar modelo y resolución del multímetro y del cronómetro (sección III.4.2).
-6. Redactar las consideraciones éticas (consentimiento y fotografías).
-7. Confirmar con el tutor el método estadístico (sección III.4.3).
-8. ~~Unificar el estilo de citas del tomo.~~ Hecho el 19/11/2026: este capítulo pasó a **IEEE**, como los Capítulos I y II y el Marco teórico. Falta confirmar ciudad y editorial de [1] y [2] y añadir la página a esas citas.
-9. ~~Definir el criterio de RF-05.~~ Corregido el 19/11/2026 a «< 20 cm» para coincidir con el firmware; falta medir la distancia final de parada con el robot real.
-10. Sustituir los supuestos del Modo Demo por mediciones del robot real y completar cada marca **[PENDIENTE DE MEDICIÓN FÍSICA]** con su registro HIL o de campo (fecha, condiciones y evidencia).
+[4] R. Ramirez, C.-Y. Huang, C.-A. Liao, P.-T. Lin, H.-W. Lin y S.-H. Liang, “A practice of BLE RSSI measurement for indoor positioning,” *Sensors*, vol. 21, n.º 15, art. 5181, 2021, doi: 10.3390/s21155181.
+
+[5] A. Banks, E. Briggs, K. Borgendale y R. Gupta, Eds., *MQTT Version 5.0*, OASIS Standard, 7 mar. 2019. [En línea]. Disponible: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html
+
+[6] K. J. Åström y R. M. Murray, *Feedback Systems: An Introduction for Scientists and Engineers*. Princeton, NJ, EE. UU.: Princeton University Press, 2008.
+
+[7] TDK InvenSense, *MPU-6000 and MPU-6050 Product Specification*, Rev. 3.4, 2013. Accedido: 9 nov. 2026. [En línea]. Disponible: https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050/
+
+[8] V. Ušinskis, M. Nowicki, A. Dzedzickis y V. Bučinskas, “Sensor-fusion based navigation for autonomous mobile robot,” *Sensors*, vol. 25, n.º 4, art. 1248, 2025, doi: 10.3390/s25041248.
+
+[9] J. Borenstein y L. Feng, “Measurement and correction of systematic odometry errors in mobile robots,” *IEEE Trans. Robot. Autom.*, vol. 12, n.º 6, pp. 869-880, dic. 1996, doi: 10.1109/70.544770.
+
+[10] S. Lee, H. Kim, D.-K. Hong y H. Ju, “Correlation analysis of MQTT loss and delay according to QoS level,” en *Proc. Int. Conf. Inf. Netw. (ICOIN)*, 2013, pp. 714-717, doi: 10.1109/ICOIN.2013.6496715.
+
+[11] R. Siegwart, I. R. Nourbakhsh y D. Scaramuzza, *Introduction to Autonomous Mobile Robots*, 2.ª ed. Cambridge, MA, EE. UU.: MIT Press, 2011.
+
+[12] Joint Committee for Guides in Metrology, *Evaluation of Measurement Data: Guide to the Expression of Uncertainty in Measurement*, JCGM 100:2008, Sèvres, Francia: BIPM, 2008.
+
+[13] C. J. Clopper y E. S. Pearson, “The use of confidence or fiducial limits illustrated in the case of the binomial,” *Biometrika*, vol. 26, n.º 4, pp. 404-413, dic. 1934, doi: 10.2307/2331986.
+
+[14] T. Fawcett, “An introduction to ROC analysis,” *Pattern Recognit. Lett.*, vol. 27, n.º 8, pp. 861-874, jun. 2006, doi: 10.1016/j.patrec.2005.10.010.

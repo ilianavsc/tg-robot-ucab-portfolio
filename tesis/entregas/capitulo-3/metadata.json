@@ -3,8 +3,12 @@
   "titulo": "Capítulo III · Marco Metodológico",
   "estado": "en_revision",
   "fecha_entrega": "Pendiente de confirmación de Escuela/tutor",
-  "archivo_original": null,
+  "fecha_version": "2026-11-27",
+  "archivo_original": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.docx",
+  "archivo_pdf": "tesis/entregas/capitulo-3/Capitulo III TG FERRER, SEMPRUN.pdf",
   "archivo_markdown": "tesis/capitulo_3.md",
-  "commit_referencia": "6addd08",
-  "notas": "Versión Markdown sincronizada en tesis/capitulo_3.md (commit 6addd08) con P01–P06, P10, MQTT v2.0.0, TG_ROBOT y rigor SIL/HIL. Revisión conjunta: Iliana y Andrea."
+  "paginas": "Portada + 2 de índices (i–ii) + 19 de contenido",
+  "tablas": 8,
+  "referencias": 14,
+  "notas": "Versión final redactada bajo Normas UCAB con el formato del Capítulo II (Times New Roman 12, interlineado 1,5, carta, márgenes de 2,5 cm, encabezado con el título y pie con número de página) y citas IEEE. Trazabilidad 1 a 1 con los 9 OE de la Propuesta, los 9 productos de T1, las 7 fases (32 semanas) y los 7 criterios de validación. Markdown sincronizado con el .docx."
 }
