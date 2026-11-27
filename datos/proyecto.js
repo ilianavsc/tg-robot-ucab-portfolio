@@ -460,7 +460,7 @@ window.TG = {
      pdfOficial / textoDescarga: archivo oficial que se enlaza SOLO como botón discreto en la cabecera del visor */
 
   /* Sección 1 · Entregas de Seminario de Grado (orden cronológico).
-     Para agregar T4 y T5 basta con añadir un objeto más al final con la misma forma;
+     Para agregar nuevas entregas basta con añadir un objeto más al final con la misma forma;
      la página tesis.html no necesita cambios. */
   tesisSeminario: [
     { num: "PROP", etiqueta: "Entrega", titulo: "Propuesta de Trabajo de Grado", estado: "entregado", notaEstado: "Agosto 2026", md: "tesis/propuesta_tg.md", tituloModal: "PROP · Propuesta de Trabajo de Grado",
@@ -474,7 +474,13 @@ window.TG = {
       resumen: "Nodo central «Robot Móvil UCAB» con 4 ramas: contexto del proyecto, requisitos teóricos, requisitos prácticos y requisitos metodológicos." },
     { num: "T3", etiqueta: "Tarea", titulo: "Marco teórico: estructura y desarrollo de un tema", estado: "entregado", notaEstado: "Octubre 2026 · Revisado en Seminario de Grado", md: "tesis/marco_teorico.md", tituloModal: "T3 · Marco teórico: estructura y desarrollo de un tema",
       pdfOficial: "tesis/entregas/t3-marco-teorico/MARCOTTT%20Semprun-Ferrer.pdf", textoDescarga: "⬇ PDF oficial",
-      resumen: "Entrega previa al Capítulo II: muestra cómo se organiza el marco teórico y desarrolla un tema completo, el protocolo MQTT (QoS, tópicos, sesión, LWT). Citas en IEEE." }
+      resumen: "Entrega previa al Capítulo II: muestra cómo se organiza el marco teórico y desarrolla un tema completo, el protocolo MQTT (QoS, tópicos, sesión, LWT). Citas en IEEE." },
+    { num: "T4", etiqueta: "Tarea", titulo: "Búsqueda de investigaciones (5 TEGs)", estado: "entregado", notaEstado: "10 oct. 2026", md: "tesis/t4_busqueda_tegs.md", tituloModal: "T4 · Búsqueda de investigaciones (5 TEGs)",
+      pdfOficial: "tesis/entregas/t4-busqueda-tegs/Reporte%20de%20investigacion%20de%20tesis%2B.pdf", textoDescarga: "⬇ PDF oficial",
+      resumen: "Análisis de 5 trabajos de grado (2 de la UCAB y 3 externos): problema, objetivos, teoría, método, resultados y aportes de cada uno al robot." },
+    { num: "T5", etiqueta: "Tarea", titulo: "Registro de búsquedas documentales", estado: "entregado", notaEstado: "10 oct. 2026", md: "tesis/t5_registro_busquedas.md", tituloModal: "T5 · Registro de búsquedas documentales",
+      pdfOficial: "tesis/entregas/t5-registro-busquedas/Registro%20de%20b%C3%BAsquedas%20documentales.pdf", textoDescarga: "⬇ PDF oficial",
+      resumen: "Tabla de 12 fuentes documentales con su referencia IEEE, año, formato, enlace, fecha de consulta y la sección del Capítulo II y el objetivo que sustenta." }
   ],
 
   /* Sección 2 · Capítulos del Trabajo de Grado */
