@@ -50,9 +50,9 @@ Según su propósito, la investigación es además proyectiva. Hurtado de Barrer
 
 Arias [5] define el diseño de la investigación como la estrategia general que adopta el investigador para responder al problema planteado, y distingue los diseños documental, de campo y experimental. El presente trabajo combina los tres:
 
-- **Diseño documental:** se empleó en la revisión de las fuentes que sustentan el marco teórico, de las hojas de datos de los componentes y de los estándares técnicos, así como en el registro de búsquedas documentales y en el análisis de cinco trabajos de grado previos.
-- **Diseño de campo:** se aplicó en el levantamiento de información directamente en el laboratorio de la Escuela mediante una entrevista semiestructurada al personal encargado del almacén de componentes, realizada el 14 de noviembre de 2026, y se complementa con la observación directa del recorrido, del piso, de la iluminación y de la cobertura de la red inalámbrica, cuyos resultados sirven para dimensionar la maqueta de ensayo.
-- **Diseño experimental:** se aplica en la evaluación del prototipo, en la que se manipulan de forma deliberada los factores del experimento, como el modo de navegación (línea pura, híbrido o autónomo en rutas conocidas) y el nivel de QoS de los mensajes (0, 1 o 2), y se mide su efecto sobre las variables de respuesta, como el error de posición, el tiempo de entrega y la latencia de comunicación, bajo condiciones controladas.
+- Diseño documental: se empleó en la revisión de las fuentes que sustentan el marco teórico, de las hojas de datos de los componentes y de los estándares técnicos, así como en el registro de búsquedas documentales y en el análisis de cinco trabajos de grado previos.
+- Diseño de campo: se aplicó en el levantamiento de información directamente en el laboratorio de la Escuela mediante una entrevista semiestructurada al personal encargado del almacén de componentes, realizada el 14 de noviembre de 2026, y se complementa con la observación directa del recorrido, del piso, de la iluminación y de la cobertura de la red inalámbrica, cuyos resultados sirven para dimensionar la maqueta de ensayo.
+- Diseño experimental: se aplica en la evaluación del prototipo, en la que se manipulan de forma deliberada los factores del experimento, como el modo de navegación (línea pura, híbrido o autónomo en rutas conocidas) y el nivel de QoS de los mensajes (0, 1 o 2), y se mide su efecto sobre las variables de respuesta, como el error de posición, el tiempo de entrega y la latencia de comunicación, bajo condiciones controladas.
 
 En una investigación aplicada, los objetivos pueden organizarse en un sistema de fases, tareas e hitos: las actividades y tareas constituyen la base del trabajo, se ordenan y agrupan en fases según su relación o dependencia, y cada fase concluye con un hito que indica su fin [2]. El desarrollo del prototipo sigue esta lógica mediante una estrategia iterativa e incremental: cada subsistema se diseña, se implementa y se verifica por separado antes de integrarse con los demás, de modo que cada fase culmina en un hito verificable y el riesgo técnico se reduce de manera progresiva. La lógica del firmware se verifica primero mediante pruebas unitarias ejecutadas en un computador y, después, en el hardware real con los sensores y los motores definitivos; los resultados de la verificación previa de la lógica no se extrapolan al desempeño físico del robot, que solo se reporta a partir de mediciones en el hardware y en la maqueta. La Tabla 1 resume la caracterización metodológica del estudio.
 
@@ -124,70 +124,70 @@ El procedimiento se organiza en siete fases, con una duración total de 32 seman
 
 La primera fase estableció la base documental y los requerimientos del sistema, y atendió el OE2.
 
-- **Tareas:** revisión bibliográfica de robótica móvil, control PID, fusión de sensores, protocolos de comunicación IoT y posicionamiento en interiores, que dio origen al marco teórico del Capítulo II; búsqueda y análisis de cinco trabajos de grado previos y registro de las búsquedas documentales; entrevista semiestructurada al personal encargado del almacén; definición de los requerimientos funcionales y no funcionales del sistema y de sus criterios de evaluación; y comparación y selección de los componentes de hardware según los criterios de costo, consumo energético, disponibilidad y compatibilidad.
-- **Objetivos específicos cubiertos:** OE2.
-- **Producto verificable:** el estudio comparativo de los componentes de hardware, con su tabla comparativa, y la selección del microcontrolador, el controlador de motores, los sensores y la batería según criterios de costo, consumo energético, disponibilidad y compatibilidad.
-- **Hito de la fase:** documento de requerimientos y tabla comparativa de componentes.
+- Tareas: revisión bibliográfica de robótica móvil, control PID, fusión de sensores, protocolos de comunicación IoT y posicionamiento en interiores, que dio origen al marco teórico del Capítulo II; búsqueda y análisis de cinco trabajos de grado previos y registro de las búsquedas documentales; entrevista semiestructurada al personal encargado del almacén; definición de los requerimientos funcionales y no funcionales del sistema y de sus criterios de evaluación; y comparación y selección de los componentes de hardware según los criterios de costo, consumo energético, disponibilidad y compatibilidad.
+- Objetivos específicos cubiertos: OE2.
+- Producto verificable: el estudio comparativo de los componentes de hardware, con su tabla comparativa, y la selección del microcontrolador, el controlador de motores, los sensores y la batería según criterios de costo, consumo energético, disponibilidad y compatibilidad.
+- Hito de la fase: documento de requerimientos y tabla comparativa de componentes.
 
 ### III.3.2 Fase II: Diseño mecánico y electrónico (4 semanas)
 
 La segunda fase transforma los requerimientos en un diseño del sistema y atiende el OE1 y la etapa de diseño del OE3.
 
-- **Tareas:** modelado CAD del chasis para impresión 3D en PLA y diseño de la tracción diferencial, con dos ruedas motrices y una rueda loca de apoyo; diseño del esquema electrónico (microcontrolador ESP32, driver de motores, sensores de línea, ultrasónicos e inercial, y alimentación separada en un dominio de potencia y otro de control) y del diagrama de bloques; diseño de la arquitectura de comunicación robot–aplicación–servidor sobre MQTT [8], con la definición de la jerarquía de tópicos, de los mensajes de órdenes, estado y alertas, y del nivel de QoS de cada flujo según su criticidad: QoS 0 para el estado periódico del robot, QoS 1 para las órdenes de entrega y QoS 2 para las alertas de seguridad, de acuerdo con lo expuesto en la sección II.2.7.5; y definición del uso de la sesión persistente, de los mensajes retenidos y del mensaje de última voluntad (LWT) para detectar la desconexión del robot.
-- **Objetivos específicos cubiertos:** OE1 y OE3 (diseño).
-- **Productos verificables:** el diseño de la arquitectura de comunicación inalámbrica del sistema (robot–aplicación–servidor) basada en MQTT, con la definición de los tópicos, los niveles de QoS y los flujos de mensajes para órdenes, estado y alertas; y los planos del chasis.
-- **Hito de la fase:** planos del chasis, diagrama electrónico y diagrama de bloques del sistema.
+- Tareas: modelado CAD del chasis para impresión 3D en PLA y diseño de la tracción diferencial, con dos ruedas motrices y una rueda loca de apoyo; diseño del esquema electrónico (microcontrolador ESP32, driver de motores, sensores de línea, ultrasónicos e inercial, y alimentación separada en un dominio de potencia y otro de control) y del diagrama de bloques; diseño de la arquitectura de comunicación robot–aplicación–servidor sobre MQTT [8], con la definición de la jerarquía de tópicos, de los mensajes de órdenes, estado y alertas, y del nivel de QoS de cada flujo según su criticidad: QoS 0 para el estado periódico del robot, QoS 1 para las órdenes de entrega y QoS 2 para las alertas de seguridad, de acuerdo con lo expuesto en la sección II.2.7.5; y definición del uso de la sesión persistente, de los mensajes retenidos y del mensaje de última voluntad (LWT) para detectar la desconexión del robot.
+- Objetivos específicos cubiertos: OE1 y OE3 (diseño).
+- Productos verificables: el diseño de la arquitectura de comunicación inalámbrica del sistema (robot–aplicación–servidor) basada en MQTT, con la definición de los tópicos, los niveles de QoS y los flujos de mensajes para órdenes, estado y alertas; y los planos del chasis.
+- Hito de la fase: planos del chasis, diagrama electrónico y diagrama de bloques del sistema.
 
 ### III.3.3 Fase III: Firmware de control y comunicaciones (6 semanas)
 
 La tercera fase materializa la plataforma y su programa de control, y atiende el OE4 y la etapa de construcción del OE3.
 
-- **Tareas:** impresión 3D del chasis y montaje de motores, encoders, sensores, driver y batería; programación del control de motores mediante PWM y del seguimiento de línea con un controlador PID [9], cuyas ganancias se ajustan de forma experimental empezando por la acción proporcional y añadiendo luego la derivativa y, de ser necesaria, la integral; adquisición e integración de los cuatro sensores ópticos de línea, de los dos sensores ultrasónicos frontal y trasero, y de la unidad inercial MPU-6050 por bus I²C [10]; implementación del cliente MQTT del robot, con los tópicos y niveles de QoS definidos en la fase II; e implementación de las reglas de seguridad del firmware: parada ante un obstáculo frontal a menos de 20 cm, detención si en modo manual transcurren 5 s sin órdenes y corte por batería baja a 9,9 V.
-- **Objetivos específicos cubiertos:** OE3 (construcción) y OE4.
-- **Productos verificables:** la plataforma mecánica del robot diseñada y construida, con chasis impreso en 3D y tracción diferencial, junto con los planos del chasis; y el firmware funcional de control del robot (seguimiento de línea con PID, adquisición de los sensores de línea, ultrasónicos e inercial, y comunicación MQTT), con pruebas unitarias de lectura, control y transmisión.
-- **Hito de la fase:** firmware funcional con pruebas unitarias de lectura, control y transmisión.
+- Tareas: impresión 3D del chasis y montaje de motores, encoders, sensores, driver y batería; programación del control de motores mediante PWM y del seguimiento de línea con un controlador PID [9], cuyas ganancias se ajustan de forma experimental empezando por la acción proporcional y añadiendo luego la derivativa y, de ser necesaria, la integral; adquisición e integración de los cuatro sensores ópticos de línea, de los dos sensores ultrasónicos frontal y trasero, y de la unidad inercial MPU-6050 por bus I²C [10]; implementación del cliente MQTT del robot, con los tópicos y niveles de QoS definidos en la fase II; e implementación de las reglas de seguridad del firmware: parada ante un obstáculo frontal a menos de 20 cm, detención si en modo manual transcurren 5 s sin órdenes y corte por batería baja a 9,9 V.
+- Objetivos específicos cubiertos: OE3 (construcción) y OE4.
+- Productos verificables: la plataforma mecánica del robot diseñada y construida, con chasis impreso en 3D y tracción diferencial, junto con los planos del chasis; y el firmware funcional de control del robot (seguimiento de línea con PID, adquisición de los sensores de línea, ultrasónicos e inercial, y comunicación MQTT), con pruebas unitarias de lectura, control y transmisión.
+- Hito de la fase: firmware funcional con pruebas unitarias de lectura, control y transmisión.
 
 ### III.3.4 Fase IV: Navegación progresiva (5 semanas)
 
 La cuarta fase implementa el núcleo del proyecto, la transición gradual desde el seguimiento de línea hacia la navegación basada en sensores en rutas conocidas, y atiende el OE5. Se siguen cinco etapas técnicas:
 
-1. **Etapa 0, línea como guía y registro:** el robot recorre la ruta siguiendo la línea mientras registra, con marca de tiempo, las lecturas de los sensores de línea, las velocidades de los motores, los pulsos de los encoders, las lecturas de la IMU y las distancias ultrasónicas.
-2. **Etapa 1, aprendizaje de la ruta:** a partir de esos registros se identifican los puntos de interés y se construye un mapa relativo de la ruta basado en odometría y en los patrones de los sensores de cada segmento.
-3. **Etapa 2, segmentación y retirada gradual:** para cada segmento se calibra un controlador que usa odometría, IMU y ultrasonidos para mantener la trayectoria sin la línea; en modo híbrido, si la desviación supera un umbral, el robot vuelve al modo línea (*fallback*).
-4. **Etapa 3, fusión de sensores y corrección periódica:** se combinan encoders e IMU mediante un filtro complementario o un filtro de Kalman simplificado [11], y se añaden los puntos de re-localización absoluta con las balizas BLE para acotar la deriva acumulada.
-5. **Etapa 4, autonomía en rutas conocidas:** cuando el error de posición se mantiene dentro del criterio de aceptación, el robot recorre los segmentos sin línea, y la línea permanece como recurso de recuperación y seguridad.
+1. Etapa 0, línea como guía y registro: el robot recorre la ruta siguiendo la línea mientras registra, con marca de tiempo, las lecturas de los sensores de línea, las velocidades de los motores, los pulsos de los encoders, las lecturas de la IMU y las distancias ultrasónicas.
+2. Etapa 1, aprendizaje de la ruta: a partir de esos registros se identifican los puntos de interés y se construye un mapa relativo de la ruta basado en odometría y en los patrones de los sensores de cada segmento.
+3. Etapa 2, segmentación y retirada gradual: para cada segmento se calibra un controlador que usa odometría, IMU y ultrasonidos para mantener la trayectoria sin la línea; en modo híbrido, si la desviación supera un umbral, el robot vuelve al modo línea (*fallback*).
+4. Etapa 3, fusión de sensores y corrección periódica: se combinan encoders e IMU mediante un filtro complementario o un filtro de Kalman simplificado [11], y se añaden los puntos de re-localización absoluta con las balizas BLE para acotar la deriva acumulada.
+5. Etapa 4, autonomía en rutas conocidas: cuando el error de posición se mantiene dentro del criterio de aceptación, el robot recorre los segmentos sin línea, y la línea permanece como recurso de recuperación y seguridad.
 
-- **Tareas complementarias:** caracterización de los errores sistemáticos de la odometría mediante recorridos de prueba en trayectorias cerradas, según el procedimiento de Borenstein y Feng [12], y medición del error de posición en los puntos de referencia de cada segmento.
-- **Objetivos específicos cubiertos:** OE5.
-- **Producto verificable:** el esquema de navegación progresiva implementado (seguimiento de línea, odometría, fusión de sensores inerciales y puntos de re-localización absoluta), validado por segmentos con mediciones de error de posición.
-- **Hito de la fase:** navegación validada por segmentos con mediciones de error de posición.
+- Tareas complementarias: caracterización de los errores sistemáticos de la odometría mediante recorridos de prueba en trayectorias cerradas, según el procedimiento de Borenstein y Feng [12], y medición del error de posición en los puntos de referencia de cada segmento.
+- Objetivos específicos cubiertos: OE5.
+- Producto verificable: el esquema de navegación progresiva implementado (seguimiento de línea, odometría, fusión de sensores inerciales y puntos de re-localización absoluta), validado por segmentos con mediciones de error de posición.
+- Hito de la fase: navegación validada por segmentos con mediciones de error de posición.
 
 ### III.3.5 Fase V: Aplicación y backend (5 semanas)
 
 La quinta fase desarrolla la interfaz con el usuario y el registro de las entregas, y atiende el OE6.
 
-- **Tareas:** desarrollo de la aplicación móvil/web de solicitudes en Flutter, con catálogo de componentes, creación de pedidos, seguimiento del estado del robot en tiempo real e historial de entregas; integración con el backend en la nube para la autenticación de usuarios con roles diferenciados, la base de datos de pedidos y entregas, y el envío de notificaciones *push*; y conexión de la aplicación con el broker MQTT para enviar órdenes y recibir el estado y las alertas del robot.
-- **Objetivos específicos cubiertos:** OE6.
-- **Producto verificable:** la aplicación móvil/web de solicitudes integrada con el backend de trazabilidad, con catálogo de componentes, seguimiento del robot en tiempo real, historial de entregas y notificaciones.
-- **Hito de la fase:** aplicación integrada con el backend y con trazabilidad de entregas.
+- Tareas: desarrollo de la aplicación móvil/web de solicitudes en Flutter, con catálogo de componentes, creación de pedidos, seguimiento del estado del robot en tiempo real e historial de entregas; integración con el backend en la nube para la autenticación de usuarios con roles diferenciados, la base de datos de pedidos y entregas, y el envío de notificaciones *push*; y conexión de la aplicación con el broker MQTT para enviar órdenes y recibir el estado y las alertas del robot.
+- Objetivos específicos cubiertos: OE6.
+- Producto verificable: la aplicación móvil/web de solicitudes integrada con el backend de trazabilidad, con catálogo de componentes, seguimiento del robot en tiempo real, historial de entregas y notificaciones.
+- Hito de la fase: aplicación integrada con el backend y con trazabilidad de entregas.
 
 ### III.3.6 Fase VI: Integración y sistema de alertas (3 semanas)
 
 La sexta fase une los subsistemas y completa el módulo de seguridad, y atiende el OE7.
 
-- **Tareas:** ensamblaje del prototipo completo e integración hardware–firmware–aplicación; calibración del acelerómetro de la MPU-6050 en reposo y en movimiento normal [10]; definición de los umbrales de detección de manipulación a partir de la aceleración y la inclinación medidas mientras el robot no está en misión, según lo expuesto en la sección II.2.10.1, eligiendo el punto de operación sobre la curva ROC que equilibra la tasa de detección y la tasa de falsas alarmas [13]; generación de la alerta con la última ubicación conocida y su publicación con QoS 2; y configuración de un broker privado con autenticación de usuario y contraseña y cifrado TLS para las pruebas finales (RNF-05).
-- **Objetivos específicos cubiertos:** OE7.
-- **Producto verificable:** el módulo de alertas de seguridad anti-manipulación basado en el acelerómetro, con sus umbrales de detección definidos y la evaluación de su tasa de detección y su tasa de falsas alarmas.
-- **Hito de la fase:** prototipo integrado con el sistema de alertas operativo.
+- Tareas: ensamblaje del prototipo completo e integración hardware–firmware–aplicación; calibración del acelerómetro de la MPU-6050 en reposo y en movimiento normal [10]; definición de los umbrales de detección de manipulación a partir de la aceleración y la inclinación medidas mientras el robot no está en misión, según lo expuesto en la sección II.2.10.1, eligiendo el punto de operación sobre la curva ROC que equilibra la tasa de detección y la tasa de falsas alarmas [13]; generación de la alerta con la última ubicación conocida y su publicación con QoS 2; y configuración de un broker privado con autenticación de usuario y contraseña y cifrado TLS para las pruebas finales (RNF-05).
+- Objetivos específicos cubiertos: OE7.
+- Producto verificable: el módulo de alertas de seguridad anti-manipulación basado en el acelerómetro, con sus umbrales de detección definidos y la evaluación de su tasa de detección y su tasa de falsas alarmas.
+- Hito de la fase: prototipo integrado con el sistema de alertas operativo.
 
 ### III.3.7 Fase VII: Pruebas, validación y documentación (5 semanas)
 
 La última fase evalúa el sistema integrado frente a los criterios de validación y cierra la documentación, y atiende el OE8 y el OE9.
 
-- **Tareas:** ejecución en la maqueta del protocolo de pruebas de la sección III.4, con un mínimo de 20 repeticiones por ensayo; análisis de los resultados según la sección III.5; identificación de las limitaciones técnicas observadas durante los ensayos y formulación de mejoras orientadas a la escalabilidad del sistema y a su adaptación a otros entornos; y redacción final del Trabajo de Grado y preparación de la defensa.
-- **Objetivos específicos cubiertos:** OE8 y OE9.
-- **Productos verificables:** la evaluación del desempeño integral del sistema: informe de resultados de las pruebas en maqueta (precisión de navegación, latencia y fiabilidad de la comunicación, autonomía energética y eficacia de las alertas); y la documentación de las limitaciones técnicas del sistema y la propuesta de mejoras futuras orientadas a su escalabilidad y a su adaptación a otros entornos de aplicación.
-- **Hito de la fase:** informe de resultados, documento del Trabajo de Grado y material de defensa.
+- Tareas: ejecución en la maqueta del protocolo de pruebas de la sección III.4, con un mínimo de 20 repeticiones por ensayo; análisis de los resultados según la sección III.5; identificación de las limitaciones técnicas observadas durante los ensayos y formulación de mejoras orientadas a la escalabilidad del sistema y a su adaptación a otros entornos; y redacción final del Trabajo de Grado y preparación de la defensa.
+- Objetivos específicos cubiertos: OE8 y OE9.
+- Productos verificables: la evaluación del desempeño integral del sistema: informe de resultados de las pruebas en maqueta (precisión de navegación, latencia y fiabilidad de la comunicación, autonomía energética y eficacia de las alertas); y la documentación de las limitaciones técnicas del sistema y la propuesta de mejoras futuras orientadas a su escalabilidad y a su adaptación a otros entornos de aplicación.
+- Hito de la fase: informe de resultados, documento del Trabajo de Grado y material de defensa.
 
 ### III.3.8 Resumen de trazabilidad del procedimiento
 
@@ -202,7 +202,7 @@ La Tabla 4 resume, para cada fase, su duración, los objetivos específicos que 
 | V. Aplicación y backend | 5 semanas | OE6 | Catálogo, pedidos, seguimiento, historial, autenticación, base de datos y notificaciones | Aplicación integrada con el backend y con trazabilidad de entregas |
 | VI. Integración y sistema de alertas | 3 semanas | OE7 | Integración hardware–firmware–aplicación, calibración del acelerómetro, umbrales, broker con TLS | Prototipo integrado con el sistema de alertas operativo |
 | VII. Pruebas, validación y documentación | 5 semanas | OE8, OE9 | Ensayos en maqueta, análisis de resultados, limitaciones y mejoras, redacción final | Informe de resultados, documento del Trabajo de Grado y material de defensa |
-| **Total** | **32 semanas** | **OE1 a OE9** | | |
+| Total | 32 semanas | OE1 a OE9 | | |
 
 **Tabla 4.** Resumen de trazabilidad de las fases del procedimiento metodológico.
 
@@ -252,11 +252,11 @@ Los siete criterios de validación se operacionalizan como métricas cuantitativ
 
 Para que los ensayos sean comparables entre sí, cada sesión de pruebas sigue un mismo protocolo:
 
-1. **Preparación:** cargar la batería hasta 12,6 V, verificar la calibración de los sensores de línea sobre la cinta y sobre el piso, comprobar la conexión con el broker y anotar la versión del firmware y de la aplicación.
-2. **Registro de condiciones:** anotar la fecha, las responsables, la tensión inicial de la batería, el tipo de piso, la iluminación y la intensidad de la señal Wi-Fi en el punto de origen.
-3. **Ejecución:** realizar el ensayo el número de veces establecido en la Tabla 6, sin modificar parámetros del firmware entre repeticiones de una misma serie.
-4. **Registro de resultados:** anotar cada repetición en la plantilla del ensayo y conservar los archivos de registro de mensajes y los videos como evidencia.
-5. **Cierre:** anotar las incidencias y descartar solo las repeticiones invalidadas por una causa externa documentada, como un corte de energía del laboratorio o la caída de la red institucional.
+1. Preparación: cargar la batería hasta 12,6 V, verificar la calibración de los sensores de línea sobre la cinta y sobre el piso, comprobar la conexión con el broker y anotar la versión del firmware y de la aplicación.
+2. Registro de condiciones: anotar la fecha, las responsables, la tensión inicial de la batería, el tipo de piso, la iluminación y la intensidad de la señal Wi-Fi en el punto de origen.
+3. Ejecución: realizar el ensayo el número de veces establecido en la Tabla 6, sin modificar parámetros del firmware entre repeticiones de una misma serie.
+4. Registro de resultados: anotar cada repetición en la plantilla del ensayo y conservar los archivos de registro de mensajes y los videos como evidencia.
+5. Cierre: anotar las incidencias y descartar solo las repeticiones invalidadas por una causa externa documentada, como un corte de energía del laboratorio o la caída de la red institucional.
 
 La latencia se mide como tiempo de ida y vuelta (RTT) en un mismo dispositivo, lo que evita la necesidad de sincronizar los relojes del robot y de la aplicación, según lo expuesto en la sección II.2.12. Cada serie de mensajes se discrimina por nivel de QoS, ya que el número de paquetes que intercambia cada nivel condiciona el retardo y la probabilidad de pérdida [14].
 
@@ -264,10 +264,10 @@ La latencia se mide como tiempo de ida y vuelta (RTT) en un mismo dispositivo, l
 
 Los datos de cada ensayo se procesan con estadística descriptiva y se comparan con el criterio de aceptación correspondiente de la Tabla 6, de la siguiente manera:
 
-- **Magnitudes continuas** (error de posición, tiempos, latencia y autonomía): se calculan la media, la desviación estándar muestral, el mínimo, el máximo y, cuando corresponde, la mediana y el percentil 95. Para el error de posición se reportan además el error máximo y la raíz del error cuadrático medio (RMSE), que penaliza más los errores grandes [15]. La incertidumbre de las mediciones directas se estima a partir de la resolución de cada instrumento [16].
-- **Proporciones** (tasa de éxito por segmento, tasa de entrega de mensajes, TD, TFA y recuperaciones exitosas): se calculan como porcentaje y se acompañan de su intervalo de confianza al 95 % por el método exacto de Clopper y Pearson [17]. Este tratamiento es necesario porque un resultado sin fallos en una muestra pequeña no demuestra una tasa de fallo nula: con 20 repeticiones sin fallos solo puede afirmarse, con 95 % de confianza, una tasa de fallo de hasta aproximadamente 14 %; con 50, de hasta aproximadamente 6 %. Se adopta un nivel de confianza del 95 %, habitual en la evaluación experimental en ingeniería.
-- **Alertas:** los eventos se clasifican en una matriz de confusión (verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos), de la que se obtienen la TD y la TFA, según la sección II.2.10.2 [13].
-- **Comparaciones:** el tiempo de entrega y el error de posición se comparan entre el modo línea puro y el modo híbrido o autónomo, y la latencia y la tasa de entrega se comparan entre los niveles de QoS 0, 1 y 2. Cada comparación se presenta con la diferencia absoluta y relativa entre las medias y con la dispersión de cada grupo.
+- Magnitudes continuas (error de posición, tiempos, latencia y autonomía): se calculan la media, la desviación estándar muestral, el mínimo, el máximo y, cuando corresponde, la mediana y el percentil 95. Para el error de posición se reportan además el error máximo y la raíz del error cuadrático medio (RMSE), que penaliza más los errores grandes [15]. La incertidumbre de las mediciones directas se estima a partir de la resolución de cada instrumento [16].
+- Proporciones (tasa de éxito por segmento, tasa de entrega de mensajes, TD, TFA y recuperaciones exitosas): se calculan como porcentaje y se acompañan de su intervalo de confianza al 95 % por el método exacto de Clopper y Pearson [17]. Este tratamiento es necesario porque un resultado sin fallos en una muestra pequeña no demuestra una tasa de fallo nula: con 20 repeticiones sin fallos solo puede afirmarse, con 95 % de confianza, una tasa de fallo de hasta aproximadamente 14 %; con 50, de hasta aproximadamente 6 %. Se adopta un nivel de confianza del 95 %, habitual en la evaluación experimental en ingeniería.
+- Alertas: los eventos se clasifican en una matriz de confusión (verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos), de la que se obtienen la TD y la TFA, según la sección II.2.10.2 [13].
+- Comparaciones: el tiempo de entrega y el error de posición se comparan entre el modo línea puro y el modo híbrido o autónomo, y la latencia y la tasa de entrega se comparan entre los niveles de QoS 0, 1 y 2. Cada comparación se presenta con la diferencia absoluta y relativa entre las medias y con la dispersión de cada grupo.
 
 Un criterio se considera cumplido cuando el estadístico de interés satisface el umbral de la Tabla 6; en el caso de las proporciones, se reporta además el límite del intervalo de confianza para mostrar el grado de certeza del resultado. Los resultados se presentan en tablas y gráficos generados a partir de los archivos de registro de cada sesión. La Tabla 7 resume el tratamiento de los datos por criterio.
 
@@ -298,7 +298,7 @@ El cronograma se estima en 32 semanas, dentro del rango reglamentario de la Escu
 | V | Aplicación de solicitudes y backend de trazabilidad | 20 a 24 | 15 mar. – 16 abr. 2027 | 5 semanas |
 | VI | Integración del sistema y módulo de alertas | 25 a 27 | 19 abr. – 7 may. 2027 | 3 semanas |
 | VII | Pruebas, validación y documentación final | 28 a 32 | 10 may. – 11 jun. 2027 | 5 semanas |
-| | **Total** | **1 a 32** | **26 oct. 2026 – 11 jun. 2027** | **32 semanas** |
+| | Total | 1 a 32 | 26 oct. 2026 – 11 jun. 2027 | 32 semanas |
 
 **Tabla 8.** Cronograma de ejecución por fases.
 
@@ -308,11 +308,11 @@ La fase III abarca el período de receso de fin de año, y la semana de evaluaci
 
 ## III.7 Validez, confiabilidad y consideraciones éticas
 
-**Validez.** Los criterios de aceptación se fijan antes de realizar las mediciones, a partir del documento de requerimientos, lo que evita ajustar los umbrales a los resultados obtenidos. Las métricas se definen de forma operativa con base en el Capítulo II, y los valores de referencia de la posición se obtienen con instrumentos externos al robot.
+Validez. Los criterios de aceptación se fijan antes de realizar las mediciones, a partir del documento de requerimientos, lo que evita ajustar los umbrales a los resultados obtenidos. Las métricas se definen de forma operativa con base en el Capítulo II, y los valores de referencia de la posición se obtienen con instrumentos externos al robot.
 
-**Confiabilidad.** Cada ensayo se repite como mínimo 20 veces bajo un protocolo común, se registran las condiciones de cada sesión y se conservan los datos crudos de cada repetición. El código del firmware y de la aplicación se mantiene bajo control de versiones, de modo que cada sesión de pruebas puede asociarse con la versión exacta del programa evaluado.
+Confiabilidad. Cada ensayo se repite como mínimo 20 veces bajo un protocolo común, se registran las condiciones de cada sesión y se conservan los datos crudos de cada repetición. El código del firmware y de la aplicación se mantiene bajo control de versiones, de modo que cada sesión de pruebas puede asociarse con la versión exacta del programa evaluado.
 
-**Consideraciones éticas.** La entrevista y la observación con el personal del laboratorio tienen fines exclusivamente académicos, y en el documento no se publican nombres ni datos personales de los participantes. Antes de cada actividad de campo se solicita el consentimiento informado de los participantes y la autorización para tomar fotografías en el laboratorio, y ambos documentos se incorporan como anexo del Trabajo de Grado. Las credenciales de la red inalámbrica y del broker se mantienen fuera del código fuente y de los documentos del Trabajo de Grado.
+Consideraciones éticas. La entrevista y la observación con el personal del laboratorio tienen fines exclusivamente académicos, y en el documento no se publican nombres ni datos personales de los participantes. Antes de cada actividad de campo se solicita el consentimiento informado de los participantes y la autorización para tomar fotografías en el laboratorio, y ambos documentos se incorporan como anexo del Trabajo de Grado. Las credenciales de la red inalámbrica y del broker se mantienen fuera del código fuente y de los documentos del Trabajo de Grado.
 
 # Bibliografía
 
