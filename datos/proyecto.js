@@ -462,13 +462,9 @@ window.TG = {
       resumen: "Entrega previa al Capítulo II: muestra cómo se organiza el marco teórico y desarrolla un tema completo, el protocolo MQTT (QoS, tópicos, sesión, LWT). Citas en IEEE." },
     { num: "I", titulo: "Planteamiento del proyecto", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado", md: "tesis/capitulo_1.md",
       resumen: "Planteamiento del problema, objetivos, justificación, alcance y limitaciones. Versión web del Word (última modificación: 28/10/2026); citas en IEEE." },
-    { num: "II", titulo: "Marco teórico", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado · Entrega oficial (Normas UCAB · 46 referencias)", md: "tesis/capitulo_2.md",
-      resumen: "Antecedentes, bases teóricas (robótica móvil, sensores, control, localización, ESP32, Wi-Fi y MQTT), bases normativas y términos básicos. Versión oficial entregada bajo Normas UCAB con bibliografía de 46 referencias (PDF y Word disponibles).",
-      descargas: [
-        ["⬇ PDF oficial (Normas UCAB)", "tesis/entregas/capitulo-2/Capitulo%20II%20TG%20FERRER,%20SEMPRUN.pdf"],
-        ["⬇ Word (.docx)", "tesis/entregas/capitulo-2/Capitulo%20II%20TG%20FERRER,%20SEMPRUN.docx"]
-      ],
-      extra: [["Cambios pendientes del Capítulo II", "docs/tomo/capitulo-ii-cambios.md"]] },
+    { num: "II", titulo: "Marco teórico", provisional: false, estado: "entregado", notaEstado: "Revisado en Seminario de Grado", md: "tesis/capitulo_2.md",
+      pdfOficial: "tesis/entregas/capitulo-2/Capitulo%20II%20TG%20FERRER,%20SEMPRUN.pdf",
+      resumen: "Antecedentes, bases teóricas (robótica móvil, sensores, control, localización, ESP32, Wi-Fi y MQTT), bases normativas y términos básicos. Versión final entregada bajo Normas UCAB (46 referencias)." },
     { num: "III", titulo: "Marco metodológico", provisional: false, estado: "listo para revisión", notaEstado: "Revisión conjunta: Iliana y Andrea", md: "tesis/capitulo_3.md",
       resumen: "Nivel de investigación (Proyecto Especial), diseño de prototipo, técnicas e instrumentos, plan de análisis y las 7 fases del trabajo. Sincronizado con P01–P06, P10, MQTT v2.0.0 y rigor SIL/HIL." },
     { num: "IV", titulo: "Desarrollo del prototipo", provisional: true, estado: "por redactar", md: null,

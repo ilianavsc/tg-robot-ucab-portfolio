@@ -68,13 +68,11 @@
     var tituloModal = c.tituloModal || ("Capítulo " + c.num + " · " + c.titulo);
     var acciones = "";
     if (c.md) {
-      acciones += '<a class="btn btn-principal" href="' + esc(c.md) + '" data-md="' + esc(c.md) + '" data-titulo="' + esc(tituloModal) + '">Leer capítulo</a>';
+      acciones += '<a class="btn btn-principal" href="' + esc(c.md) + '" data-md="' + esc(c.md) + '" data-titulo="' + esc(tituloModal) + '"' +
+        (c.pdfOficial ? ' data-pdf="' + esc(c.pdfOficial) + '"' : "") + '>Leer capítulo</a>';
     } else {
       acciones += '<span class="sin">Aún no está en el repositorio</span>';
     }
-    (c.descargas || []).forEach(function(d){
-      acciones += '<a class="btn btn-secundario" href="' + esc(d[1]) + '" download target="_blank" rel="noopener">' + esc(d[0]) + '</a>';
-    });
     (c.extra || []).forEach(function(x){
       acciones += '<a class="btn btn-secundario" href="' + esc(x[1]) + '" data-md="' + esc(x[1]) + '" data-titulo="' + esc(x[0]) + '">' + esc(x[0]) + '</a>';
     });
@@ -86,6 +84,31 @@
       '<p class="resumen">' + esc(c.resumen) + '</p>' +
       '<div class="acciones">' + acciones + '</div></article>';
   }).join("");
+
+  /* Enlace discreto al PDF oficial únicamente dentro de la cabecera del visor al abrir "Leer capítulo" */
+  document.addEventListener("click", function(ev){
+    var a = ev.target && ev.target.closest ? ev.target.closest("a[data-md]") : null;
+    if (!a) return;
+    var pdf = a.getAttribute("data-pdf");
+    setTimeout(function(){
+      var rutaEl = document.getElementById("modal-md-ruta");
+      if (!rutaEl || !rutaEl.parentNode) return;
+      var prev = document.getElementById("modal-md-pdf");
+      if (prev) prev.remove();
+      if (pdf) {
+        var link = document.createElement("a");
+        link.id = "modal-md-pdf";
+        link.className = "btn btn-secundario";
+        link.style.cssText = "padding:5px 10px;font-size:12.5px;margin-left:auto;white-space:nowrap";
+        link.href = pdf;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.setAttribute("download", "");
+        link.textContent = "⬇ PDF oficial (Normas UCAB)";
+        rutaEl.parentNode.insertBefore(link, rutaEl.nextSibling);
+      }
+    }, 0);
+  });
 
   document.getElementById("apoyo").innerHTML = TG.tesisApoyo.map(function(a){
     return '<a class="tarjeta sombra ir" href="' + esc(a.md) + '" data-md="' + esc(a.md) + '" data-titulo="' + esc(a.titulo) + '"><h3>' + esc(a.titulo) + '</h3><p class="linea-2">' + esc(a.linea) + '</p></a>';
