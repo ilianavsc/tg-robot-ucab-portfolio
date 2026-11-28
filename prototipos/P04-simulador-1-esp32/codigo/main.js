@@ -4,9 +4,9 @@ import * as THREE from 'three';
 import {SIN_WEBGL, crearAviso, vigilarContexto} from './arranque.js';
 import {crearGranito} from './granito.js';
 import {crearMundo} from './mundo.js';
-import {R} from './model.js';
+import {R, cuentasVuelta} from './model.js';
 import {GEOM, PD, crearSim, ledsEsp32} from './sim.js';
-import {crearPuenteMqtt} from './mqtt_puente.js';
+import {TOPICOS, crearPuenteMqtt} from './mqtt_puente.js';
 import {IDS_PISTA, PISTAS} from './pista.js';
 import {ZA, buildRobot} from './robot.js';
 
@@ -15,6 +15,12 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const f = (v, d = 1) => v.toFixed(d).replace('.', ',');
 const sg = (v, d = 1) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d).replace('.', ',');
 const seg = (v) => (v === null || v === undefined ? '—' : `${f(v)} s`);
+
+// Umbrales oficiales HC-SR04 (alineados con assets/js/parametros_robot.js)
+const US_PARADA_CM = 20;
+const US_PRECAUCION_CM = 50;
+const US_PRESETS = {libre: 150, precaucion: 35, parada: 14};
+const CUENTAS_POR_METRO = cuentasVuelta() / (Math.PI * R.ruedaD);
 
 const aviso = crearAviso();
 aviso.cargando();
@@ -45,7 +51,23 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     },
   });
   const anim = {ang: {izq: 0, der: 0}, arm: {izq: 0, der: 0}, flow: {}, act: {}, hall: {izq: [false, false], der: [false, false]}};
+  const enc = {izq: 0, der: 0};
+  const us = {frenteCm: 150, atrasCm: 160, modo: 'libre'};
   const ui = {vista: 'seguir', t: 0, teclas: new Set(), botones: new Set(), aviso: '', conexion: 'local', configurado: false, dpadDeseado: false};
+
+  const zonaUltrasonido = (cm) => (cm < US_PARADA_CM ? 'parada' : cm <= US_PRECAUCION_CM ? 'precaucion' : 'libre');
+
+  // ---------------------------------------------------------------- traza de eventos MQTT
+  const logMqtt = [];
+  let ultimaAlertaPayload = null;
+  const registrarEventoMqtt = (texto, qos = '') => {
+    const hora = new Date().toLocaleTimeString('es-VE', {hour12: false});
+    const pref = qos ? `[${qos}] ` : '';
+    logMqtt.unshift(`${hora} · ${pref}${texto}`);
+    if (logMqtt.length > 18) logMqtt.length = 18;
+    const ul = $('#log-mqtt');
+    if (ul) ul.innerHTML = logMqtt.map((item) => `<li>${item}</li>`).join('');
+  };
 
   // ---------------------------------------------------------------- cámara
   const yaw = new THREE.Vector3(0, 1, 0);
@@ -60,7 +82,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     if (v === 'general') {
       const z = sim.P.zona;
       const ancho = sim.pistaId === 'B' ? 4.4 : 3.5;
-      const util = canvas.clientWidth >= 900 ? 0.74 : 1; // en escritorio el panel tapa la derecha
+      const util = canvas.clientWidth >= 900 ? 0.72 : 1; // en escritorio el panel tapa la derecha
       const vert = ((ancho / 2 / Math.tan((camera.fov * Math.PI) / 360)) / Math.min(1, camera.aspect) / util) * 0.85;
       return {pos: new THREE.Vector3(0, Math.max(1.8, vert * 0.85), Math.max(1.2, vert * 0.55)), tgt: new THREE.Vector3(z.x0 + z.ancho / 2, 0, 0)};
     }
@@ -105,12 +127,11 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     controls.target.set(sim.eje.x, VISTAS[ui.vista].alto, sim.eje.z);
     camera.position.copy(controls.target).add(off);
   };
-  // en pantallas angostas el panel y el D-Pad ocupan abajo: se corre la vista para que el robot quede más arriba
   const desplazaVista = () => {
     const W = canvas.clientWidth;
     const H = canvas.clientHeight;
     if (W < 900) camera.setViewOffset(W, H, 0, Math.round(H * 0.13), W, H);
-    else camera.setViewOffset(W, H, 170, 0, W, H); // en escritorio el panel de datos ocupa la derecha: la escena se corre a la izquierda
+    else camera.setViewOffset(W, H, 180, 0, W, H);
     camera.updateProjectionMatrix();
   };
 
@@ -119,9 +140,11 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   const activo = (k) => ui.teclas.has(k) || ui.botones.has(k);
   const aplicaEntrada = () => {
     const E = sim.entrada;
-    E.f = (activo('arriba') ? 1 : 0) - (activo('abajo') ? 1 : 0);
+    const bloqObstaculo = us.frenteCm < US_PARADA_CM;
+    const fCmd = (activo('arriba') ? 1 : 0) - (activo('abajo') ? 1 : 0);
+    E.f = bloqObstaculo && fCmd > 0 ? 0 : fCmd;
     E.t = (activo('izq') ? 1 : 0) - (activo('der') ? 1 : 0);
-    E.freno = activo('stop');
+    E.freno = activo('stop') || (bloqObstaculo && E.f >= 0 && E.t === 0);
     $$('[data-dp]').forEach((b) => b.classList.toggle('on', activo(b.dataset.dp)));
   };
   const tomaControl = () => {
@@ -193,7 +216,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     }, {passive: false});
     b.addEventListener('contextmenu', (e) => e.preventDefault());
     b.addEventListener('keydown', (e) => {
-      // Enter o espacio sobre el botón no deben pulsarlo "de verdad": el teclado ya maneja el carro
       if (e.code === 'Enter') e.preventDefault();
     });
   });
@@ -213,7 +235,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     el.classList.add('pulso');
   };
   let mqtt;
-  // escribe texto solo si cambió (evita repintados del DOM con la telemetría constante)
   const ponTexto = (el, txt) => {
     if (el && el.textContent !== txt) el.textContent = txt;
   };
@@ -222,6 +243,9 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const st = mqtt.capa3.estado_ruta;
     const bloq = mqtt.movimientoBloqueado;
     mpuEstEl.setAttribute('data-bloq', bloq ? '1' : '0');
+    ponTexto($('#v-pitch'), `${f(mqtt.capa3.pitch, 1)}°`);
+    ponTexto($('#v-roll'), `${f(mqtt.capa3.roll, 1)}°`);
+    ponTexto($('#v-acel'), `${f(mqtt.capa3.acel_g, 2)} g`);
     if (st === 'ERROR_SEGURIDAD') {
       ponTexto(mpuEstEl, `BLOQUEADO · ${String(mqtt.capa3.alerta_mpu || 'seguridad').toUpperCase()}`);
       if (bMpuRecuperar) {
@@ -230,7 +254,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
       }
       actualizaModoTxt(`Seguridad MPU-6050 (${mqtt.capa3.alerta_mpu || 'alerta'}): movimiento bloqueado`);
     } else if (st === 'RECUPERACION_MANUAL') {
-      ponTexto(mpuEstEl, 'RECUPERACIÓN MANUAL · BLOQ.');
+      ponTexto(mpuEstEl, 'RECUPERACIÓN · BLOQ.');
       if (bMpuRecuperar) {
         bMpuRecuperar.hidden = false;
         ponTexto(bMpuRecuperar, 'Confirmar y reanudar');
@@ -240,12 +264,13 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
       ponTexto(mpuEstEl, 'MPU-6050 · OK');
       if (bMpuRecuperar) bMpuRecuperar.hidden = true;
     }
+    actualizaDetallesJson();
   };
   mqtt = crearPuenteMqtt({
     sim,
     alModo: (m, txt) => ponModo(m, txt),
     alTx: pulsarLedTx,
-    alEstado: ({estado: est, broker}) => {
+    alEstado: ({estado: est, broker, detalle}) => {
       mqttDot.className = 'mqtt-dot' + (est === 'desconectado' ? '' : ' ' + est);
       if (est === 'conectado') {
         ponTexto(mqttEstEl, `Conectado · ${broker.nombre}`);
@@ -260,6 +285,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
         ponTexto(bMqtt, 'Conectar App');
         bMqtt.setAttribute('aria-pressed', 'false');
       }
+      if (detalle) registrarEventoMqtt(detalle, est === 'conectado' ? 'MQTT' : '');
       actualizaMpuUi();
     },
   });
@@ -267,7 +293,11 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   $$('[data-mpu]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const tipo = btn.getAttribute('data-mpu');
-      mqtt.dispararAlertaInercial(tipo);
+      const res = mqtt.dispararAlertaInercial(tipo);
+      if (res && res.ok) {
+        ultimaAlertaPayload = res.alerta;
+        registrarEventoMqtt(`${TOPICOS.alertas} (${tipo})`, 'QoS 2');
+      }
       actualizaMpuUi();
     });
   });
@@ -281,6 +311,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
           sequence: seqUiCapa3,
           schema_version: '2.0.0',
         });
+        registrarEventoMqtt('recuperacion_manual solicitada', 'QoS 1');
       } else if (mqtt.capa3.estado_ruta === 'RECUPERACION_MANUAL') {
         mqtt.recibirRutaEscaneo({
           accion: 'reanudar_operacion',
@@ -288,10 +319,48 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
           sequence: seqUiCapa3,
           schema_version: '2.0.0',
         });
+        ultimaAlertaPayload = null;
+        registrarEventoMqtt('reanudar_operacion confirmada', 'QoS 1');
       }
       actualizaMpuUi();
     });
   }
+
+  // ---------------------------------------------------------------- HC-SR04 (simulación de obstáculos)
+  const actualizaUsUi = () => {
+    const z = zonaUltrasonido(us.frenteCm);
+    const badge = $('#us-badge');
+    const barraUs = $('#us-barra');
+    const etiqueta = z === 'parada' ? `Parada · ${us.frenteCm} cm` : z === 'precaucion' ? `Precaución · ${us.frenteCm} cm` : `Libre · ${us.frenteCm} cm`;
+    if (badge) {
+      badge.dataset.zona = z;
+      ponTexto(badge, etiqueta);
+    }
+    if (barraUs) {
+      barraUs.dataset.zona = z;
+      barraUs.style.width = `${Math.min(100, Math.max(8, Math.round((us.frenteCm / 150) * 100)))}%`;
+    }
+    ponTexto($('#v-us-frente'), `${us.frenteCm} cm`);
+    ponTexto($('#v-us-atras'), `${us.atrasCm} cm`);
+    $$('[data-us]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.us === us.modo)));
+  };
+  $$('[data-us]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const modo = btn.dataset.us;
+      us.modo = modo;
+      us.frenteCm = US_PRESETS[modo] ?? 150;
+      aplicaEntrada();
+      actualizaUsUi();
+      if (us.frenteCm < US_PARADA_CM) {
+        actualizaModoTxt(`HC-SR04 frontal (${us.frenteCm} cm < ${US_PARADA_CM} cm): parada de seguridad`);
+        registrarEventoMqtt(`HC-SR04 obstáculo frontal ${us.frenteCm} cm (parada)`, 'QoS 0');
+      } else {
+        actualizaModoTxt();
+      }
+      actualizaDetallesJson();
+      solicitarCuadro();
+    });
+  });
 
   // ---------------------------------------------------------------- botones de la barra
   const bEncender = $('#b-encender');
@@ -313,6 +382,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const mostrar = esTactilOAngosto() || ui.dpadDeseado;
     dpad.classList.toggle('oculto', !mostrar);
     bDpad.setAttribute('aria-pressed', String(mostrar));
+    $$('[data-dp]').forEach((b) => (b.disabled = !sim.encendido));
   };
 
   const actualizaModoTxt = (texto = '') => {
@@ -325,7 +395,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
       : ui.conexion === 'app'
         ? 'Modo App (MQTT): control remoto desde la App'
         : sim.modo === 'auto'
-          ? 'Seguidor automático: el robot sigue la línea solo'
+          ? 'Seguidor automático: el robot sigue la línea TCRT5000'
           : 'Modo manual: W A S D o flechas · Espacio frena';
     $('#modo-txt').textContent = base;
   };
@@ -336,6 +406,12 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     document.body.dataset.encendido = on ? '1' : '0';
     bEncender.setAttribute('aria-pressed', String(on));
     encenderTxt.textContent = on ? '⏹ Detener' : '⚡ Encender';
+    const badgeMis = $('#badge-mision');
+    if (badgeMis) {
+      badgeMis.dataset.on = on ? '1' : '0';
+      ponTexto(badgeMis, on ? (sim.modo === 'auto' ? 'AUTO' : 'MANUAL') : 'DETENIDO');
+    }
+    sincronizaDpad();
     if (!on) {
       soltarTodo();
       if (rafId) {
@@ -369,11 +445,15 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     sim.setModo(m);
     $$('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modo === m)));
     document.body.dataset.modo = m;
+    const badgeMis = $('#badge-mision');
+    if (badgeMis && sim.encendido) ponTexto(badgeMis, m === 'auto' ? 'AUTO' : 'MANUAL');
     actualizaModoTxt(texto);
   };
   const ponPista = (id) => {
     soltarTodo();
     sim.setPista(id);
+    enc.izq = 0;
+    enc.der = 0;
     $$('[data-pista]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pista === id)));
     $('#pista-desc').textContent = PISTAS[id].descripcion;
     construyeBarra();
@@ -388,6 +468,8 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     mqtt.cancelarRemoto();
     soltarTodo();
     sim.reiniciar();
+    enc.izq = 0;
+    enc.der = 0;
     irA(ui.vista, true);
     pintaPlaca(0);
     refresca();
@@ -414,6 +496,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const abierto = panel.classList.toggle('abierto');
     bMas.setAttribute('aria-expanded', String(abierto));
     bMas.textContent = abierto ? 'Menos datos ▾' : 'Más datos ▴';
+    if (abierto) pintaMinimapa();
   });
   bDpad.addEventListener('click', () => {
     if (ui.conexion === 'app') return;
@@ -422,6 +505,12 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     bDpad.setAttribute('aria-pressed', String(!oculto));
     if (oculto) soltarTodo();
   });
+  const detallesBox = $('#detalles-tecnicos');
+  if (detallesBox) {
+    detallesBox.addEventListener('toggle', () => {
+      if (detallesBox.open) actualizaDetallesJson();
+    });
+  }
   sincronizaDpad();
 
   // menú pre-inicio (modo de operación + pista)
@@ -460,7 +549,7 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   addEventListener('focus', avisoTeclado);
   addEventListener('blur', () => ($('#aviso-teclado').hidden = esTactilOAngosto()));
 
-  // ---------------------------------------------------------------- ajustes del PD
+  // ---------------------------------------------------------------- ajustes del PD y batería 3S
   const aj = [
     ['base', 'Base', 0.4, 1, 0.05, (v) => `${Math.round(v * 100)} %`],
     ['kp', 'Kp', 0.005, 0.06, 0.005, (v) => f(v, 3)],
@@ -475,8 +564,10 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   ajustes.addEventListener('input', (e) => {
     const k = e.target.dataset.aj;
     if (!k) return;
-    if (k === 'vbat') sim.vbat = Number(e.target.value);
-    else sim.pd[k] = Number(e.target.value);
+    if (k === 'vbat') {
+      sim.vbat = Number(e.target.value);
+      actualizaBateriaUi();
+    } else sim.pd[k] = Number(e.target.value);
     pintaAj();
   });
   $('#b-pd-reset').addEventListener('click', () => {
@@ -484,12 +575,12 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     sim.vbat = R.bat.nominal;
     $$('[data-aj]').forEach((el) => (el.value = el.dataset.aj === 'vbat' ? '11.1' : PD[el.dataset.aj]));
     pintaAj();
+    actualizaBateriaUi();
   });
   pintaAj();
 
   // ---------------------------------------------------------------- panel de datos
   const cacheEl = {};
-  // referencias perezosas: algunos nodos (la marca de la barra de tramos) se crean de nuevo al cambiar de pista
   const nodo = (sel) => {
     const c = cacheEl[sel];
     if (c && c.isConnected) return c;
@@ -499,6 +590,38 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const el = nodo('#' + id);
     if (el && el.textContent !== txt) el.textContent = txt;
   };
+  const actualizaBateriaUi = () => {
+    const pct = Math.max(0, Math.min(100, Math.round(((sim.vbat - R.bat.baja) / (R.bat.llena - R.bat.baja)) * 100)));
+    const el = nodo('#v-bat-badge');
+    if (el) {
+      el.dataset.ok = sim.vbat <= R.bat.baja + 0.05 ? '0' : '1';
+      ponTexto(el, `${f(sim.vbat, 1)} V · ${pct} %`);
+    }
+  };
+  const actualizaDetallesJson = () => {
+    if (!detallesBox || !detallesBox.open || !mqtt) return;
+    const L = sim.lectura();
+    const estPreview = {
+      estado: sim.modo === 'auto' ? 'autonomo' : 'manual',
+      bateria_v: Number(sim.vbat.toFixed(2)),
+      linea_mm: Number(L.eMedido.toFixed(1)),
+      sensores: L.bin,
+      v_izq: Number(sim.vel.izq.toFixed(2)),
+      v_der: Number(sim.vel.der.toFixed(2)),
+      us_frente_cm: us.frenteCm,
+      parada: us.frenteCm < US_PARADA_CM ? 'obstaculo_frente' : mqtt.parada,
+    };
+    set('json-estado', JSON.stringify(estPreview, null, 2));
+    const ordPreview = mqtt.ultimoAck
+      ? {ultima_orden: mqtt.remoto.ultimoCmd, ack: mqtt.ultimoAck}
+      : {estado: 'Sin órdenes remotas todavía', topico: TOPICOS.ordenes};
+    set('json-ordenes', JSON.stringify(ordPreview, null, 2));
+    const alPreview = ultimaAlertaPayload
+      ? ultimaAlertaPayload
+      : {alerta: mqtt.capa3.alerta_mpu, estado_ruta: mqtt.capa3.estado_ruta, pitch: mqtt.capa3.pitch, roll: mqtt.capa3.roll, acel_g: mqtt.capa3.acel_g};
+    set('json-alertas', JSON.stringify(alPreview, null, 2));
+  };
+
   // placa ESP32: se pinta en cada cuadro, sincronizada con el robot de la pista
   const ledsTcrt = $$('.esp-led.tcrt');
   const pwmIzq = $('#pwm-izq');
@@ -515,7 +638,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     if (pwmDer.style.width !== wDer) pwmDer.style.width = wDer;
     pwmIzq.classList.toggle('atras', led.dirIzq < 0);
     pwmDer.classList.toggle('atras', led.dirDer < 0);
-    // telemetría del ESP32 cada 2 s (como en el Simulador del ESP32): el LED TX parpadea
     tTx += dt;
     if (tTx >= 2) {
       tTx = 0;
@@ -562,7 +684,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
 
-    // fondo con retícula sutil estilo Gemelo Digital
     ctx.fillStyle = '#07101f';
     ctx.fillRect(0, 0, cssW, cssH);
     ctx.strokeStyle = 'rgba(56,189,248,0.09)';
@@ -590,7 +711,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const sx = (x) => ox + (x - xMin) * esc;
     const sy = (z) => oy + (z - zMin) * esc;
 
-    // halo y trazo de la pista
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -608,7 +728,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // puntos de control PC1–PC3 y marca INICIO
     const progM = sim.idx * P.paso;
     ctx.font = '700 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
     ctx.textBaseline = 'middle';
@@ -634,7 +753,6 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
       dibujarNodo(pc.x, pc.z, COLORES_PC[pc.id] || '#2DD4BF', etiquetaPc(pc.id), dy, progM >= pc.distanciaM);
     }
 
-    // posición y orientación en vivo del robot
     const rx = sx(sim.eje.x);
     const ry = sy(sim.eje.z);
     const ang = Math.atan2(Math.cos(sim.eje.th), Math.sin(sim.eje.th));
@@ -680,23 +798,26 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     set('v-tramo-prev', L.tramoPrev ? `${L.tramoPrev.id}: ${seg(L.tramoPrev.t)}` : '—');
     set('v-salidas', String(L.salidas));
     set('v-pwm', `${Math.round(L.pwm.izq * 100)} / ${Math.round(L.pwm.der * 100)} %`);
+    set('v-vel-ruedas', `${f(sim.vel.izq, 2)} / ${f(sim.vel.der, 2)}`);
+    set('v-enc-izq', `${Math.round(enc.izq)} pls`);
+    set('v-enc-der', `${Math.round(enc.der)} pls`);
     set('v-prog', `${f(L.progresoM, 2)} de ${f(L.largo, 2)} m`);
+    actualizaDetallesJson();
     const marcaLeft = `${((L.progresoM / L.largo) * 100).toFixed(2)}%`;
     if (marcaLeft !== prevMarca) {
       prevMarca = marcaLeft;
       const marcaEl = nodo('#marca');
       if (marcaEl) marcaEl.style.left = marcaLeft;
-      else prevMarca = ''; // la marca aún no existe: se reintenta en el próximo refresco
+      else prevMarca = '';
     }
     const tramoNom = `${L.tramo.nombre}${L.tramo.linea ? '' : ' · sin cinta'}`;
     if (tramoNom !== prevTramoNom) {
       prevTramoNom = tramoNom;
       nodo('#tramo-nombre').textContent = tramoNom;
     }
-    // tabla de comparación (solo repinta si cambió)
     const resumen = sim.resumen();
     const claveTabla = resumen.map((r) => [r.pista, r.modo, r.vueltas, r.mejor, r.vmedia, r.emax, r.erms, r.salidas].join(':')).join('|');
-    if (claveTabla === prevClaveTabla) return; // sin vueltas nuevas: no se reconstruye la tabla
+    if (claveTabla === prevClaveTabla) return;
     prevClaveTabla = claveTabla;
     const filas = resumen.sort((a, b) => (a.pista + a.modo).localeCompare(b.pista + b.modo));
     const tablaHtml = filas.length
@@ -716,6 +837,8 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
     const RW = 0.0325;
     anim.ang.izq += (sim.vel.izq / RW) * dt;
     anim.ang.der += (sim.vel.der / RW) * dt;
+    enc.izq += sim.vel.izq * dt * CUENTAS_POR_METRO;
+    enc.der += sim.vel.der * dt * CUENTAS_POR_METRO;
     anim.arm.izq = anim.ang.izq * 4;
     anim.arm.der = anim.ang.der * 4;
     for (const lado of ['izq', 'der']) {
@@ -754,12 +877,13 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
       sim.avanzar(dt);
       animar(dt);
     }
-    // el eje de las ruedas está ZA delante del centro del chasis
     pose.position.set(sim.eje.x - Math.sin(sim.eje.th) * ZA, 0, sim.eje.z - Math.cos(sim.eje.th) * ZA);
     pose.rotation.y = sim.eje.th;
+    const zF = zonaUltrasonido(us.frenteCm);
+    const zR = zonaUltrasonido(us.atrasCm);
     robot.update({
       ang: anim.ang, arm: anim.arm, xray: 0, explode: 0, wires: 1, t: ui.t, flow: anim.flow, act: anim.act, hall: anim.hall,
-      sens: sim.lectura().bin, zonaF: 'libre', zonaR: 'libre', dF: Infinity, dR: Infinity, sel: null,
+      sens: sim.lectura().bin, zonaF: zF, zonaR: zR, dF: us.frenteCm / 100, dR: us.atrasCm / 100, sel: null,
     });
     sol.position.set(sim.eje.x + 1.0, 2.4, sim.eje.z + 0.8);
     sol.target.position.set(sim.eje.x, 0, sim.eje.z);
@@ -805,6 +929,9 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   }).observe(canvas);
   resize();
   desplazaVista();
+  actualizaUsUi();
+  actualizaBateriaUi();
+  actualizaMpuUi();
   ponModo('auto');
   ponPista('A');
   ponEncendido(false);
@@ -814,5 +941,5 @@ function iniciar({renderer, scene, camera, controls, sol, pose, resize, ponerPis
   avisoTeclado();
 
   // ayuda para capturas y pruebas del navegador
-  window.SIM1 = {sim, ui, mqtt, irA, ponModo, ponPista, ponEncendido, ponConexion, abrirMenuInicio, pintaMinimapa, reiniciar, camera, controls, pulsa, suelta, IDS_PISTA, repintado};
+  window.SIM1 = {sim, ui, mqtt, us, enc, irA, ponModo, ponPista, ponEncendido, ponConexion, abrirMenuInicio, pintaMinimapa, reiniciar, camera, controls, pulsa, suelta, IDS_PISTA, repintado};
 }

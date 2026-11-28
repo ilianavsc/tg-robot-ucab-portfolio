@@ -13,20 +13,31 @@
   <canvas id="lienzo" tabindex="0" aria-label="Vista 3D del robot seguidor de línea sobre la pista seleccionada" role="img"></canvas>
 
   <header class="barra" role="toolbar" aria-label="Controles del simulador">
-    <button class="btn encender" type="button" id="b-encender" aria-pressed="false" aria-label="Encender o detener el robot"><span class="est-dot" aria-hidden="true"></span><span id="encender-txt">⚡ Encender</span></button>
-    <div class="grupo" role="group" aria-label="Pista">
-      <button class="btn" type="button" data-pista="A" aria-pressed="true"><span><span class="largo">Pista </span>A · 8,05 m</span></button>
-      <button class="btn" type="button" data-pista="B" aria-pressed="false"><span><span class="largo">Pista </span>B · 9,00 m</span></button>
+    <div class="barra-bloque" role="group" aria-label="Encendido del robot">
+      <button class="btn btn-primario encender" type="button" id="b-encender" aria-pressed="false" aria-label="Encender o detener el robot">
+        <span class="est-dot" aria-hidden="true"></span><span id="encender-txt">⚡ Encender</span>
+      </button>
     </div>
-    <div class="grupo" role="group" aria-label="Modo de control">
-      <button class="btn" type="button" data-modo="manual" aria-pressed="false">Manual</button>
-      <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span>Auto<span class="largo">mático</span></span></button>
+
+    <div class="barra-bloque" role="group" aria-label="Pista y modo de control">
+      <div class="grupo" role="group" aria-label="Pista">
+        <button class="btn" type="button" data-pista="A" aria-pressed="true"><span><span class="largo">Pista </span>A · 8,05 m</span></button>
+        <button class="btn" type="button" data-pista="B" aria-pressed="false"><span><span class="largo">Pista </span>B · 9,00 m</span></button>
+      </div>
+      <div class="grupo" role="group" aria-label="Modo de control">
+        <button class="btn" type="button" data-modo="manual" aria-pressed="false">Manual</button>
+        <button class="btn" type="button" data-modo="auto" aria-pressed="true"><span>Auto<span class="largo">mático</span></span></button>
+      </div>
     </div>
-    <button class="btn suave" type="button" id="b-reiniciar" aria-label="Reiniciar en la salida"><span class="ic" aria-hidden="true">↺</span><span class="largo">Reiniciar</span></button>
-    <button class="btn suave" type="button" id="b-vista">Vista: Seguir</button>
-    <button class="btn suave solo-ancho" type="button" id="b-dpad" aria-pressed="false">D-Pad</button>
-    <button class="btn suave" type="button" id="b-config" aria-label="Cambiar modo de operación o pista"><span aria-hidden="true">⚙</span><span class="largo"> Modo/Pista</span></button>
+
+    <div class="barra-bloque" role="group" aria-label="Acciones de vista y sesión">
+      <button class="btn suave" type="button" id="b-reiniciar" aria-label="Reiniciar en la salida"><span class="ic-vis" aria-hidden="true">↺</span><span class="largo">Reiniciar</span></button>
+      <button class="btn suave" type="button" id="b-vista">Vista: Seguir</button>
+      <button class="btn suave solo-ancho" type="button" id="b-dpad" aria-pressed="false">D-Pad</button>
+      <button class="btn suave" type="button" id="b-config" aria-label="Cambiar modo de operación o pista"><span aria-hidden="true">⚙</span><span class="largo">Sesión</span></button>
+    </div>
   </header>
+
   <p class="modo-txt" id="modo-txt" role="status" aria-live="polite"></p>
   <p class="aviso-teclado" id="aviso-teclado" hidden>Haz clic en la pista para activar el teclado</p>
 
@@ -39,90 +50,172 @@
       <button type="button" class="dp" data-dp="abajo" aria-label="Retroceder" style="grid-area:d">▼</button>
     </div>
 
-    <aside class="datos" id="datos" aria-label="Datos en vivo">
+    <aside class="datos" id="datos" aria-label="Panel de telemetría y sensores en vivo">
       <section class="resumen">
-        <div class="placa" id="placa-esp32" role="group" aria-label="Placa ESP32 en vivo: 4 LEDs de los sensores de línea y PWM de los motores">
-          <div class="placa-cab"><span class="usb" aria-hidden="true"></span><b>ESP32</b><span class="tx" id="led-tx" aria-hidden="true"></span></div>
+        <!-- 1. Conexión y Placa ESP32 -->
+        <div class="tarjeta placa" id="placa-esp32" role="group" aria-label="Placa ESP32 en vivo: conexión MQTT, sensores TCRT5000 y PWM">
+          <div class="tarjeta-cab">
+            <span class="cab-izq"><span class="usb" aria-hidden="true"></span><b>ESP32 · MQTT v2.0</b></span>
+            <span class="cab-der"><span class="badge-chip mono" id="badge-mision">DETENIDO</span><span class="tx" id="led-tx" title="Pulso de telemetría TX" aria-hidden="true"></span></span>
+          </div>
+          <div class="placa-mqtt" id="placa-mqtt" role="group" aria-label="Enlace MQTT con la App" aria-live="polite">
+            <span class="mqtt-est"><i class="mqtt-dot" id="mqtt-dot" aria-hidden="true"></i><span id="mqtt-estado">Desconectado</span></span>
+            <button class="btn-panel btn-panel-prim" type="button" id="b-mqtt" aria-pressed="false">Conectar App</button>
+          </div>
+        </div>
+
+        <!-- 2. Mini-mapa Gemelo Digital + KPIs compactos -->
+        <div class="tarjeta minimapa" id="minimapa" role="region" aria-label="Mini-mapa de la ruta estilo Gemelo Digital">
+          <div class="minimapa-cab">
+            <span class="minimapa-tit"><i class="mm-dot" aria-hidden="true"></i>Gemelo Digital</span>
+            <span class="minimapa-pista mono" id="minimapa-pista">Pista A · 8,05 m</span>
+          </div>
+          <canvas id="minimapa-canvas" width="280" height="106" aria-label="Trazado de la pista con INICIO, PC1, PC2, PC3 y posición en vivo del robot"></canvas>
+          <div class="minimapa-leyenda mono" id="minimapa-leyenda"></div>
+          <div class="kpi-grid" aria-label="Resumen de misión">
+            <div class="kpi"><span class="kpi-k">Velocidad</span><b class="kpi-v mono" id="v-vel">0,00 m/s</b></div>
+            <div class="kpi"><span class="kpi-k">Distancia</span><b class="kpi-v mono" id="v-dist">0,0 m</b></div>
+            <div class="kpi"><span class="kpi-k">Vuelta</span><b class="kpi-v mono" id="v-vuelta">1 · 0,0 s</b></div>
+          </div>
+        </div>
+
+        <!-- 3. Sensores reales del proyecto (TCRT5000, HC-SR04, MPU-6050, Encoders + Batería) -->
+        <div class="tarjeta sensor-card" id="sensor-tcrt" role="group" aria-label="Arreglo óptico TCRT5000 de 4 canales">
+          <div class="sensor-cab">
+            <span class="sensor-tit">TCRT5000 · Línea</span>
+            <span class="badge-estado" id="v-estado" data-ok="1">En la línea</span>
+          </div>
           <div class="leds-tcrt" aria-hidden="true">
-            <span class="led-item"><i class="esp-led tcrt"></i>S1<small>36</small></span>
-            <span class="led-item"><i class="esp-led tcrt"></i>S2<small>39</small></span>
-            <span class="led-item"><i class="esp-led tcrt"></i>S3<small>34</small></span>
-            <span class="led-item"><i class="esp-led tcrt"></i>S4<small>35</small></span>
+            <span class="led-item"><i class="esp-led tcrt"></i>S1<small>G36</small></span>
+            <span class="led-item"><i class="esp-led tcrt"></i>S2<small>G39</small></span>
+            <span class="led-item"><i class="esp-led tcrt"></i>S3<small>G34</small></span>
+            <span class="led-item"><i class="esp-led tcrt"></i>S4<small>G35</small></span>
+          </div>
+          <div class="sensor-pie mono">
+            <span>Canales <b id="v-bin">[0,0,0,0]</b></span>
+            <span>Error <b id="v-emed">+0,0 mm</b></span>
+          </div>
+        </div>
+
+        <div class="tarjeta sensor-card" id="sensor-hcsr04" role="group" aria-label="Sensores ultrasónicos HC-SR04">
+          <div class="sensor-cab">
+            <span class="sensor-tit">HC-SR04 · Obstáculos</span>
+            <span class="badge-estado" id="us-badge" data-zona="libre">Libre · 150 cm</span>
+          </div>
+          <div class="barra-nivel" aria-hidden="true"><i id="us-barra" style="width:100%"></i></div>
+          <div class="sensor-pie mono">
+            <span>Frente <b id="v-us-frente">150 cm</b></span>
+            <span>Atrás <b id="v-us-atras">160 cm</b></span>
+          </div>
+          <div class="chips-accion" role="group" aria-label="Simular obstáculo HC-SR04">
+            <button type="button" class="chip-btn" data-us="libre" aria-pressed="true">Libre</button>
+            <button type="button" class="chip-btn" data-us="precaucion" aria-pressed="false">35 cm</button>
+            <button type="button" class="chip-btn alerta" data-us="parada" aria-pressed="false">&lt;20 cm</button>
+          </div>
+        </div>
+
+        <div class="tarjeta sensor-card placa-mpu" id="placa-mpu" role="group" aria-label="Seguridad inercial MPU-6050" aria-live="polite">
+          <div class="sensor-cab mpu-cab">
+            <span class="sensor-tit">MPU-6050 · Inercial</span>
+            <span class="mpu-est badge-estado" id="mpu-estado" data-bloq="0">MPU-6050 · OK</span>
+          </div>
+          <div class="sensor-pie mono">
+            <span>Pitch <b id="v-pitch">0,0°</b></span>
+            <span>Roll <b id="v-roll">0,0°</b></span>
+            <span>Acel <b id="v-acel">1,00 g</b></span>
+          </div>
+          <div class="mpu-btns" role="group" aria-label="Simular alerta anti-manipulación MPU-6050">
+            <button class="mpu-btn" type="button" data-mpu="impacto">Impacto</button>
+            <button class="mpu-btn" type="button" data-mpu="inclinacion">Inclinación</button>
+            <button class="mpu-btn" type="button" data-mpu="atascamiento">Atascamiento</button>
+          </div>
+          <button class="mpu-btn rec" type="button" id="b-mpu-recuperar" hidden>Recuperación manual</button>
+        </div>
+
+        <div class="tarjeta sensor-card" id="sensor-encoders" role="group" aria-label="Encoders de ruedas y batería 3S">
+          <div class="sensor-cab">
+            <span class="sensor-tit">Encoders · Batería 3S</span>
+            <span class="badge-estado mono" id="v-bat-badge" data-ok="1">11,1 V · 44 %</span>
           </div>
           <div class="pwm" aria-hidden="true">
             <span>ENA</span><span class="pwm-pista"><i id="pwm-izq"></i></span>
             <span>ENB</span><span class="pwm-pista"><i id="pwm-der"></i></span>
           </div>
-          <div class="placa-mqtt" id="placa-mqtt" role="group" aria-label="Enlace MQTT con la App" aria-live="polite">
-            <span class="mqtt-est"><i class="mqtt-dot" id="mqtt-dot" aria-hidden="true"></i><span id="mqtt-estado">Desconectado</span></span>
-            <button class="mqtt-btn" type="button" id="b-mqtt" aria-pressed="false">Conectar App</button>
-          </div>
-          <div class="placa-mpu" id="placa-mpu" role="group" aria-label="Seguridad inercial MPU-6050" aria-live="polite">
-            <div class="mpu-cab">
-              <span class="mpu-est" id="mpu-estado" data-bloq="0">MPU-6050 · OK</span>
-              <button class="mpu-btn rec" type="button" id="b-mpu-recuperar" hidden>Recuperación manual</button>
-            </div>
-            <div class="mpu-btns">
-              <button class="mpu-btn" type="button" data-mpu="impacto">Impacto</button>
-              <button class="mpu-btn" type="button" data-mpu="inclinacion">Inclinación</button>
-              <button class="mpu-btn" type="button" data-mpu="atascamiento">Atascamiento</button>
-            </div>
+          <div class="sensor-pie mono">
+            <span>Izq <b id="v-enc-izq">0 pls</b></span>
+            <span>Der <b id="v-enc-der">0 pls</b></span>
           </div>
         </div>
-        <div class="minimapa" id="minimapa" role="region" aria-label="Mini-mapa de la ruta estilo Gemelo Digital">
-          <div class="minimapa-cab">
-            <span class="minimapa-tit"><i class="mm-dot" aria-hidden="true"></i>Gemelo Digital</span>
-            <span class="minimapa-pista mono" id="minimapa-pista">Pista A · 8,05 m</span>
-          </div>
-          <canvas id="minimapa-canvas" width="280" height="118" aria-label="Trazado de la pista con INICIO, PC1, PC2, PC3 y posición en vivo del robot"></canvas>
-          <div class="minimapa-leyenda mono" id="minimapa-leyenda"></div>
-        </div>
-        <div class="fila tcrt"><span class="k">Sensores S1…S4</span><b class="v mono" id="v-bin">[0, 0, 0, 0]</b></div>
-        <div class="fila"><span class="k">Error medido</span><b class="v mono" id="v-emed">+0,0 mm</b></div>
-        <div class="fila extra"><span class="k">Desvío real</span><b class="v mono" id="v-ereal">+0,0 mm</b></div>
-        <div class="fila extra"><span class="k">Estado</span><b class="v" id="v-estado" data-ok="1">En la línea</b></div>
-        <div class="fila"><span class="k">Velocidad</span><b class="v mono" id="v-vel">0,00 m/s</b></div>
-        <div class="fila"><span class="k">Distancia</span><b class="v mono" id="v-dist">0,0 m</b></div>
-        <div class="fila"><span class="k">Rumbo</span><b class="v mono" id="v-rumbo">0°</b></div>
-        <div class="fila"><span class="k">Vuelta · tiempo</span><b class="v mono" id="v-vuelta">1 · 0,0 s</b></div>
-        <div class="fila"><span class="k">Salidas de línea</span><b class="v mono" id="v-salidas">0</b></div>
       </section>
+
       <button class="btn chico mas" type="button" id="b-mas" aria-expanded="false" aria-controls="detalle">Más datos ▴</button>
+
       <div class="detalle" id="detalle">
-        <section>
-          <h3>Lectura y control</h3>
-          <div class="fila"><span class="k">ADC (0–4095)</span><b class="v mono" id="v-raw">—</b></div>
-          <div class="fila"><span class="k">PWM izq / der</span><b class="v mono" id="v-pwm">0 / 0 %</b></div>
-          <div class="fila"><span class="k">Última vuelta</span><b class="v mono" id="v-ultima">—</b></div>
-        </section>
-        <section>
-          <h3>Tramo</h3>
-          <div class="fila"><span class="k">Tramo · tiempo</span><b class="v mono" id="v-tramo">—</b></div>
-          <p class="nota-mini" id="tramo-nombre"></p>
-          <div class="fila"><span class="k">Tramo anterior</span><b class="v mono" id="v-tramo-prev">—</b></div>
-          <div class="fila"><span class="k">Avance</span><b class="v mono" id="v-prog">—</b></div>
-          <div class="progreso" id="progreso" aria-hidden="true"></div>
-        </section>
-        <section>
-          <h3>Pista seleccionada</h3>
-          <p class="nota-mini" id="pista-desc"></p>
-        </section>
-        <section>
-          <h3>Comparación (esta sesión)</h3>
-          <div class="tabla-scroll">
-            <table id="comparacion">
-              <thead><tr><th scope="col">Pista·modo</th><th scope="col">Vueltas</th><th scope="col">Mejor (s)</th><th scope="col">v (m/s)</th><th scope="col">e máx</th><th scope="col">e rms</th><th scope="col">Salidas</th></tr></thead>
-              <tbody></tbody>
-            </table>
+        <details class="detalles-box" id="detalles-tecnicos">
+          <summary class="detalles-sum">Ver detalles técnicos y JSON MQTT</summary>
+          <div class="detalles-cuerpo">
+            <section class="det-sec">
+              <h3>Payloads MQTT en vivo</h3>
+              <div class="json-bloque">
+                <div class="json-cab"><code class="mono">robot/estado</code><span class="qos-tag mono">QoS 0</span></div>
+                <pre class="json-pre mono" id="json-estado">{}</pre>
+              </div>
+              <div class="json-bloque">
+                <div class="json-cab"><code class="mono">robot/ordenes · ack</code><span class="qos-tag mono">QoS 1</span></div>
+                <pre class="json-pre mono" id="json-ordenes">Sin órdenes remotas todavía</pre>
+              </div>
+              <div class="json-bloque">
+                <div class="json-cab"><code class="mono">robot/alertas</code><span class="qos-tag mono qos-2">QoS 2</span></div>
+                <pre class="json-pre mono" id="json-alertas">Sin alertas activas</pre>
+              </div>
+            </section>
+
+            <section class="det-sec">
+              <h3>Lecturas numéricas de sensores</h3>
+              <div class="fila"><span class="k">TCRT5000 ADC (0–4095)</span><b class="v mono" id="v-raw">—</b></div>
+              <div class="fila"><span class="k">Desvío real</span><b class="v mono" id="v-ereal">+0,0 mm</b></div>
+              <div class="fila"><span class="k">PWM izq / der</span><b class="v mono" id="v-pwm">0 / 0 %</b></div>
+              <div class="fila"><span class="k">Velocidad ruedas (m/s)</span><b class="v mono" id="v-vel-ruedas">0,00 / 0,00</b></div>
+              <div class="fila"><span class="k">Rumbo</span><b class="v mono" id="v-rumbo">0°</b></div>
+              <div class="fila"><span class="k">Salidas de línea</span><b class="v mono" id="v-salidas">0</b></div>
+              <div class="fila"><span class="k">Última vuelta</span><b class="v mono" id="v-ultima">—</b></div>
+            </section>
+
+            <section class="det-sec">
+              <h3>Traza de eventos MQTT</h3>
+              <ul class="log-mqtt mono" id="log-mqtt" aria-live="off">
+                <li>Sin eventos MQTT registrados</li>
+              </ul>
+            </section>
+
+            <section class="det-sec">
+              <h3>Tramo y pista</h3>
+              <div class="fila"><span class="k">Tramo · tiempo</span><b class="v mono" id="v-tramo">—</b></div>
+              <p class="nota-mini" id="tramo-nombre"></p>
+              <div class="fila"><span class="k">Tramo anterior</span><b class="v mono" id="v-tramo-prev">—</b></div>
+              <div class="fila"><span class="k">Avance</span><b class="v mono" id="v-prog">—</b></div>
+              <div class="progreso" id="progreso" aria-hidden="true"></div>
+              <p class="nota-mini" id="pista-desc"></p>
+            </section>
+
+            <section class="det-sec">
+              <h3>Comparación (esta sesión)</h3>
+              <div class="tabla-scroll">
+                <table id="comparacion">
+                  <thead><tr><th scope="col">Pista·modo</th><th scope="col">Vueltas</th><th scope="col">Mejor (s)</th><th scope="col">v (m/s)</th><th scope="col">e máx</th><th scope="col">e rms</th><th scope="col">Salidas</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="det-sec">
+              <details class="sub-detalles">
+                <summary>Ajustes del PD y batería 3S</summary>
+                <div id="ajustes-cuerpo" class="ajustes"></div>
+              </details>
+            </section>
           </div>
-          <p class="nota-mini">Cada fila acumula lo recorrido en esa pista y modo (una vuelta cuenta si se siguió la línea sin salidas); así se ve la diferencia entre manual y automático. El error (e, en mm) cuenta solo mientras el robot está a menos de 15 cm de la línea.</p>
-        </section>
-        <section>
-          <details>
-            <summary>Ajustes del PD y la batería</summary>
-            <div id="ajustes-cuerpo" class="ajustes"></div>
-          </details>
-        </section>
+        </details>
       </div>
     </aside>
   </div>
